@@ -1,5 +1,4 @@
 import { MediaCard } from '@/components/MediaCard';
-import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
 import { searchMedia } from '@/lib/tmdb/service';
 import type { Metadata } from 'next';
 
@@ -19,7 +18,6 @@ export default async function SearchPage({
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
       <h1 className="font-display mb-2 text-3xl font-bold">Search</h1>
-      <TmdbSetupBanner />
       {query ? (
         <p className="mb-8 text-white/50">
           {results.length} result{results.length !== 1 ? 's' : ''} for &ldquo;{query}
