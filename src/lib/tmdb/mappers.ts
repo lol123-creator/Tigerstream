@@ -1,0 +1,154 @@
+import type { Episode, MediaItem, Movie, Season, TvShow } from '@/types/media';
+import type {
+  TmdbMovieDetail,
+  TmdbMovieSummary,
+  TmdbSearchResult,
+  TmdbSeasonDetail,
+  TmdbTrendingResult,
+  TmdbTvDetail,
+  TmdbTvSummary,
+} from './types';
+
+function genreNames(genres: { name: string }[] | undefined): string[] {
+  return genres?.map((g) => g.name) ?? [];
+}
+
+export function mapMovieSummary(m: TmdbMovieSummary, genres: string[] = []): Movie {
+  return {
+    id: m.id,
+    type: 'movie',
+    title: m.title,
+    overview: m.overview ?? '',
+    poster_path: m.poster_path ?? '',
+    backdrop_path: m.backdrop_path ?? '',
+    release_date: m.release_date ?? '',
+    runtime: 0,
+    vote_average: m.vote_average ?? 0,
+    genres,
+  };
+}
+
+export function mapMovieDetail(m: TmdbMovieDetail): Movie {
+  return {
+    ...mapMovieSummary(m, genreNames(m.genres)),
+    runtime: m.runtime ?? 0,
+    tagline: m.tagline || undefined,
+  };
+}
+
+export function mapTvSummary(t: TmdbTvSummary, genres: string[] = []): TvShow {
+  return {
+    id: t.id,
+    type: 'tv',
+    title: t.name,
+    overview: t.overview ?? '',
+    poster_path: t.poster_path ?? '',
+    backdrop_path: t.backdrop_path ?? '',
+    first_air_date: t.first_air_date ?? '',
+    vote_average: t.vote_average ?? 0,
+    genres,
+    seasons: [],
+  };
+}
+
+/** Hero banner: full metadata without loading every episode. */
+export function mapTvHeroDetail(t: TmdbTvDetail): TvShow {
+  return {
+    ...mapTvSummary(
+      {
+        id: t.id,
+        name: t.name,
+        overview: t.overview,
+        poster_path: t.poster_path,
+        backdrop_path: t.backdrop_path,
+        first_air_date: t.first_air_date,
+        vote_average: t.vote_average,
+      },
+      genreNames(t.genres),
+    ),
+    tagline: t.tagline || undefined,
+    seasons: [],
+  };
+}
+
+export function mapTvDetail(
+  t: TmdbTvDetail,
+  seasonDetails: TmdbSeasonDetail[],
+): TvShow {
+  const seasons: Season[] = seasonDetails
+    .filter((s) => s.season_number > 0 && s.episodes.length > 0)
+    .sort((a, b) => a.season_number - b.season_number)
+    .map((s) => ({
+      season_number: s.season_number,
+      name: s.name || `Season ${s.season_number}`,
+      episode_count: s.episodes.length,
+      episodes: s.episodes.map(
+        (ep): Episode => ({
+          season: s.season_number,
+          episode: ep.episode_number,
+          title: ep.name,
+          overview: ep.overview ?? '',
+          runtime: ep.runtime ?? 0,
+          still_path: ep.still_path ?? undefined,
+        }),
+      ),
+    }));
+
+  return {
+    ...mapTvSummary(t, genreNames(t.genres)),
+    tagline: t.tagline || undefined,
+    seasons,
+  };
+}
+
+export function mapTrendingItem(r: TmdbTrendingResult): MediaItem | null {
+  if (r.media_type === 'movie') {
+    return mapMovieSummary({
+      id: r.id,
+      title: r.title ?? 'Untitled',
+      overview: r.overview ?? '',
+      poster_path: r.poster_path,
+      backdrop_path: r.backdrop_path,
+      release_date: r.release_date ?? '',
+      vote_average: r.vote_average ?? 0,
+    });
+  }
+  if (r.media_type === 'tv') {
+    return mapTvSummary({
+      id: r.id,
+      name: r.name ?? 'Untitled',
+      overview: r.overview ?? '',
+      poster_path: r.poster_path,
+      backdrop_path: r.backdrop_path,
+      first_air_date: r.first_air_date ?? '',
+      vote_average: r.vote_average ?? 0,
+    });
+  }
+  return null;
+}
+
+export function mapSearchResult(r: TmdbSearchResult): MediaItem | null {
+  if (r.media_type === 'movie') {
+    return mapMovieSummary({
+      id: r.id,
+      title: r.title ?? 'Untitled',
+      overview: r.overview ?? '',
+      poster_path: r.poster_path,
+      backdrop_path: r.backdrop_path,
+      release_date: r.release_date ?? '',
+      vote_average: r.vote_average ?? 0,
+    });
+  }
+  if (r.media_type === 'tv') {
+    return mapTvSummary({
+      id: r.id,
+      name: r.name ?? 'Untitled',
+      overview: r.overview ?? '',
+      poster_path: r.poster_path,
+      backdrop_path: r.backdrop_path,
+      first_air_date: r.first_air_date ?? '',
+      vote_average: r.vote_average ?? 0,
+    });
+  }
+  return null;
+}

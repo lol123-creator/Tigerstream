@@ -1,0 +1,79 @@
+import Image from 'next/image';
+import Link from 'next/link';
+import { tmdbImage } from '@/lib/tmdb-images';
+import type { MediaItem } from '@/types/media';
+import { watchMovieHref, watchTvHref } from '@/lib/routes';
+
+interface DetailHeroProps {
+  item: MediaItem;
+  playLabel?: string;
+  playHref?: string;
+}
+
+export function DetailHero({ item, playLabel = 'Play', playHref }: DetailHeroProps) {
+  const defaultPlay =
+    item.type === 'movie'
+      ? watchMovieHref(item.id)
+      : watchTvHref(item.id, 1, item.seasons[0]?.episodes[0]?.episode ?? 1);
+
+  return (
+    <section className="relative min-h-[50vh] overflow-hidden">
+      <Image
+        src={tmdbImage(item.backdrop_path, 'original')}
+        alt=""
+        fill
+        className="object-cover"
+        priority
+        sizes="100vw"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-surface/30" />
+
+      <div className="relative mx-auto flex max-w-7xl gap-6 px-4 pb-12 pt-28 sm:px-6 md:gap-10">
+        <div className="relative hidden h-64 w-44 shrink-0 overflow-hidden rounded-lg shadow-2xl sm:block md:h-80 md:w-52">
+          <Image
+            src={tmdbImage(item.poster_path, 'w500')}
+            alt={item.title}
+            fill
+            className="object-cover"
+            sizes="208px"
+          />
+        </div>
+        <div className="flex flex-col justify-end">
+          <h1 className="font-display text-3xl font-bold text-white md:text-5xl">
+            {item.title}
+          </h1>
+          {'tagline' in item && item.tagline && (
+            <p className="mt-1 text-white/60 italic">{item.tagline}</p>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-white/55">
+            <span className="text-accent font-medium">
+              ★ {item.vote_average.toFixed(1)}
+            </span>
+            {item.genres.map((g) => (
+              <span key={g}>{g}</span>
+            ))}
+            {item.type === 'movie' ? (
+              <span>{item.runtime} min</span>
+            ) : (
+              <span>
+                {item.seasons.length} season{item.seasons.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
+            {item.overview}
+          </p>
+          <Link
+            href={playHref ?? defaultPlay}
+            className="mt-6 inline-flex w-fit items-center gap-2 rounded-lg bg-accent px-8 py-3 font-semibold text-white transition hover:bg-accent-hover"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            {playLabel}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}

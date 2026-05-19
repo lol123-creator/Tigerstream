@@ -1,0 +1,18 @@
+---
+pid: 22680
+cwd: |
+  C:\Users\clare
+---
+
+
+
+PS C:\Users\clare> npm.cmd run dev
+npm error code ENOENT
+npm error syscall open
+npm error path C:\Users\clare\package.json
+npm error errno -4058
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\Users\clare\package.json'
+npm error enoent This is related to npm not being able to find a file.        
+npm error enoent
+npm error A complete log of this run can be found in: C:\Users\clare\AppData\Local\npm-cache\_logs\2026-05-19T16_13_08_614Z-debug-0.log
+PS C:\Users\clare> cd C:\Users\clare\.cursor\projects\empty-windownpm.cmd rundev

@@ -1,0 +1,57 @@
+export type MediaType = 'movie' | 'tv';
+
+export interface Movie {
+  id: number;
+  type: 'movie';
+  title: string;
+  overview: string;
+  poster_path: string;
+  backdrop_path: string;
+  release_date: string;
+  runtime: number;
+  vote_average: number;
+  genres: string[];
+  tagline?: string;
+}
+
+export interface Episode {
+  season: number;
+  episode: number;
+  title: string;
+  overview: string;
+  runtime: number;
+  still_path?: string;
+}
+
+export interface Season {
+  season_number: number;
+  name: string;
+  episode_count: number;
+  episodes: Episode[];
+}
+
+export interface TvShow {
+  id: number;
+  type: 'tv';
+  title: string;
+  overview: string;
+  poster_path: string;
+  backdrop_path: string;
+  first_air_date: string;
+  vote_average: number;
+  genres: string[];
+  seasons: Season[];
+  tagline?: string;
+}
+
+export type MediaItem = Movie | TvShow;
+
+export interface ContinueWatchingItem {
+  id: number;
+  type: MediaType;
+  title: string;
+  poster_path: string;
+  progressPercent: number;
+  href: string;
+  subtitle?: string;
+}

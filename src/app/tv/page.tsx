@@ -1,0 +1,35 @@
+import { GenreChips } from '@/components/GenreChips';
+import { MediaGrid } from '@/components/MediaGrid';
+import {
+  BROWSE_PAGE_COUNT,
+  getPopularTv,
+  getTvGenres,
+} from '@/lib/tmdb/service';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'TV Shows',
+};
+
+export const revalidate = 3600;
+
+export default async function TvPage() {
+  const [genres, tvShows] = await Promise.all([
+    getTvGenres(),
+    getPopularTv(BROWSE_PAGE_COUNT),
+  ]);
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
+      <h1 className="font-display mb-2 text-3xl font-bold">TV Shows</h1>
+      <p className="mb-6 text-sm text-white/45">
+        {tvShows.length} popular series — use genres below or scroll the grid
+      </p>
+      <div className="sticky top-[4.25rem] z-40 -mx-4 mb-8 border-b border-white/5 bg-surface/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
+        <p className="mb-3 text-sm font-medium text-white/60">Browse by genre</p>
+        <GenreChips type="tv" genres={genres} />
+      </div>
+      <MediaGrid items={tvShows} priorityCount={18} />
+    </div>
+  );
+}

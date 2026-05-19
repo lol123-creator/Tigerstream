@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Peachify — Watch</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #0d0d0f; color: #eee; }
+    header { padding: 1rem 1.5rem; border-bottom: 1px solid #222; }
+    main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+    #player { margin-bottom: 1rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    button {
+      background: #b54666; color: #fff; border: none; padding: 0.5rem 1rem;
+      border-radius: 6px; cursor: pointer;
+    }
+    button:hover { filter: brightness(1.1); }
+    #log {
+      margin-top: 1rem; padding: 1rem; background: #16161a; border-radius: 8px;
+      font-size: 0.85rem; max-height: 200px; overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>The Boys — S1E1</h1>
+  </header>
+  <main>
+    <div id="player"></div>
+    <div class="controls">
+      <button type="button" id="btn-play">Play</button>
+      <button type="button" id="btn-pause">Pause</button>
+      <button type="button" id="btn-seek">Seek to 5:00</button>
+      <button type="button" id="btn-mute">Toggle mute</button>
+      <button type="button" id="btn-fs">Fullscreen</button>
+      <button type="button" id="btn-status">Get status</button>
+    </div>
+    <pre id="log"></pre>
+  </main>
+
+  <script src="../src/peachify/peachify-vanilla.js"></script>
+  <script>
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.textContent = msg + '\n' + logEl.textContent;
+    }
+
+    const { mountPeachifyPlayer } = window.Peachify;
+
+    const mounted = mountPeachifyPlayer(
+      document.getElementById('player'),
+      {
+        type: 'tv',
+        mediaId: 76479,
+        season: 1,
+        episode: 1,
+        options: {
+          sub: 'English',
+          quality: '1080',
+          accent: 'B54666',
+          autoNext: true,
+          showNextBtn: true,
+          servers: false,
+        },
+      },
+      {
+        autoResume: true,
+        controllerOptions: {
+          onPlayerEvent: (d) => {
+            if (d.event !== 'timeupdate') {
+              log(`PLAYER_EVENT: ${d.event} @ ${d.currentTime.toFixed(1)}s / ${d.duration.toFixed(0)}s`);
+            }
+          },
+          onMediaData: () => {
+            log('MEDIA_DATA saved to localStorage (peachifyProgress)');
+          },
+        },
+      },
+    );
+
+    const { controller } = mounted;
+    document.getElementById('btn-play').onclick = () => controller.play();
+    document.getElementById('btn-pause').onclick = () => controller.pause();
+    document.getElementById('btn-seek').onclick = () => controller.seek(300);
+    document.getElementById('btn-mute').onclick = () => controller.toggleMute();
+    document.getElementById('btn-fs').onclick = () => controller.toggleFullscreen();
+    document.getElementById('btn-status').onclick = () => controller.getStatus();
+  </script>
+</body>
+</html>

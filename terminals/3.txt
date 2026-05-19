@@ -1,0 +1,342 @@
+---
+pid: 23592
+cwd: |
+  C:\Users\clare
+---
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 733ms
+ GET / 500 in 752ms
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 373ms
+ GET / 500 in 356ms
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 398ms
+ GET / 500 in 381ms
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 361ms
+ GET / 500 in 481ms
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 846ms
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 195ms
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 348ms
+ GET / 500 in 434ms
+ ⨯ ./src/app/page.tsx:4:1
+Module not found: Can't resolve '@/components/TmdbSetupBanner'
+  2 | import { Hero } from '@/components/Hero';
+  3 | import { MediaRow } from '@/components/MediaRow';
+> 4 | import { TmdbSetupBanner } from '@/components/TmdbSetupBanner';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { featured } from '@/lib/catalog';
+  6 | import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
+  7 | import {
+
+Import map: aliased to relative './src/components/TmdbSetupBanner' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 377ms
+ ✓ Compiled in 73ms
+ ✓ Compiled in 53ms
+ ✓ Compiled in 85ms
+ ✓ Compiled in 50ms
+ ✓ Compiled in 40ms
+ ✓ Compiled in 50ms
+ ✓ Compiled / in 224ms
+ GET / 500 in 3017ms
+ GET / 500 in 987ms
+ GET / 200 in 3755ms
+ ✓ Compiled in 48ms
+ ✓ Compiled in 46ms
+ ✓ Compiled in 1080ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 3872ms
+ GET / 200 in 6610ms
+ GET / 200 in 6617ms
+ GET / 200 in 2868ms
+ GET / 200 in 2826ms
+ ✓ Compiled in 37ms
+ ✓ Compiled / in 137ms
+ GET / 200 in 2986ms
+ GET / 200 in 3010ms
+ GET / 200 in 2416ms
+ GET / 200 in 2420ms
+ GET / 200 in 1477ms
+ GET / 200 in 1481ms
+ GET / 200 in 1268ms
+ GET / 200 in 1100ms
+ GET / 200 in 931ms
+ GET / 200 in 498ms
+ GET / 200 in 429ms
+ GET / 200 in 326ms
+ ✓ Compiled in 77ms
+ ✓ Compiled / in 160ms
+ ✓ Compiled in 0ms
+ ✓ Compiled / in 98ms
+ ✓ Compiled in 58ms
+ GET / 200 in 2504ms
+ GET / 200 in 2488ms
+ ✓ Compiled / in 307ms
+ GET / 200 in 1933ms
+ GET / 200 in 2064ms
+ GET / 200 in 1793ms
+ GET / 200 in 1778ms
+ GET / 200 in 1561ms
+ GET / 200 in 1520ms
+ GET / 200 in 1295ms
+ GET / 200 in 1119ms
+ GET / 200 in 1063ms
+ GET / 200 in 880ms
+ GET / 200 in 813ms
+ GET / 200 in 423ms
+ GET / 200 in 379ms
+ GET / 200 in 391ms
+ GET / 200 in 417ms
+ GET / 200 in 512ms
+ ✓ Compiled in 55ms
+ ✓ Compiled / in 79ms
+ GET / 200 in 1646ms
+ GET / 200 in 1388ms
+ GET / 200 in 1890ms
+ ✓ Compiled in 301ms
+ ✓ Compiled in 87ms
+ GET / 200 in 1618ms
+ ✓ Compiled in 169ms
+ ✓ Compiled / in 430ms
+ ✓ Compiled in 0ms
+ GET / 200 in 10269ms
+ GET / 200 in 10161ms
+ GET / 200 in 9115ms
+ GET / 200 in 8822ms
+ GET / 200 in 7602ms
+ GET / 200 in 6743ms
+ GET / 200 in 7088ms
+ GET / 200 in 6511ms
+ GET / 200 in 3328ms
+ GET / 200 in 3038ms
+ GET / 200 in 2027ms
+ GET / 200 in 1407ms
+ GET / 200 in 796ms
+ ✓ Compiled in 131ms
+ GET / 200 in 2935ms
+ GET / 200 in 2948ms
+ GET / 200 in 2611ms
+ GET / 200 in 2991ms
+ GET / 200 in 2349ms
+ GET / 200 in 2135ms
+ GET / 200 in 1510ms
+ GET / 200 in 1231ms
+ GET / 200 in 2593ms
+ GET / 200 in 2601ms
+ GET / 200 in 2191ms
+ GET / 200 in 2195ms
+ GET / 200 in 1706ms
+ GET / 200 in 1500ms
+ GET / 200 in 1128ms
+ GET / 200 in 942ms
+ ✓ Compiled in 114ms
+ GET / 200 in 2341ms
+ GET / 200 in 2341ms
+ GET / 200 in 2427ms
+ GET / 200 in 2223ms
+ GET / 200 in 1944ms
+ GET / 200 in 1627ms
+ GET / 200 in 1303ms
+ GET / 200 in 1110ms
+ ✓ Compiled in 98ms
+ ✓ Compiled in 54ms
+ ✓ Compiled in 49ms
+ ⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+   ▲ Next.js 15.5.18 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.3.55:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 17.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 11.1s
+ GET /movies 200 in 1773ms
+ GET / 200 in 14794ms
+ GET /movies 200 in 1533ms
