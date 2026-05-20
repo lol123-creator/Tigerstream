@@ -1,3 +1,4 @@
+import { BrowseTitleList } from '@/components/BrowseTitleList';
 import { GenreChips } from '@/components/GenreChips';
 import { MediaGrid } from '@/components/MediaGrid';
 import {
@@ -29,6 +30,7 @@ export default async function TvPage() {
         <p className="mb-3 text-sm font-medium text-white/60">Browse by genre</p>
         <GenreChips type="tv" genres={genres} />
       </div>
+      <BrowseTitleList heading="All TV Show Titles" items={tvShows} />
       <MediaGrid items={tvShows} priorityCount={18} />
     </div>
   );
