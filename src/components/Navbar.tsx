@@ -5,14 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { SITE_NAME } from '@/lib/brand';
 
-const links = [
-  { href: '/', label: 'Home' },
-  { href: '/movies', label: 'Movies' },
-  { href: '/tv', label: 'TV Shows' },
-  { href: '/sports', label: 'Sports' },
-  { href: '/genres', label: 'Genres' },
-];
-
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -42,27 +34,6 @@ export function Navbar() {
         >
           Tiger<span className="text-accent">Stream</span>
         </Link>
-
-        <ul className="hidden items-center gap-5 sm:flex">
-          {links.map(({ href, label }) => (
-            <li key={href}>
-              <Link
-                href={href}
-                className={`text-sm transition-colors hover:text-white ${
-                  href === '/sports'
-                    ? pathname.startsWith('/sports')
-                      ? 'text-white'
-                      : 'text-white/60'
-                    : pathname === href
-                      ? 'text-white'
-                      : 'text-white/60'
-                }`}
-              >
-                {label}
-              </Link>
-            </li>
-          ))}
-        </ul>
 
         <form onSubmit={onSearch} className="ml-auto flex max-w-xs flex-1 sm:max-w-sm">
           <input

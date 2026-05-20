@@ -33,6 +33,9 @@ import type {
 /** Pages × 20 results — 15 pages = 300 titles per browse view */
 export const BROWSE_PAGE_COUNT = 15;
 
+/** Number of items per paginated browse page (1 TMDB page = 20 items) */
+export const PAGE_SIZE = 20;
+
 const HOME_ROW_SIZE = 24;
 
 export { HOME_ROW_SIZE };
@@ -467,4 +470,72 @@ export async function getWatchTvContext(
 export async function getMovieTitle(id: number): Promise<string | null> {
   const movie = await getMovieById(id);
   return movie?.title ?? null;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  totalPages: number;
+  currentPage: number;
+}
+
+export async function getPopularMoviesPage(page = 1): Promise<PagedResult<Movie>> {
+  if (!isTmdbEnabled()) {
+    return { items: fallbackMovies.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
+  }
+  const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/movie/popular', { page });
+  return {
+    items: dedupeById(data.results.map(mapMovieSummary)),
+    totalPages: Math.min(data.total_pages ?? 1, 500),
+    currentPage: page,
+  };
+}
+
+export async function getPopularTvPage(page = 1): Promise<PagedResult<TvShow>> {
+  if (!isTmdbEnabled()) {
+    return { items: fallbackTvShows.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
+  }
+  const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/tv/popular', { page });
+  return {
+    items: dedupeById(data.results.map(mapTvSummary)),
+    totalPages: Math.min(data.total_pages ?? 1, 500),
+    currentPage: page,
+  };
+}
+
+export async function getMoviesByGenrePage(
+  genreId: number,
+  page = 1,
+): Promise<PagedResult<Movie>> {
+  if (!isTmdbEnabled()) {
+    return { items: fallbackMovies.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
+  }
+  const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
+    with_genres: String(genreId),
+    sort_by: 'popularity.desc',
+    page,
+  });
+  return {
+    items: dedupeById(data.results.map(mapMovieSummary)),
+    totalPages: Math.min(data.total_pages ?? 1, 500),
+    currentPage: page,
+  };
+}
+
+export async function getTvByGenrePage(
+  genreId: number,
+  page = 1,
+): Promise<PagedResult<TvShow>> {
+  if (!isTmdbEnabled()) {
+    return { items: fallbackTvShows.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
+  }
+  const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
+    with_genres: String(genreId),
+    sort_by: 'popularity.desc',
+    page,
+  });
+  return {
+    items: dedupeById(data.results.map(mapTvSummary)),
+    totalPages: Math.min(data.total_pages ?? 1, 500),
+    currentPage: page,
+  };
 }
