@@ -5,6 +5,8 @@ import { SportsRow } from '@/components/sports/SportsRow';
 import { getHomeSportsRow } from '@/lib/ppv/service';
 import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
 import {
+  getAnimeMovies,
+  getAnimeTvShows,
   getDiscoverMovies,
   getFeaturedHero,
   getNewMovies,
@@ -49,6 +51,8 @@ export default async function HomePage() {
     crimeThriller,
     action,
     sportsRow,
+    animeMovies,
+    animeShows,
   ] = await Promise.all([
     getFeaturedHero(),
     getTrendingToday(),
@@ -70,6 +74,8 @@ export default async function HomePage() {
     getDiscoverMovies('80,53', 3),
     getDiscoverMovies('28,12', 3),
     getHomeSportsRow(16),
+    getAnimeMovies(3),
+    getAnimeTvShows(3),
   ]);
 
   return (
@@ -96,6 +102,8 @@ export default async function HomePage() {
         <MediaRow title="Romance" items={row(romance)} />
         <MediaRow title="Animation & Family" items={row(animation)} />
         <MediaRow title="Crime & Thriller" items={row(crimeThriller)} />
+        <MediaRow title="Anime Movies" items={row(animeMovies)} />
+        <MediaRow title="Anime Shows" items={row(animeShows)} />
       </div>
     </>
   );
