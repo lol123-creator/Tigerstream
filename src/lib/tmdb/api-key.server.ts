@@ -6,7 +6,7 @@ import 'server-only';
  *
  * Order: TMDB_API_KEY env (.env.local / Vercel) → site owner fallback below.
  */
-const SITE_OWNER_TMDB_KEY = '4597e5385c892d8c89f7c3e0e478a891';
+const SITE_OWNER_TMDB_KEY = '';
 
 export function resolveTmdbApiKey(): string {
   const fromEnv = process.env.TMDB_API_KEY?.trim();
