@@ -467,6 +467,80 @@ export async function getWatchTvContext(
   }
 }
 
+// ─── Anime helpers ───────────────────────────────────────────────────────────
+// TMDB uses keyword id 210024 ("anime") combined with Animation genre (16).
+// For TV we also include the Japanese origin-country filter which gives the
+// cleanest results on the free API tier.
+
+const ANIME_MOVIE_PARAMS = {
+  with_genres: '16',
+  with_keywords: '210024',
+  sort_by: 'popularity.desc',
+} as const;
+
+const ANIME_TV_PARAMS = {
+  with_genres: '16',
+  with_keywords: '210024',
+  sort_by: 'popularity.desc',
+} as const;
+
+async function fetchAnimeMoviePage(page: number): Promise<Movie[]> {
+  const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
+    ...ANIME_MOVIE_PARAMS,
+    page,
+  });
+  return data.results.map(mapMovieSummary);
+}
+
+async function fetchAnimeTvPage(page: number): Promise<TvShow[]> {
+  const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
+    ...ANIME_TV_PARAMS,
+    page,
+  });
+  return data.results.map(mapTvSummary);
+}
+
+export async function getAnimeMovies(pages = 3): Promise<Movie[]> {
+  if (!isTmdbEnabled()) return fallbackMovies;
+  return dedupeById(await fetchPaged(pages, fetchAnimeMoviePage));
+}
+
+export async function getAnimeTvShows(pages = 3): Promise<TvShow[]> {
+  if (!isTmdbEnabled()) return fallbackTvShows;
+  return dedupeById(await fetchPaged(pages, fetchAnimeTvPage));
+}
+
+export async function getAnimeMoviesPage(page = 1): Promise<PagedResult<Movie>> {
+  if (!isTmdbEnabled()) {
+    return { items: fallbackMovies.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
+  }
+  const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
+    ...ANIME_MOVIE_PARAMS,
+    page,
+  });
+  return {
+    items: dedupeById(data.results.map(mapMovieSummary)),
+    totalPages: Math.min(data.total_pages ?? 1, 500),
+    currentPage: page,
+  };
+}
+
+export async function getAnimeTvPage(page = 1): Promise<PagedResult<TvShow>> {
+  if (!isTmdbEnabled()) {
+    return { items: fallbackTvShows.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
+  }
+  const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
+    ...ANIME_TV_PARAMS,
+    page,
+  });
+  return {
+    items: dedupeById(data.results.map(mapTvSummary)),
+    totalPages: Math.min(data.total_pages ?? 1, 500),
+    currentPage: page,
+  };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function getMovieTitle(id: number): Promise<string | null> {
   const movie = await getMovieById(id);
   return movie?.title ?? null;

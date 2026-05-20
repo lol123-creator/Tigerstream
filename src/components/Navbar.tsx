@@ -8,6 +8,7 @@ import { SITE_NAME } from '@/lib/brand';
 const NAV_LINKS = [
   { label: 'Movies', href: '/movies' },
   { label: 'TV Shows', href: '/tv' },
+  { label: 'Anime', href: '/anime' },
   { label: 'Sports', href: '/sports' },
   { label: 'Genres', href: '/genres' },
 ];
