@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Navbar } from '@/components/Navbar';
 import { SITE_NAME } from '@/lib/brand';
 import { getSiteUrl } from '@/lib/site';
@@ -27,6 +28,7 @@ export default function RootLayout({
         <footer className="border-t border-white/5 py-8 text-center text-sm text-white/35">
           <p>{SITE_NAME}</p>
         </footer>
+        <SpeedInsights />
       </body>
     </html>
   );
