@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Image from 'next/image';
+import { tmdbImage } from '@/lib/tmdb-images';
 import Link from 'next/link';
 import { watchTvHref } from '@/lib/routes';
 import type { TvShow } from '@/types/media';
@@ -83,6 +85,15 @@ export function EpisodeList({
                     : 'border-white/5 bg-surface-card hover:border-white/15 hover:bg-surface-raised'
                 }`}
               >
+                <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-md bg-white/5">
+                  <Image
+                    src={tmdbImage(ep.still_path, 'w185')}
+                    alt=""
+                    fill
+                    sizes="112px"
+                    className="object-cover"
+                  />
+                </div>
                 <span
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                     isActive ? 'bg-accent text-white' : 'bg-white/10 text-white/70'
