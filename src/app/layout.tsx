@@ -13,6 +13,19 @@ export const metadata: Metadata = {
   },
   description:
     'Stream movies, TV shows, and live sports. Pick up where you left off with Continue Watching.',
+  openGraph: {
+    title: `${SITE_NAME} — Movies & TV`,
+    description:
+      'Stream movies, TV shows, and live sports. Pick up where you left off with Continue Watching.',
+    siteName: SITE_NAME,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${SITE_NAME} — Movies & TV`,
+    description:
+      'Stream movies, TV shows, and live sports. Pick up where you left off with Continue Watching.',
+  },
 };
 
 export default function RootLayout({

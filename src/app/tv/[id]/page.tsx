@@ -19,7 +19,25 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const show = await getTvShowById(Number(id));
-  return { title: show?.title ?? 'TV Show' };
+  if (!show) return { title: 'TV Show' };
+  return {
+    title: show.title,
+    description: show.overview || `${show.title} on TigerStream`,
+    openGraph: {
+      title: show.title,
+      description: show.overview || `${show.title} on TigerStream`,
+      images: [
+        { url: `https://image.tmdb.org/t/p/w780${show.backdrop_path || show.poster_path}`, width: 780, height: 439 },
+      ],
+      type: 'video.tv_show',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: show.title,
+      description: show.overview || `${show.title} on TigerStream`,
+      images: [`https://image.tmdb.org/t/p/w780${show.backdrop_path || show.poster_path}`],
+    },
+  };
 }
 
 export default async function TvDetailPage({
