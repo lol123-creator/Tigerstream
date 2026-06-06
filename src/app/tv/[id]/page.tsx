@@ -1,6 +1,7 @@
 import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
 import { EpisodeList } from '@/components/EpisodeList';
+import { BackButton } from '@/components/BackButton';
 import { QualityBadge } from '@/components/QualityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { getTvShowById } from '@/lib/tmdb/service';
@@ -36,6 +37,9 @@ export default async function TvDetailPage({
 
   return (
     <>
+      <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+        <BackButton />
+      </div>
       <DetailHero
         item={show}
         playLabel={
