@@ -2,6 +2,7 @@ import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
 import { QualityBadge } from '@/components/QualityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { getMovieById } from '@/lib/tmdb/service';
 import { watchMovieHref } from '@/lib/routes';
 import { isComingSoon } from '@/lib/release-checker';
 import type { Metadata } from 'next';
@@ -15,14 +16,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-
-  // Fetch movie details + credits
-  const apiKey = process.env.TMDB_API_KEY;
-  const res = await fetch(
-    `https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&append_to_response=credits`
-  );
-  const movie = await res.json();
-
+  const movie = await getMovieById(Number(id));
   return { title: movie?.title ?? 'Movie' };
 }
 
@@ -33,23 +27,30 @@ export default async function MovieDetailPage({
 }) {
   const { id } = await params;
 
-  // Fetch movie details + credits
-  const apiKey = process.env.TMDB_API_KEY;
-  const res = await fetch(
-    `https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&append_to_response=credits`
-  );
-  const movie = await res.json();
+  // Use the shared TMDB service so we get the same fallback handling,
+  // normalized `Movie` shape, and consistent error handling as the TV page.
+  const movie = await getMovieById(Number(id));
 
   if (!movie) notFound();
 
   const comingSoon = isComingSoon(movie);
 
-  // Map cast into the shape CastSection expects
-  const cast = movie.credits?.cast?.map((actor: any) => ({
-    name: actor.name,
-    character: actor.character,
-    profile_path: actor.profile_path,
-  }));
+  // All of these fields are normalized by `mapMovieDetail` to safe defaults
+  // (empty string / 0 / []), but we still guard the display values so a
+  // partial response (e.g. a new title with no rating yet) never crashes
+  // the page with "Cannot read properties of undefined".
+  const rating =
+    typeof movie.vote_average === 'number' && movie.vote_average > 0
+      ? movie.vote_average.toFixed(1)
+      : '—';
+  const runtime =
+    typeof movie.runtime === 'number' && movie.runtime > 0
+      ? `${movie.runtime} min`
+      : '—';
+  const releaseDate = movie.release_date
+    ? new Date(movie.release_date).toLocaleDateString()
+    : '—';
+  const genresText = movie.genres?.length ? movie.genres.join(', ') : '—';
 
   return (
     <>
@@ -66,32 +67,30 @@ export default async function MovieDetailPage({
         </div>
 
         <h2 className="mb-3 text-lg font-semibold">About</h2>
-        <p className="leading-relaxed text-white/70">{movie.overview}</p>
+        <p className="leading-relaxed text-white/70">
+          {movie.overview || 'No overview available.'}
+        </p>
         <dl className="mt-8 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <div>
             <dt className="text-white/40">Released</dt>
-            <dd>
-              {movie.release_date
-                ? new Date(movie.release_date).toLocaleDateString()
-                : '-'}
-            </dd>
+            <dd>{releaseDate}</dd>
           </div>
           <div>
             <dt className="text-white/40">Runtime</dt>
-            <dd>{movie.runtime > 0 ? `${movie.runtime} min` : '-'}</dd>
+            <dd>{runtime}</dd>
           </div>
           <div>
             <dt className="text-white/40">Rating</dt>
-            <dd>{movie.vote_average.toFixed(1)} / 10</dd>
+            <dd>{rating} / 10</dd>
           </div>
           <div>
             <dt className="text-white/40">Genres</dt>
-            <dd>{movie.genres?.length ? movie.genres.map((g:any)=>g.name).join(', ') : '-'}</dd>
+            <dd>{genresText}</dd>
           </div>
         </dl>
 
-        {/* Cast section now wired to real data */}
-        <CastSection cast={cast} />
+        {/* CastSection already handles undefined / empty cast gracefully */}
+        <CastSection cast={movie.cast} />
       </div>
     </>
   );
