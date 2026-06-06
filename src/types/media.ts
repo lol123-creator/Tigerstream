@@ -1,5 +1,12 @@
 export type MediaType = 'movie' | 'tv';
 
+export interface Cast {
+  name: string;
+  character: string;
+  profile_path?: string;
+  order?: number;
+}
+
 export interface Movie {
   id: number;
   type: 'movie';
@@ -12,6 +19,10 @@ export interface Movie {
   vote_average: number;
   genres: string[];
   tagline?: string;
+  cast?: Cast[];
+  status?: 'Released' | 'Post Production' | 'In Production' | 'Planned' | 'Rumored';
+  quality?: string;
+  lastQualityUpdate?: number;
 }
 
 export interface Episode {
@@ -42,6 +53,10 @@ export interface TvShow {
   genres: string[];
   seasons: Season[];
   tagline?: string;
+  cast?: Cast[];
+  status?: 'Returning Series' | 'Planned' | 'In Production' | 'Ended' | 'Cancelled';
+  quality?: string;
+  lastQualityUpdate?: number;
 }
 
 export type MediaItem = Movie | TvShow;

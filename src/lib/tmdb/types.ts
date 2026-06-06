@@ -10,6 +10,17 @@ export interface TmdbGenre {
   name: string;
 }
 
+export interface TmdbCast {
+  name: string;
+  character: string;
+  profile_path: string | null;
+  order?: number;
+}
+
+export interface TmdbCredits {
+  cast: TmdbCast[];
+}
+
 export interface TmdbMovieSummary {
   id: number;
   title: string;
@@ -25,6 +36,7 @@ export interface TmdbMovieDetail extends TmdbMovieSummary {
   runtime: number | null;
   tagline?: string | null;
   genres: TmdbGenre[];
+  status?: string;
 }
 
 export interface TmdbTvSummary {
@@ -46,6 +58,7 @@ export interface TmdbTvDetail extends TmdbTvSummary {
     name: string;
     episode_count: number;
   }[];
+  status?: string;
 }
 
 export interface TmdbSeasonDetail {

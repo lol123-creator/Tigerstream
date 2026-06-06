@@ -72,7 +72,7 @@ export const PeachifyPlayer = forwardRef<
   const iframeId = `peachify-player-${reactId.replace(/:/g, '')}`;
 
   const embedUrl = useMemo(() => {
-    const options = { ...target.options };
+    const options = { ...target.options, autoplay: 1 };
 
     if (
       autoResume &&

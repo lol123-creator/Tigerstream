@@ -1,5 +1,6 @@
-import type { Episode, MediaItem, Movie, Season, TvShow } from '@/types/media';
+import type { Cast, Episode, MediaItem, Movie, Season, TvShow } from '@/types/media';
 import type {
+  TmdbCast,
   TmdbMovieDetail,
   TmdbMovieSummary,
   TmdbSearchResult,
@@ -11,6 +12,18 @@ import type {
 
 function genreNames(genres: { name: string }[] | undefined): string[] {
   return genres?.map((g) => g.name) ?? [];
+}
+
+function mapCast(cast: TmdbCast[] | undefined): Cast[] {
+  if (!cast) return [];
+  return cast
+    .slice(0, 12)
+    .map((c) => ({
+      name: c.name,
+      character: c.character,
+      profile_path: c.profile_path ?? undefined,
+      order: c.order,
+    }));
 }
 
 export function mapMovieSummary(m: TmdbMovieSummary, genres: string[] = []): Movie {
@@ -28,11 +41,16 @@ export function mapMovieSummary(m: TmdbMovieSummary, genres: string[] = []): Mov
   };
 }
 
-export function mapMovieDetail(m: TmdbMovieDetail): Movie {
+export function mapMovieDetail(
+  m: TmdbMovieDetail,
+  cast?: TmdbCast[],
+): Movie {
   return {
     ...mapMovieSummary(m, genreNames(m.genres)),
     runtime: m.runtime ?? 0,
     tagline: m.tagline || undefined,
+    cast: mapCast(cast),
+    status: (m.status as any) || undefined,
   };
 }
 
@@ -74,6 +92,7 @@ export function mapTvHeroDetail(t: TmdbTvDetail): TvShow {
 export function mapTvDetail(
   t: TmdbTvDetail,
   seasonDetails: TmdbSeasonDetail[],
+  cast?: TmdbCast[],
 ): TvShow {
   const seasons: Season[] = seasonDetails
     .filter((s) => s.season_number > 0 && s.episodes.length > 0)
@@ -98,6 +117,8 @@ export function mapTvDetail(
     ...mapTvSummary(t, genreNames(t.genres)),
     tagline: t.tagline || undefined,
     seasons,
+    cast: mapCast(cast),
+    status: (t.status as any) || undefined,
   };
 }
 
