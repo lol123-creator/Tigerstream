@@ -1,1 +1,76 @@
-import { DetailHero } from '@/components/DetailHero';\nimport { CastSection } from '@/components/CastSection';\nimport { EpisodeList } from '@/components/EpisodeList';\nimport { QualityBadge } from '@/components/QualityBadge';\nimport { StatusBadge } from '@/components/StatusBadge';\nimport { getTvShowById } from '@/lib/tmdb/service';\nimport { watchTvHref } from '@/lib/routes';\nimport { isComingSoon } from '@/lib/release-checker';\nimport type { Metadata } from 'next';\nimport { notFound } from 'next/navigation';\n\nexport const revalidate = 3600;\n\nexport async function generateMetadata({\n  params,\n}: {\n  params: Promise<{ id: string }>;\n}): Promise<Metadata> {\n  const { id } = await params;\n  const show = await getTvShowById(Number(id));\n  return { title: show?.title ?? 'TV Show' };\n}\n\nexport default async function TvDetailPage({\n  params,\n}: {\n  params: Promise<{ id: string }>;\n}) {\n  const { id } = await params;\n  const show = await getTvShowById(Number(id));\n  if (!show) notFound();\n\n  const firstSeason = show.seasons[0];\n  const firstEp = firstSeason?.episodes[0];\n  const comingSoon = isComingSoon(show);\n\n  return (\n    <>\n      <DetailHero\n        item={show}\n        playLabel={\n          comingSoon\n            ? 'Coming Soon'\n            : firstEp\n              ? `Watch S${firstEp.season} E${firstEp.episode}`\n              : 'Watch S1 E1'\n        }\n        playHref={\n          comingSoon\n            ? undefined\n            : firstEp\n              ? watchTvHref(show.id, firstEp.season, firstEp.episode)\n              : watchTvHref(show.id, 1, 1)\n        }\n        disablePlay={comingSoon}\n      />\n      <div className=\"mx-auto max-w-3xl px-4 py-10 sm:px-6\">\n        <div className=\"mb-6 flex flex-wrap items-center gap-3\">\n          <StatusBadge media={show} />\n          <QualityBadge media={show} />\n        </div>\n\n        <h2 className=\"mb-6 text-lg font-semibold\">Episodes</h2>\n        {show.seasons.length > 0 ? (\n          <EpisodeList show={show} />\n        ) : (\n          <p className=\"text-white/50\">\n            Episode list loading failed — use Watch from the hero.\n          </p>\n        )}\n\n        <CastSection cast={show.cast} />\n      </div>\n    </>\n  );\n}\n
+import { DetailHero } from '@/components/DetailHero';
+import { CastSection } from '@/components/CastSection';
+import { EpisodeList } from '@/components/EpisodeList';
+import { QualityBadge } from '@/components/QualityBadge';
+import { StatusBadge } from '@/components/StatusBadge';
+import { getTvShowById } from '@/lib/tmdb/service';
+import { watchTvHref } from '@/lib/routes';
+import { isComingSoon } from '@/lib/release-checker';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+
+export const revalidate = 3600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const show = await getTvShowById(Number(id));
+  return { title: show?.title ?? 'TV Show' };
+}
+
+export default async function TvDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const show = await getTvShowById(Number(id));
+  if (!show) notFound();
+
+  const firstSeason = show.seasons[0];
+  const firstEp = firstSeason?.episodes[0];
+  const comingSoon = isComingSoon(show);
+
+  return (
+    <>
+      <DetailHero
+        item={show}
+        playLabel={
+          comingSoon
+            ? 'Coming Soon'
+            : firstEp
+              ? `Watch S${firstEp.season} E${firstEp.episode}`
+              : 'Watch S1 E1'
+        }
+        playHref={
+          comingSoon
+            ? undefined
+            : firstEp
+              ? watchTvHref(show.id, firstEp.season, firstEp.episode)
+              : watchTvHref(show.id, 1, 1)
+        }
+        disablePlay={comingSoon}
+      />
+      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <StatusBadge media={show} />
+          <QualityBadge media={show} />
+        </div>
+
+        <h2 className="mb-6 text-lg font-semibold">Episodes</h2>
+        {show.seasons.length > 0 ? (
+          <EpisodeList show={show} />
+        ) : (
+          <p className="text-white/50">
+            Episode list loading failed — use Watch from the hero.
+          </p>
+        )}
+
+        <CastSection cast={show.cast} />
+      </div>
+    </>
+  );
+}
