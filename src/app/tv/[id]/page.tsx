@@ -65,7 +65,7 @@ export default async function TvDetailPage({
           <EpisodeList show={show} />
         ) : (
           <p className="text-white/50">
-            Episode list loading failed — use Watch from the hero.
+            Episode list loading failed - use Watch from the hero.
           </p>
         )}
 
