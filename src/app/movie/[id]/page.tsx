@@ -2,7 +2,6 @@ import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
 import { QualityBadge } from '@/components/QualityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
-import { getMovieById } from '@/lib/tmdb/service';
 import { watchMovieHref } from '@/lib/routes';
 import { isComingSoon } from '@/lib/release-checker';
 import type { Metadata } from 'next';
@@ -16,7 +15,14 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const movie = await getMovieById(Number(id));
+
+  // Fetch movie details + credits
+  const apiKey = process.env.TMDB_API_KEY;
+  const res = await fetch(
+    `https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&append_to_response=credits`
+  );
+  const movie = await res.json();
+
   return { title: movie?.title ?? 'Movie' };
 }
 
@@ -26,10 +32,24 @@ export default async function MovieDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const movie = await getMovieById(Number(id));
+
+  // Fetch movie details + credits
+  const apiKey = process.env.TMDB_API_KEY;
+  const res = await fetch(
+    `https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&append_to_response=credits`
+  );
+  const movie = await res.json();
+
   if (!movie) notFound();
 
   const comingSoon = isComingSoon(movie);
+
+  // Map cast into the shape CastSection expects
+  const cast = movie.credits?.cast?.map((actor: any) => ({
+    name: actor.name,
+    character: actor.character,
+    profile_path: actor.profile_path,
+  }));
 
   return (
     <>
@@ -66,11 +86,12 @@ export default async function MovieDetailPage({
           </div>
           <div>
             <dt className="text-white/40">Genres</dt>
-            <dd>{movie.genres.length ? movie.genres.join(', ') : '-'}</dd>
+            <dd>{movie.genres?.length ? movie.genres.map((g:any)=>g.name).join(', ') : '-'}</dd>
           </div>
         </dl>
 
-        <CastSection cast={movie.cast} />
+        {/* Cast section now wired to real data */}
+        <CastSection cast={cast} />
       </div>
     </>
   );
