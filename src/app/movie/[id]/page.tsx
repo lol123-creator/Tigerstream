@@ -1,5 +1,6 @@
 import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
+import { BackButton } from '@/components/BackButton';
 import { QualityBadge } from '@/components/QualityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { getMovieById } from '@/lib/tmdb/service';
@@ -54,6 +55,9 @@ export default async function MovieDetailPage({
 
   return (
     <>
+      <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+        <BackButton />
+      </div>
       <DetailHero
         item={movie}
         playLabel={comingSoon ? 'Coming Soon' : 'Watch Movie'}
