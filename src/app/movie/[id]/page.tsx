@@ -53,12 +53,12 @@ export default async function MovieDetailPage({
             <dd>
               {movie.release_date
                 ? new Date(movie.release_date).toLocaleDateString()
-                : '—'}
+                : '-'}
             </dd>
           </div>
           <div>
             <dt className="text-white/40">Runtime</dt>
-            <dd>{movie.runtime > 0 ? `${movie.runtime} min` : '—'}</dd>
+            <dd>{movie.runtime > 0 ? `${movie.runtime} min` : '-'}</dd>
           </div>
           <div>
             <dt className="text-white/40">Rating</dt>
@@ -66,7 +66,7 @@ export default async function MovieDetailPage({
           </div>
           <div>
             <dt className="text-white/40">Genres</dt>
-            <dd>{movie.genres.length ? movie.genres.join(', ') : '—'}</dd>
+            <dd>{movie.genres.length ? movie.genres.join(', ') : '-'}</dd>
           </div>
         </dl>
 
