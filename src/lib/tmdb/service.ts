@@ -340,8 +340,13 @@ export async function searchMedia(query: string): Promise<MediaItem[]> {
 export async function getMovieById(id: number): Promise<Movie | null> {
   if (!isTmdbEnabled()) return fallbackGetMovie(id) ?? null;
   try {
-    const data = await tmdbFetch<TmdbMovieDetail>(`/movie/${id}`);
-    return mapMovieDetail(data);
+    // `append_to_response=credits` returns the top cast in the same call
+    // so the detail page can show it without a second round-trip.
+    const data = await tmdbFetch<TmdbMovieDetail>(
+      `/movie/${id}`,
+      { append_to_response: "credits" },
+    );
+    return mapMovieDetail(data, data.credits?.cast);
   } catch {
     return fallbackGetMovie(id) ?? null;
   }
@@ -364,7 +369,12 @@ export async function getTvShowById(id: number): Promise<TvShow | null> {
   if (!isTmdbEnabled()) return fallbackGetTvShow(id) ?? null;
 
   try {
-    const show = await tmdbFetch<TmdbTvDetail>(`/tv/${id}`);
+    // `append_to_response=credits` returns the top cast in the same call
+    // so the detail page can show it without a second round-trip.
+    const show = await tmdbFetch<TmdbTvDetail>(
+      `/tv/${id}`,
+      { append_to_response: "credits" },
+    );
     const seasonNumbers = show.seasons
       .filter((s) => s.season_number > 0 && s.episode_count > 0)
       .map((s) => s.season_number)
@@ -374,7 +384,7 @@ export async function getTvShowById(id: number): Promise<TvShow | null> {
       await Promise.all(seasonNumbers.map((n) => fetchSeason(id, n)))
     ).filter((s): s is TmdbSeasonDetail => s != null);
 
-    return mapTvDetail(show, seasonDetails);
+    return mapTvDetail(show, seasonDetails, show.credits?.cast);
   } catch {
     return fallbackGetTvShow(id) ?? null;
   }
