@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { SITE_NAME } from '@/lib/brand';
+import { SearchDropdown } from '@/components/SearchDropdown';
 
 const NAV_LINKS = [
   { label: 'Movies', href: '/movies' },
@@ -15,21 +16,11 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [q, setQ] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isWatch =
     pathname.startsWith('/watch') || pathname.startsWith('/sports/watch');
 
-  function onSearch(e: FormEvent) {
-    e.preventDefault();
-    const query = q.trim();
-    if (query) {
-      router.push(`/search?q=${encodeURIComponent(query)}`);
-      setMenuOpen(false);
-    }
-  }
 
   function isActive(href: string) {
     if (href === '/') return pathname === '/';
@@ -73,18 +64,7 @@ export function Navbar() {
         </div>
 
         {/* Search bar */}
-        <form
-          onSubmit={onSearch}
-          className="ml-auto flex max-w-xs flex-1 sm:max-w-sm"
-        >
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search titles, genres…"
-            className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40 outline-none ring-accent/50 focus:border-accent/50 focus:ring-2"
-          />
-        </form>
+        <SearchDropdown />
 
         {/* Mobile hamburger */}
         <button
