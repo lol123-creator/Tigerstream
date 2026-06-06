@@ -18,7 +18,25 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const movie = await getMovieById(Number(id));
-  return { title: movie?.title ?? 'Movie' };
+  if (!movie) return { title: 'Movie' };
+  return {
+    title: movie.title,
+    description: movie.overview || `${movie.title} on TigerStream`,
+    openGraph: {
+      title: movie.title,
+      description: movie.overview || `${movie.title} on TigerStream`,
+      images: [
+        { url: `https://image.tmdb.org/t/p/w780${movie.backdrop_path || movie.poster_path}`, width: 780, height: 439 },
+      ],
+      type: 'video.movie',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: movie.title,
+      description: movie.overview || `${movie.title} on TigerStream`,
+      images: [`https://image.tmdb.org/t/p/w780${movie.backdrop_path || movie.poster_path}`],
+    },
+  };
 }
 
 export default async function MovieDetailPage({
