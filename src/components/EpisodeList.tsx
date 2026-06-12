@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { tmdbImage } from '@/lib/tmdb-images';
 import Link from 'next/link';
 import { watchTvHref } from '@/lib/routes';
+import { SeasonDropdown } from '@/components/SeasonDropdown';
 import type { TvShow } from '@/types/media';
 
 interface EpisodeListProps {
@@ -39,35 +40,25 @@ export function EpisodeList({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-surface-card p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <label
-            htmlFor="season-select"
-            className="text-sm font-semibold uppercase tracking-wide text-white/45"
-          >
-            Select season
-          </label>
-          <p className="mt-1 text-lg font-semibold text-white">
-            {selectedSeason.name}
-            <span className="ml-2 text-sm font-normal text-white/45">
-              {selectedSeason.episode_count} episodes
-            </span>
-          </p>
+      <div className="rounded-2xl border border-white/10 bg-surface-card p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/45">
+              Select season
+            </p>
+            <p className="mt-1 text-lg font-semibold text-white">
+              {selectedSeason.name}
+              <span className="ml-2 text-sm font-normal text-white/45">
+                {selectedSeason.episode_count} episodes
+              </span>
+            </p>
+          </div>
+          <SeasonDropdown
+            seasons={show.seasons}
+            selectedSeasonNumber={selectedSeasonNumber}
+            onChange={setSelectedSeasonNumber}
+          />
         </div>
-        <select
-          id="season-select"
-          value={selectedSeasonNumber}
-          onChange={(event) =>
-            setSelectedSeasonNumber(Number(event.currentTarget.value))
-          }
-          className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm font-medium text-white outline-none transition focus:border-accent sm:w-48"
-        >
-          {show.seasons.map((season) => (
-            <option key={season.season_number} value={season.season_number}>
-              {season.name}
-            </option>
-          ))}
-        </select>
       </div>
 
       <ul className="space-y-2">
