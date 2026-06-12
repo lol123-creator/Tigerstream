@@ -101,6 +101,8 @@ export function mapTvDetail(
       season_number: s.season_number,
       name: s.name || `Season ${s.season_number}`,
       episode_count: s.episodes.length,
+      poster_path: s.poster_path ?? undefined,
+      air_date: s.air_date ?? undefined,
       episodes: s.episodes.map(
         (ep): Episode => ({
           season: s.season_number,

@@ -37,7 +37,6 @@ export interface TmdbMovieDetail extends TmdbMovieSummary {
   tagline?: string | null;
   genres: TmdbGenre[];
   status?: string;
-  /** Present when the request was made with `append_to_response=credits`. */
   credits?: TmdbCredits;
 }
 
@@ -61,13 +60,14 @@ export interface TmdbTvDetail extends TmdbTvSummary {
     episode_count: number;
   }[];
   status?: string;
-  /** Present when the request was made with `append_to_response=credits`. */
   credits?: TmdbCredits;
 }
 
 export interface TmdbSeasonDetail {
   season_number: number;
   name: string;
+  poster_path?: string | null;
+  air_date?: string | null;
   episodes: {
     episode_number: number;
     name: string;
