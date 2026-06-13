@@ -55,7 +55,7 @@ export default async function TvDetailPage({
 
   return (
     <>
-      <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 pt-20 sm:px-6">
         <BackButton />
       </div>
       <DetailHero
