@@ -16,6 +16,10 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
   const href =
     item.type === 'movie' ? movieDetailHref(item.id) : tvDetailHref(item.id);
 
+  const year = item.type === 'movie'
+    ? new Date(item.release_date).getFullYear()
+    : new Date(item.first_air_date).getFullYear();
+
   return (
     <Link
       href={href}
@@ -43,14 +47,30 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
         <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-accent">
           {item.vote_average.toFixed(1)}
         </span>
+
+        {/* Hover overlay with details */}
+        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
+          <p className="text-sm font-semibold text-white leading-tight">{item.title}</p>
+          <p className="mt-1 text-xs text-white/60">
+            {year} · ★ {item.vote_average.toFixed(1)}
+          </p>
+          {item.genres && item.genres.length > 0 && (
+            <p className="mt-1 text-xs text-white/50 line-clamp-2 leading-relaxed">
+              {item.genres.slice(0, 3).join(", ")}
+            </p>
+          )}
+          {item.overview && (
+            <p className="mt-1 text-[11px] text-white/40 line-clamp-3 leading-relaxed">
+              {item.overview}
+            </p>
+          )}
+        </div>
       </div>
       <p className="mt-2 truncate px-1 text-sm font-medium text-white/90 group-hover:text-white">
         {item.title}
       </p>
       <p className="truncate px-1 text-xs text-white/45">
-        {item.type === 'movie'
-          ? new Date(item.release_date).getFullYear()
-          : `TV · ${new Date(item.first_air_date).getFullYear()}`}
+        {item.type === 'movie' ? `Movie · ${year}` : `TV · ${year}`}
       </p>
     </Link>
   );
