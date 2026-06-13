@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { tmdbImage } from '@/lib/tmdb-images';
 import type { MediaItem } from '@/types/media';
 import { storeReturnPath } from '@/components/BackButton';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import { movieDetailHref, tvDetailHref } from '@/lib/routes';
 
 interface MediaCardProps {
@@ -42,6 +43,10 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
           className="object-cover transition-opacity group-hover:opacity-80"
         />
         <div className="absolute inset-0 bg-card-shine opacity-0 transition-opacity group-hover:opacity-100" />
+        <FavoriteButton
+          entry={{ id: item.id, type: item.type, title: item.title, poster_path: item.poster_path }}
+          variant="card"
+        />
         <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-accent">
           {item.vote_average.toFixed(1)}
         </span>

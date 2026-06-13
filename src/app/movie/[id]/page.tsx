@@ -3,6 +3,7 @@ import { CastSection } from '@/components/CastSection';
 import { BackButton } from '@/components/BackButton';
 import { QualityBadge } from '@/components/QualityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import { getMovieById } from '@/lib/tmdb/service';
 import { watchMovieHref } from '@/lib/routes';
 import { isComingSoon } from '@/lib/release-checker';
@@ -86,6 +87,7 @@ export default async function MovieDetailPage({
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <StatusBadge media={movie} />
           <QualityBadge media={movie} />
+          <FavoriteButton entry={{ id: movie.id, type: 'movie', title: movie.title, poster_path: movie.poster_path }} />
         </div>
 
         <h2 className="mb-3 text-lg font-semibold">About</h2>

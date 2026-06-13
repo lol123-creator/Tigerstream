@@ -4,6 +4,7 @@ import { EpisodeList } from '@/components/EpisodeList';
 import { BackButton } from '@/components/BackButton';
 import { QualityBadge } from '@/components/QualityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import { getTvShowById } from '@/lib/tmdb/service';
 import { watchTvHref } from '@/lib/routes';
 import { isComingSoon } from '@/lib/release-checker';
@@ -80,6 +81,7 @@ export default async function TvDetailPage({
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <StatusBadge media={show} />
           <QualityBadge media={show} />
+          <FavoriteButton entry={{ id: show.id, type: 'tv', title: show.title, poster_path: show.poster_path }} />
         </div>
 
         <h2 className="mb-6 text-lg font-semibold">Episodes</h2>
