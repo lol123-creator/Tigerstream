@@ -36,7 +36,7 @@ export function QualityBadge({ media }: QualityBadgeProps) {
     checkQuality();
 
     // Poll for quality updates every 5 minutes
-    const interval = setInterval(checkQuality, 5 * 60 * 1000);
+    const interval = setInterval(checkQuality, 30 * 60 * 1000);
 
     return () => {
       isMounted = false;
