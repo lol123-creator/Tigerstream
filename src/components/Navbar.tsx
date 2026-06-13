@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: 'Anime', href: '/anime' },
   { label: 'Sports', href: '/sports' },
   { label: 'Genres', href: '/genres' },
+  { label: 'My List', href: '/favorites' },
 ];
 
 export function Navbar() {
