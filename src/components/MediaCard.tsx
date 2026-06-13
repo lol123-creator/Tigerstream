@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { tmdbImage } from '@/lib/tmdb-images';
 import type { MediaItem } from '@/types/media';
+import { storeReturnPath } from '@/components/BackButton';
 import { movieDetailHref, tvDetailHref } from '@/lib/routes';
 
 interface MediaCardProps {
@@ -19,6 +20,7 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
   return (
     <Link
       href={href}
+      onClick={storeReturnPath}
       className={`group relative block overflow-hidden rounded-lg bg-surface-card transition-transform duration-300 hover:z-10 hover:scale-[1.03] ${
         variant === 'row'
           ? 'shrink-0 snap-start'
