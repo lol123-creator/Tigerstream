@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -7,6 +9,7 @@ import {
   watchTvHref,
 } from '@/lib/routes';
 import { tmdbImage } from '@/lib/tmdb-images';
+import { storeReturnPath } from '@/components/BackButton';
 import type { MediaItem } from '@/types/media';
 
 interface HeroProps {
@@ -70,6 +73,7 @@ export function Hero({ item, badge = 'Featured' }: HeroProps) {
           </Link>
           <Link
             href={detailHref}
+            onClick={storeReturnPath}
             className="inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
           >
             More Info
