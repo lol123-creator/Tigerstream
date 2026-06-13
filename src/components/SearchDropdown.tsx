@@ -91,6 +91,20 @@ export function SearchDropdown() {
     return () => document.removeEventListener('keydown', handleKey);
   }, []);
 
+  // Keyboard shortcut: / to focus search
+  useEffect(() => {
+    function handleShortcut(e: KeyboardEvent) {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    }
+    document.addEventListener('keydown', handleShortcut);
+    return () => document.removeEventListener('keydown', handleShortcut);
+  }, []);
+
   function submitFullSearch(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = q.trim();
