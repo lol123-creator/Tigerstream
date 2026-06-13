@@ -1,4 +1,5 @@
 import { ContinueWatchingRow } from '@/components/ContinueWatchingRow';
+import { FavoritesRow } from '@/components/FavoritesRow';
 import { Hero } from '@/components/Hero';
 import { MediaRow } from '@/components/MediaRow';
 import { SportsRow } from '@/components/sports/SportsRow';
@@ -82,6 +83,7 @@ export default async function HomePage() {
     <>
       <Hero item={featured.item} badge={featured.badge} />
       <div className="relative z-10 -mt-8 space-y-2 pb-16">
+        <FavoritesRow />
         <ContinueWatchingRow />
         <SportsRow title={sportsRow.title} streams={sportsRow.streams} />
         <MediaRow title="Hot Right Now" items={row(trendingToday)} />
