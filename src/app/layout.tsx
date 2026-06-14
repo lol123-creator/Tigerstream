@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Navbar } from '@/components/Navbar';
 import { ScrollToTop } from '@/components/ScrollToTop';
@@ -43,6 +44,7 @@ export default function RootLayout({
         <footer className="border-t border-white/5 py-10 text-sm text-white/35">
           <div className="mx-auto max-w-7xl px-4 sm:px-6"><div className="flex flex-wrap justify-center gap-x-6 gap-y-2"><a href="/" className="hover:text-white/60 transition">Home</a><a href="/movies" className="hover:text-white/60 transition">Movies</a><a href="/tv" className="hover:text-white/60 transition">TV Shows</a><a href="/anime" className="hover:text-white/60 transition">Anime</a><a href="/sports" className="hover:text-white/60 transition">Sports</a><a href="/genres" className="hover:text-white/60 transition">Genres</a><a href="/favorites" className="hover:text-white/60 transition">My List</a></div><p className="mt-4 text-center">{SITE_NAME}</p></div>
         </footer>
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>
