@@ -39,6 +39,8 @@ export interface Season {
   name: string;
   episode_count: number;
   episodes: Episode[];
+  poster_path?: string;
+  air_date?: string;
 }
 
 export interface TvShow {

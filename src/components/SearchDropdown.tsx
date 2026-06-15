@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { tmdbImage } from '@/lib/tmdb-images';
 import { movieDetailHref, tvDetailHref } from '@/lib/routes';
+import { storeReturnPath } from '@/components/BackButton';
 
 interface SearchResult {
   id: number;
@@ -90,6 +91,20 @@ export function SearchDropdown() {
     return () => document.removeEventListener('keydown', handleKey);
   }, []);
 
+  // Keyboard shortcut: / to focus search
+  useEffect(() => {
+    function handleShortcut(e: KeyboardEvent) {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    }
+    document.addEventListener('keydown', handleShortcut);
+    return () => document.removeEventListener('keydown', handleShortcut);
+  }, []);
+
   function submitFullSearch(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = q.trim();
@@ -129,7 +144,7 @@ export function SearchDropdown() {
               role="option"
               className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-white/8"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => setOpen(false)}
+              onClick={() => { storeReturnPath(); setOpen(false); }}
             >
               <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded bg-white/10">
                 <Image
@@ -152,7 +167,7 @@ export function SearchDropdown() {
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setOpen(false)}
           >
-            View all results for "{q.trim()}"
+            View all results for &ldquo;{q.trim()}&rdquo;
           </a>
         </div>
       )}
