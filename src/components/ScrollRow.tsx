@@ -30,12 +30,16 @@ function ChevronRight() {
   );
 }
 
+const DRAG_THRESHOLD = 5;
+
 export function ScrollRow({ title, children, className }: ScrollRowProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const isDragging = useRef(false);
+  const didDrag = useRef(false);
   const dragStartX = useRef(0);
+  const dragStartPageX = useRef(0);
   const dragScrollLeft = useRef(0);
 
   const updateArrows = useCallback(() => {
@@ -66,15 +70,16 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     el.scrollBy({ left: direction === 'left' ? -distance : distance, behavior: 'smooth' });
   };
 
-  /* ── Drag-to-scroll ── */
   const onMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (target.closest('button, a, input, textarea, select')) return;
+    if (target.closest('button, input, textarea, select')) return;
     const el = scrollerRef.current;
     if (!el) return;
     isDragging.current = true;
+    didDrag.current = false;
     dragStartX.current = e.pageX - el.offsetLeft;
+    dragStartPageX.current = e.pageX;
     dragScrollLeft.current = el.scrollLeft;
     el.style.scrollBehavior = 'auto';
     el.style.cursor = 'grabbing';
@@ -86,6 +91,17 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     e.preventDefault();
     const el = scrollerRef.current;
     if (!el) return;
+    if (!didDrag.current) {
+      if (Math.abs(e.pageX - dragStartPageX.current) > DRAG_THRESHOLD) {
+        didDrag.current = true;
+        const overlay = document.createElement('div');
+        overlay.setAttribute('data-drag-overlay', '');
+        overlay.style.cssText =
+          'position:absolute;inset:0;z-index:20;cursor:grabbing;pointer-events:auto;';
+        el.style.position = 'relative';
+        el.appendChild(overlay);
+      }
+    }
     const x = e.pageX - el.offsetLeft;
     const walk = (x - dragStartX.current) * 1.5;
     el.scrollLeft = dragScrollLeft.current - walk;
@@ -99,6 +115,16 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
       el.style.scrollBehavior = '';
       el.style.cursor = '';
       el.style.userSelect = '';
+      const overlay = el.querySelector('[data-drag-overlay]');
+      if (overlay) overlay.remove();
+    }
+    if (didDrag.current) {
+      const el = scrollerRef.current;
+      const suppress = (ev: Event) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      };
+      el?.addEventListener('click', suppress, { capture: true, once: true });
     }
   };
 
