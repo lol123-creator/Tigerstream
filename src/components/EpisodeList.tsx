@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { tmdbImage } from '@/lib/tmdb-images';
 import Link from 'next/link';
 import { watchTvHref } from '@/lib/routes';
+import { SeasonDropdown } from '@/components/SeasonDropdown';
 import type { TvShow } from '@/types/media';
 
 const VISIBLE_ITEMS = 5;
