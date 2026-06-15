@@ -26,9 +26,13 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
     <Link
       href={href}
       onClick={storeReturnPath}
+<<<<<<< feat/ui-modernization
+      className={`group relative block overflow-hidden rounded-xl bg-surface-card transition-all duration-300 hover:z-10 hover:scale-[1.04] hover:shadow-glow hover:ring-1 hover:ring-accent/20 ${
+=======
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
       className={`group relative block overflow-hidden rounded-lg bg-surface-card transition-transform duration-300 hover:z-10 hover:scale-[1.03] ${
+>>>>>>> feat/drag-to-scroll
         variant === 'row'
           ? 'shrink-0 snap-start'
           : 'w-full'
@@ -46,7 +50,7 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
           fill
           sizes="200px"
           priority={priority}
-          className="object-cover transition-opacity group-hover:opacity-80"
+          className="object-cover transition-all duration-300 group-hover:scale-105 group-hover:opacity-80"
         />
         <div className="absolute inset-0 bg-card-shine opacity-0 transition-opacity group-hover:opacity-100" />
         <FavoriteButton
@@ -80,7 +84,7 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
           )}
         </div>
       </div>
-      <p className="mt-2 truncate px-1 text-sm font-medium text-white/90 group-hover:text-white">
+      <p className="mt-2 truncate px-1 text-sm font-medium text-white/85 group-hover:text-white transition-colors duration-200">
         {item.title}
       </p>
       <p className="truncate px-1 text-xs text-white/45">

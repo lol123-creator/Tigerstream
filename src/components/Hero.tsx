@@ -95,6 +95,47 @@ export function Hero({ slides }: HeroProps) {
 
       {/* Content (fade between slides) */}
       <div className="relative mx-auto flex max-w-7xl flex-col justify-end px-4 pb-16 pt-32 sm:px-6 md:pb-24">
+<<<<<<< feat/ui-modernization
+        <p className="mb-2 inline-block rounded-full bg-accent/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-accent backdrop-blur-sm">
+          {badge}
+        </p>
+        <h1 className="font-display max-w-3xl text-4xl font-bold leading-tight text-white md:text-6xl">
+          {item.title}
+        </h1>
+        {'tagline' in item && item.tagline && (
+          <p className="mt-2 text-lg text-white/70 italic">{item.tagline}</p>
+        )}
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/75 md:text-base">
+          {item.overview}
+        </p>
+        {item.genres.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {item.genres.slice(0, 3).map((g) => (
+              <span
+                key={g}
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-xs text-white/70"
+              >
+                {g}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href={watchHref}
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition-all duration-200 hover:bg-accent-hover hover:shadow-glow-lg active:scale-95"
+          >
+            <PlayIcon />
+            Watch Now
+          </Link>
+          <Link
+            href={detailHref}
+            onClick={storeReturnPath}
+            className="inline-flex items-center rounded-xl border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur-sm transition-all duration-200 hover:bg-white/[0.12] hover:text-white active:scale-95"
+          >
+            More Info
+          </Link>
+=======
         <div
           key={item.id}
           className="animate-fade-in"
@@ -140,6 +181,7 @@ export function Hero({ slides }: HeroProps) {
               More Info
             </Link>
           </div>
+>>>>>>> feat/drag-to-scroll
         </div>
       </div>
 
