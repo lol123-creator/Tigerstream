@@ -19,6 +19,8 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
   return (
     <Link
       href={href}
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
       className={`group relative block overflow-hidden rounded-lg bg-surface-card transition-transform duration-300 hover:z-10 hover:scale-[1.03] ${
         variant === 'row'
           ? 'shrink-0 snap-start'
@@ -37,7 +39,7 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
           fill
           sizes="200px"
           priority={priority}
-          className="object-cover transition-opacity group-hover:opacity-80"
+          className="object-cover transition-opacity group-hover:opacity-80" draggable={false}
         />
         <div className="absolute inset-0 bg-card-shine opacity-0 transition-opacity group-hover:opacity-100" />
         <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-accent">
