@@ -39,7 +39,7 @@ export function Hero({ item, badge = 'Featured' }: HeroProps) {
       <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/70 to-transparent" />
 
       <div className="relative mx-auto flex max-w-7xl flex-col justify-end px-4 pb-16 pt-32 sm:px-6 md:pb-24">
-        <p className="mb-2 text-sm font-medium uppercase tracking-widest text-accent">
+        <p className="mb-2 inline-block rounded-full bg-accent/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-accent backdrop-blur-sm">
           {badge}
         </p>
         <h1 className="font-display max-w-3xl text-4xl font-bold leading-tight text-white md:text-6xl">
@@ -66,7 +66,7 @@ export function Hero({ item, badge = 'Featured' }: HeroProps) {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href={watchHref}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:bg-accent-hover"
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition-all duration-200 hover:bg-accent-hover hover:shadow-glow-lg active:scale-95"
           >
             <PlayIcon />
             Watch Now
@@ -74,7 +74,7 @@ export function Hero({ item, badge = 'Featured' }: HeroProps) {
           <Link
             href={detailHref}
             onClick={storeReturnPath}
-            className="inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+            className="inline-flex items-center rounded-xl border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur-sm transition-all duration-200 hover:bg-white/[0.12] hover:text-white active:scale-95"
           >
             More Info
           </Link>

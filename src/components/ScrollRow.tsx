@@ -133,20 +133,20 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
       <div className="mb-4 flex items-center justify-between gap-4 px-4 sm:px-6">
         <h2 className="text-lg font-semibold text-white md:text-xl">{title}</h2>
         <div className="flex shrink-0 items-center gap-2">
-          <button type="button" onClick={() => scroll('left')} disabled={!canScrollLeft} aria-label={`Scroll ${title} left`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-surface-raised text-white transition enabled:hover:border-accent/50 enabled:hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft /></button>
-          <button type="button" onClick={() => scroll('right')} disabled={!canScrollRight} aria-label={`Scroll ${title} right`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-surface-raised text-white transition enabled:hover:border-accent/50 enabled:hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-30"><ChevronRight /></button>
+          <button type="button" onClick={() => scroll('left')} disabled={!canScrollLeft} aria-label={`Scroll ${title} left`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.04] text-white/80 backdrop-blur transition-all duration-200 enabled:hover:border-accent/40 enabled:hover:bg-accent/15 enabled:hover:text-accent enabled:hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-20"><ChevronLeft /></button>
+          <button type="button" onClick={() => scroll('right')} disabled={!canScrollRight} aria-label={`Scroll ${title} right`} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.04] text-white/80 backdrop-blur transition-all duration-200 enabled:hover:border-accent/40 enabled:hover:bg-accent/15 enabled:hover:text-accent enabled:hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-20"><ChevronRight /></button>
         </div>
       </div>
 
       <div className="group/row relative">
         {canScrollLeft && (
           <button type="button" onClick={() => scroll('left')} aria-label={`Scroll ${title} left`} className="absolute left-0 top-0 z-10 hidden h-full w-12 items-center justify-center bg-gradient-to-r from-surface via-surface/80 to-transparent opacity-0 transition hover:opacity-100 group-hover/row:opacity-100 md:flex lg:w-14">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white shadow-lg backdrop-blur hover:bg-accent"><ChevronLeft /></span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-accent/80"><ChevronLeft /></span>
           </button>
         )}
         {canScrollRight && (
           <button type="button" onClick={() => scroll('right')} aria-label={`Scroll ${title} right`} className="absolute right-0 top-0 z-10 hidden h-full w-12 items-center justify-center bg-gradient-to-l from-surface via-surface/80 to-transparent opacity-0 transition hover:opacity-100 group-hover/row:opacity-100 md:flex lg:w-14">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white shadow-lg backdrop-blur hover:bg-accent"><ChevronRight /></span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-accent/80"><ChevronRight /></span>
           </button>
         )}
 
