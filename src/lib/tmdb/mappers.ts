@@ -81,6 +81,7 @@ export function mapTvHeroDetail(t: TmdbTvDetail): TvShow {
         backdrop_path: t.backdrop_path,
         first_air_date: t.first_air_date,
         vote_average: t.vote_average,
+        original_language: t.original_language,
       },
       genreNames(t.genres),
     ),
@@ -134,6 +135,7 @@ export function mapTrendingItem(r: TmdbTrendingResult): MediaItem | null {
       backdrop_path: r.backdrop_path,
       release_date: r.release_date ?? '',
       vote_average: r.vote_average ?? 0,
+      original_language: r.original_language,
     });
   }
   if (r.media_type === 'tv') {
@@ -145,6 +147,7 @@ export function mapTrendingItem(r: TmdbTrendingResult): MediaItem | null {
       backdrop_path: r.backdrop_path,
       first_air_date: r.first_air_date ?? '',
       vote_average: r.vote_average ?? 0,
+      original_language: r.original_language,
     });
   }
   return null;
@@ -160,6 +163,7 @@ export function mapSearchResult(r: TmdbSearchResult): MediaItem | null {
       backdrop_path: r.backdrop_path,
       release_date: r.release_date ?? '',
       vote_average: r.vote_average ?? 0,
+      original_language: r.original_language,
     });
   }
   if (r.media_type === 'tv') {
@@ -171,6 +175,7 @@ export function mapSearchResult(r: TmdbSearchResult): MediaItem | null {
       backdrop_path: r.backdrop_path,
       first_air_date: r.first_air_date ?? '',
       vote_average: r.vote_average ?? 0,
+      original_language: r.original_language,
     });
   }
   return null;
