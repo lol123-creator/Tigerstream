@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { ContinueWatchingRow } from '@/components/ContinueWatchingRow';
 import { FavoritesRow } from '@/components/FavoritesRow';
-import { Hero } from '@/components/Hero';
+import { Hero, type HeroSlide } from '@/components/Hero';
 import { MediaRow } from '@/components/MediaRow';
 import { SportsRow } from '@/components/sports/SportsRow';
 import { HomeMoreRows } from '@/components/HomeMoreRows';
@@ -9,7 +9,6 @@ import { HomeMoreRowsSkeleton } from '@/components/HomeMoreRowsSkeleton';
 import { getHomeSportsRow } from '@/lib/ppv/service';
 import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
 import {
-  getFeaturedHero,
   getNewMovies,
   getNewTvSeries,
   getTrendingToday,
@@ -23,18 +22,22 @@ function row<T>(items: T[]): T[] {
 }
 
 export default async function HomePage() {
-  const [featured, trendingToday, newMovies, newTv, sportsRow] =
+  const [trendingToday, newMovies, newTv, sportsRow] =
     await Promise.all([
-      getFeaturedHero(),
       getTrendingToday(),
       getNewMovies(3),
       getNewTvSeries(3),
       getHomeSportsRow(16),
     ]);
 
+  const heroSlides: HeroSlide[] = trendingToday.slice(0, 6).map((t) => ({
+    item: t,
+    badge: t.type === 'movie' ? 'Hot Movie Today' : 'Hot Series Today',
+  }));
+
   return (
     <>
-      <Hero item={featured.item} badge={featured.badge} />
+      <Hero slides={heroSlides} />
       <div className="relative z-10 -mt-8 space-y-2 pb-16">
         <FavoritesRow />
         <ContinueWatchingRow />

@@ -20,6 +20,7 @@ export interface Movie {
   genres: string[];
   tagline?: string;
   cast?: Cast[];
+  original_language?: string;
   status?: 'Released' | 'Post Production' | 'In Production' | 'Planned' | 'Rumored';
   quality?: string;
   lastQualityUpdate?: number;
@@ -56,6 +57,7 @@ export interface TvShow {
   seasons: Season[];
   tagline?: string;
   cast?: Cast[];
+  original_language?: string;
   status?: 'Returning Series' | 'Planned' | 'In Production' | 'Ended' | 'Cancelled';
   quality?: string;
   lastQualityUpdate?: number;

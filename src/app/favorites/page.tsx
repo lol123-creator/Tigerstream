@@ -16,9 +16,9 @@ function toMediaItem(e: FavoriteEntry): MediaItem {
       overview: '',
       poster_path: e.poster_path,
       backdrop_path: e.poster_path,
-      release_date: '',
+      release_date: e.release_date ?? '',
       runtime: 0,
-      vote_average: 0,
+      vote_average: e.vote_average ?? 0,
       genres: [],
     };
   }
@@ -29,8 +29,8 @@ function toMediaItem(e: FavoriteEntry): MediaItem {
     overview: '',
     poster_path: e.poster_path,
     backdrop_path: e.poster_path,
-    first_air_date: '',
-    vote_average: 0,
+    first_air_date: e.first_air_date ?? '',
+    vote_average: e.vote_average ?? 0,
     genres: [],
     seasons: [],
   };

@@ -38,6 +38,7 @@ export function mapMovieSummary(m: TmdbMovieSummary, genres: string[] = []): Mov
     runtime: 0,
     vote_average: m.vote_average ?? 0,
     genres,
+    original_language: m.original_language,
   };
 }
 
@@ -66,6 +67,7 @@ export function mapTvSummary(t: TmdbTvSummary, genres: string[] = []): TvShow {
     vote_average: t.vote_average ?? 0,
     genres,
     seasons: [],
+    original_language: t.original_language,
   };
 }
 
@@ -145,6 +147,7 @@ export function mapTrendingItem(r: TmdbTrendingResult): MediaItem | null {
       backdrop_path: r.backdrop_path,
       first_air_date: r.first_air_date ?? '',
       vote_average: r.vote_average ?? 0,
+      original_language: r.original_language,
     });
   }
   return null;
@@ -171,6 +174,7 @@ export function mapSearchResult(r: TmdbSearchResult): MediaItem | null {
       backdrop_path: r.backdrop_path,
       first_air_date: r.first_air_date ?? '',
       vote_average: r.vote_average ?? 0,
+      original_language: r.original_language,
     });
   }
   return null;
