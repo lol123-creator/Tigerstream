@@ -26,6 +26,8 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
     <Link
       href={href}
       onClick={storeReturnPath}
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
       className={`group relative block overflow-hidden rounded-lg bg-surface-card transition-transform duration-300 hover:z-10 hover:scale-[1.03] ${
         variant === 'row'
           ? 'shrink-0 snap-start'
