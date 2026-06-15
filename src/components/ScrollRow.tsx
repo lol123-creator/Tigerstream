@@ -72,6 +72,7 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
 
   const onMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    e.preventDefault();
     const target = e.target as HTMLElement;
     if (target.closest('button, input, textarea, select')) return;
     const el = scrollerRef.current;
@@ -150,7 +151,7 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
           </button>
         )}
 
-        <div ref={scrollerRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={stopDrag} onMouseLeave={stopDrag} className="scrollbar-hide flex cursor-grab gap-3 overflow-x-auto px-4 pb-2 active:cursor-grabbing sm:gap-4 sm:px-6">
+        <div ref={scrollerRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={stopDrag} onMouseLeave={stopDrag} onDragStart={(e) => e.preventDefault()} draggable={false} className="scrollbar-hide flex cursor-grab gap-3 overflow-x-auto px-4 pb-2 active:cursor-grabbing sm:gap-4 sm:px-6">
           {children}
         </div>
       </div>
