@@ -50,7 +50,7 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
         />
         <div className="absolute inset-0 bg-card-shine opacity-0 transition-opacity group-hover:opacity-100" />
         <FavoriteButton
-          entry={{ id: item.id, type: item.type, title: item.title, poster_path: item.poster_path }}
+          entry={{ id: item.id, type: item.type, title: item.title, poster_path: item.poster_path, vote_average: item.vote_average, release_date: item.type === "movie" ? item.release_date : undefined, first_air_date: item.type === "tv" ? item.first_air_date : undefined }}
           variant="card"
         />
         <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-accent">
@@ -63,6 +63,11 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
           <p className="mt-1 text-xs text-white/60">
             {year} · ★ {item.vote_average.toFixed(1)}
           </p>
+          {item.original_language && (
+            <p className="mt-0.5 text-xs text-white/40">
+              {item.original_language.toUpperCase()}
+            </p>
+          )}
           {item.genres && item.genres.length > 0 && (
             <p className="mt-1 text-xs text-white/50 line-clamp-2 leading-relaxed">
               {item.genres.slice(0, 3).join(", ")}

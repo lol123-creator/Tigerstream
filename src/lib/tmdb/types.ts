@@ -88,6 +88,7 @@ export interface TmdbTrendingResult {
   release_date?: string;
   first_air_date?: string;
   vote_average: number;
+  original_language?: string;
 }
 
 export interface TmdbSearchResult {
@@ -101,4 +102,5 @@ export interface TmdbSearchResult {
   release_date?: string;
   first_air_date?: string;
   vote_average: number;
+  original_language?: string;
 }
