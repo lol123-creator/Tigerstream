@@ -63,7 +63,6 @@ export const TV_GENRES: Genre[] = [
   { id: 16, name: 'Animation' },
   { id: 35, name: 'Comedy' },
   { id: 80, name: 'Crime' },
-  { id: 27, name: 'Horror' },
   { id: 99, name: 'Documentary' },
   { id: 18, name: 'Drama' },
   { id: 10751, name: 'Family' },
@@ -80,8 +79,9 @@ export const TV_GENRES: Genre[] = [
 
 /** Curated TV genre combinations (multi-genre IDs). */
 export const TV_CURATED_GENRES: Genre[] = [
+  { id: '10765,9648', name: 'Horror TV' },
   { id: '80,9648', name: 'True Crime' },
-  { id: '27,10765', name: 'Supernatural' },
+  { id: '10765,18', name: 'Supernatural' },
   { id: '18,10768', name: 'Political Drama' },
   { id: '16,35', name: 'Animated Comedy' },
   { id: '10751,10759', name: 'Family Adventure' },
@@ -91,19 +91,18 @@ export const TV_CURATED_GENRES: Genre[] = [
   { id: '10765,10759', name: 'Sci-Fi Adventure' },
   { id: '9648,80', name: 'Mystery Thriller' },
   { id: '10765,14', name: 'Fantasy Quest' },
-  { id: '27,9648', name: 'Horror Mystery' },
+  { id: '10765,9648,18', name: 'Dark Thriller' },
   { id: '18,10751', name: 'Family Drama' },
   { id: '10759,80', name: 'Action Crime' },
   { id: '10759,35', name: 'Action Comedy' },
   { id: '35,18', name: 'Dramedy' },
-  { id: '27,10759', name: 'Horror Adventure' },
   { id: '10765,35', name: 'Sci-Fi Comedy' },
   { id: '80,18', name: 'Crime Drama' },
   { id: '16,10751', name: 'Animated Family' },
-  { id: '10765,9648', name: 'Sci-Fi Mystery' },
+  { id: '10765,80', name: 'Sci-Fi Horror' },
   { id: '37,18', name: 'Western Drama' },
-  { id: '27,35', name: 'Horror Comedy' },
-  { id: '10765,27', name: 'Sci-Fi Horror' },
+  { id: '35,9648', name: 'Horror Comedy' },
+  { id: '10759,9648', name: 'Horror Adventure' },
 ];
 
 export function getMovieGenreName(id: number | string): string {
