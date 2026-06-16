@@ -80,8 +80,10 @@ export const TV_GENRES: Genre[] = [
 
 /** Curated TV genre combinations (multi-genre IDs). */
 export const TV_CURATED_GENRES: Genre[] = [
+  /** NOTE: TMDB has no Horror (27) for TV - it's movie-only. Horror TV shows use Sci-Fi & Fantasy (10765), Mystery (9648), Drama (18), Crime (80), Action & Adventure (10759). */
+  { id: '10765,9648', name: 'Horror TV' },
   { id: '80,9648', name: 'True Crime' },
-  { id: '27,10765', name: 'Supernatural' },
+  { id: '10765,18', name: 'Supernatural' },
   { id: '18,10768', name: 'Political Drama' },
   { id: '16,35', name: 'Animated Comedy' },
   { id: '10751,10759', name: 'Family Adventure' },
@@ -90,20 +92,19 @@ export const TV_CURATED_GENRES: Genre[] = [
   { id: '80,9648,18', name: 'Crime Mystery' },
   { id: '10765,10759', name: 'Sci-Fi Adventure' },
   { id: '9648,80', name: 'Mystery Thriller' },
-  { id: '10765,14', name: 'Fantasy Quest' },
-  { id: '27,9648', name: 'Horror Mystery' },
+  { id: '10765,16', name: 'Fantasy Quest' },
+  { id: '10765,9648,18', name: 'Horror Mystery' },
   { id: '18,10751', name: 'Family Drama' },
+  { id: '10759,9648', name: 'Horror Adventure' },
+  { id: '35,9648', name: 'Horror Comedy' },
+  { id: '10765,80', name: 'Sci-Fi Horror' },
   { id: '10759,80', name: 'Action Crime' },
   { id: '10759,35', name: 'Action Comedy' },
   { id: '35,18', name: 'Dramedy' },
-  { id: '27,10759', name: 'Horror Adventure' },
   { id: '10765,35', name: 'Sci-Fi Comedy' },
   { id: '80,18', name: 'Crime Drama' },
   { id: '16,10751', name: 'Animated Family' },
-  { id: '10765,9648', name: 'Sci-Fi Mystery' },
   { id: '37,18', name: 'Western Drama' },
-  { id: '27,35', name: 'Horror Comedy' },
-  { id: '10765,27', name: 'Sci-Fi Horror' },
 ];
 
 export function getMovieGenreName(id: number | string): string {
