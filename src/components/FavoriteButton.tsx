@@ -37,7 +37,7 @@ export function FavoriteButton({
         type="button"
         onClick={onClick}
         aria-label={active ? 'Remove from favorites' : 'Add to favorites'}
-        className={`absolute top-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 backdrop-blur transition hover:bg-black/80 ${className}`}
+        className={`absolute top-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 backdrop-blur opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-black/80 ${className}`}
       >
         <svg
           width="16"

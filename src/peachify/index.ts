@@ -6,6 +6,7 @@ export {
   loadPeachifyProgress,
   mergePeachifyProgress,
   savePeachifyProgress,
+  removeContinueWatchingItem,
 } from './progressStorage';
 export {
   PEACHIFY_ORIGIN,
