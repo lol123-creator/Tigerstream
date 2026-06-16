@@ -7,7 +7,7 @@ import type { Genre } from '@/lib/tmdb/genres';
 interface GenreChipsProps {
   type: 'movie' | 'tv';
   genres: Genre[];
-  activeId?: number;
+  activeId?: number | string;
 }
 
 function ChevronLeft() {
@@ -70,7 +70,7 @@ export function GenreChips({ type, genres, activeId }: GenreChipsProps) {
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el || activeId == null) return;
-    const active = el.querySelector<HTMLElement>(`[data-genre-id="${activeId}"]`);
+    const active = el.querySelector<HTMLElement>(`[data-genre-id=\"${activeId}\"]`);
     active?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [activeId]);
 
@@ -132,7 +132,7 @@ export function GenreChips({ type, genres, activeId }: GenreChipsProps) {
             key={g.id}
             href={`${base}/${g.id}`}
             data-genre-id={g.id}
-            className={chipClass(activeId === g.id)}
+            className={chipClass(String(activeId) === String(g.id))}
           >
             {g.name}
           </Link>

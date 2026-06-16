@@ -282,14 +282,14 @@ export async function getDiscoverTv(
 }
 
 export async function getMoviesByGenre(
-  genreId: number,
+  genreId: number | string,
   pages = BROWSE_PAGE_COUNT,
 ): Promise<Movie[]> {
   return getDiscoverMovies(genreId, pages);
 }
 
 export async function getTvByGenre(
-  genreId: number,
+  genreId: number | string,
   pages = BROWSE_PAGE_COUNT,
 ): Promise<TvShow[]> {
   return getDiscoverTv(genreId, pages);
@@ -592,7 +592,7 @@ export async function getPopularTvPage(page = 1): Promise<PagedResult<TvShow>> {
 }
 
 export async function getMoviesByGenrePage(
-  genreId: number,
+  genreId: number | string,
   page = 1,
 ): Promise<PagedResult<Movie>> {
   if (!isTmdbEnabled()) {
@@ -611,7 +611,7 @@ export async function getMoviesByGenrePage(
 }
 
 export async function getTvByGenrePage(
-  genreId: number,
+  genreId: number | string,
   page = 1,
 ): Promise<PagedResult<TvShow>> {
   if (!isTmdbEnabled()) {
