@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getMovieGenres, getTvGenres } from '@/lib/tmdb/service';
+import { MOVIE_CURATED_GENRES, TV_CURATED_GENRES } from '@/lib/tmdb/genres';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -33,6 +34,18 @@ export default async function GenresPage() {
             </Link>
           ))}
         </div>
+        <h3 className="mb-3 mt-6 text-lg font-medium text-white/70">Curated collections</h3>
+        <div className="flex flex-wrap gap-2">
+          {MOVIE_CURATED_GENRES.map((g) => (
+            <Link
+              key={g.id}
+              href={`/movies/genre/${g.id}`}
+              className="rounded-full border border-accent/20 bg-accent/5 px-4 py-2 text-sm text-white/85 transition hover:border-accent/50 hover:bg-accent/15 hover:text-white"
+            >
+              {g.name}
+            </Link>
+          ))}
+        </div>
       </section>
 
       <section>
@@ -43,6 +56,18 @@ export default async function GenresPage() {
               key={g.id}
               href={`/tv/genre/${g.id}`}
               className="rounded-full border border-white/15 bg-surface-card px-4 py-2 text-sm text-white/85 transition hover:border-accent/50 hover:bg-accent/10 hover:text-white"
+            >
+              {g.name}
+            </Link>
+          ))}
+        </div>
+        <h3 className="mb-3 mt-6 text-lg font-medium text-white/70">Curated collections</h3>
+        <div className="flex flex-wrap gap-2">
+          {TV_CURATED_GENRES.map((g) => (
+            <Link
+              key={g.id}
+              href={`/tv/genre/${g.id}`}
+              className="rounded-full border border-accent/20 bg-accent/5 px-4 py-2 text-sm text-white/85 transition hover:border-accent/50 hover:bg-accent/15 hover:text-white"
             >
               {g.name}
             </Link>
