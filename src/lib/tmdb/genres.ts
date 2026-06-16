@@ -90,7 +90,7 @@ export const TV_CURATED_GENRES: Genre[] = [
   { id: '80,9648,18', name: 'Crime Mystery' },
   { id: '10765,10759', name: 'Sci-Fi Adventure' },
   { id: '9648,80', name: 'Mystery Thriller' },
-  { id: '10765,14', name: 'Fantasy Quest' },
+  { id: '10765,16', name: 'Fantasy Quest' },
   { id: '10765,9648,18', name: 'Dark Thriller' },
   { id: '18,10751', name: 'Family Drama' },
   { id: '10759,80', name: 'Action Crime' },
