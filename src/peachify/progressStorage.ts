@@ -45,6 +45,19 @@ export function getMediaProgress(
   return store[String(mediaId)];
 }
 
+
+export function removeContinueWatchingItem(
+  mediaId: string | number,
+  storageKey = DEFAULT_STORAGE_KEY,
+  storage: Storage = localStorage,
+): void {
+  const store = loadPeachifyProgress(storageKey, storage);
+  delete store[String(mediaId)];
+  savePeachifyProgress(store, storageKey, storage);
+}
+
+
+
 export function getCompletionRatio(entry: {
   progress?: { watched?: number; duration?: number };
 }): number {

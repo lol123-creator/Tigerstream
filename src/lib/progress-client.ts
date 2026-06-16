@@ -4,6 +4,7 @@ import {
   getCompletionRatio,
   getMediaProgress,
   loadPeachifyProgress,
+  removeContinueWatchingItem,
 } from '@/peachify';
 import type { PeachifyProgressStore } from '@/peachify';
 import { watchMovieHref, watchTvHref } from '@/lib/routes';
@@ -62,4 +63,4 @@ export function buildContinueWatching(
   return items.sort((a, b) => b.progressPercent - a.progressPercent).slice(0, 12);
 }
 
-export { getMediaProgress, loadPeachifyProgress };
+export { getMediaProgress, loadPeachifyProgress, removeContinueWatchingItem };
