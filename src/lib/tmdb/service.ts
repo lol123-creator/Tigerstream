@@ -309,7 +309,12 @@ export async function getTvGenres(): Promise<Genre[]> {
   if (!isTmdbEnabled()) return TV_GENRES;
   try {
     const data = await tmdbFetch<{ genres: Genre[] }>('/genre/tv/list');
-    return data.genres.length ? data.genres : TV_GENRES;
+    const genres = data.genres.length ? data.genres : TV_GENRES;
+    // Ensure Horror is always included for TV (TMDB doesn't list it natively for TV)
+    if (!genres.some((g) => g.id === 27)) {
+      return [...genres, { id: 27, name: 'Horror' }];
+    }
+    return genres;
   } catch {
     return TV_GENRES;
   }

@@ -30,6 +30,7 @@ export interface TmdbMovieSummary {
   release_date: string;
   vote_average: number;
   genre_ids?: number[];
+  original_language?: string;
 }
 
 export interface TmdbMovieDetail extends TmdbMovieSummary {
