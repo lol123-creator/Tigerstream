@@ -30,7 +30,7 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-colors ${
+      className={`fixed inset-x-0 top-0 z-50 border-b border-white/[0.03] bg-surface/80 backdrop-blur-xl transition-colors ${
         isWatch
           ? 'bg-surface/90 backdrop-blur-md'
           : 'bg-gradient-to-b from-black/80 to-transparent'
@@ -56,7 +56,7 @@ export function Navbar() {
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 isActive(href)
                   ? 'bg-accent/15 text-accent'
-                  : 'text-white/70 hover:bg-white/8 hover:text-white'
+                  : 'text-white/70 hover:bg-white/[0.06] hover:text-white'
               }`}
             >
               {label}
@@ -100,7 +100,7 @@ export function Navbar() {
                 className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive(href)
                     ? 'bg-accent/15 text-accent'
-                    : 'text-white/70 hover:bg-white/8 hover:text-white'
+                    : 'text-white/70 hover:bg-white/[0.06] hover:text-white'
                 }`}
               >
                 {label}
