@@ -63,7 +63,6 @@ export function WatchLayout({
             options: {
               accent: PLAYER_ACCENT,
               sub: 'English',
-              quality: '1080',
               autoNext: target.type === 'tv',
               showNextBtn: true,
               ...target.options,
