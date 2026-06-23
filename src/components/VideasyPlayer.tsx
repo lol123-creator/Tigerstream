@@ -5,8 +5,8 @@ import { useEffect, useRef } from 'react'
 /**
  * VideasyPlayer embeds a Videasy player inside an iframe.
  * Known embed pattern:
- *   Movie: https://player.videasy.net/embed/{mediaId}
- *   TV:    https://player.videasy.net/embed/{mediaId}?season={season}&episode={episode}
+ *   Movie: https://www.videasy.to/embed/{mediaId}
+ *   TV:    https://www.videasy.to/embed/{mediaId}?season={season}&episode={episode}
  */
 export function VideasyPlayer({
   type,
@@ -26,7 +26,7 @@ export function VideasyPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const buildUrl = () => {
-    const base = `https://player.videasy.net/embed/${mediaId}`
+    const base = `https://www.videasy.to/embed/${mediaId}`
     const params = new URLSearchParams()
     if (autoPlay) params.set('autoplay', '1')
     if (type === 'tv' && season != null && episode != null) {
@@ -40,7 +40,7 @@ export function VideasyPlayer({
   // Sync progress with the same localStorage key as Peachify
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== 'https://player.videasy.net') return
+      if (event.origin !== 'https://www.videasy.to') return
       if (event.data?.type === 'MEDIA_DATA') {
         try {
           localStorage.setItem('peachifyProgress', JSON.stringify(event.data.data))
