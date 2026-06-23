@@ -14,7 +14,7 @@ interface MediaCardProps {
   variant?: 'row' | 'grid';
 }
 
-export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
+export const MediaCard = React.memo(function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
   const href =
     item.type === 'movie' ? movieDetailHref(item.id) : tvDetailHref(item.id);
 
@@ -44,7 +44,7 @@ export function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
           src={tmdbImage(item.poster_path, 'w342')}
           alt={item.title}
           fill
-          sizes="200px"
+          sizes="(max-width: 640px) 35vw, (max-width: 1024px) 18vw, 200px"
           priority={priority}
           className="object-cover transition-all duration-300 group-hover:scale-105 group-hover:opacity-80"
         />

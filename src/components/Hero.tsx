@@ -58,6 +58,24 @@ export function Hero({ slides }: HeroProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [next, prev]);
 
+
+  /* Preload adjacent slides after initial paint */
+  useEffect(() => {
+    if (slides.length <= 2) return;
+    const nextIndex = (current + 1) % slides.length;
+    const prevIndex = (current - 1 + slides.length) % slides.length;
+    const preload = (idx: number) => {
+      if (idx === current) return;
+      const img = new window.Image();
+      img.src = tmdbImage(slides[idx].item.backdrop_path, 'original');
+    };
+    const t = setTimeout(() => {
+      preload(nextIndex);
+      preload(prevIndex);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [current, slides]);
+
   if (slides.length === 0) return null;
 
   const item = slides[current].item;
