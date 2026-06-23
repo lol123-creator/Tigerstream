@@ -26,7 +26,7 @@ export function VideasyPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const buildUrl = () => {
-    const base = `https://www.videasy.to/embed/${mediaId}`
+    const base = type === 'movie' ? `https://www.videasy.to/embed/movie/${mediaId}` : `https://www.videasy.to/embed/tv/${mediaId}`
     const params = new URLSearchParams()
     if (autoPlay) params.set('autoplay', '1')
     if (type === 'tv' && season != null && episode != null) {
