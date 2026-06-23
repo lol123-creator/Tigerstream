@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,6 +14,7 @@ interface MediaCardProps {
   priority?: boolean;
   variant?: 'row' | 'grid';
 }
+
 
 export const MediaCard = React.memo(function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
   const href =
