@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
+// Use cinemaos.live embed endpoint (confirmed working)
 const BASE = 'https://cinemaos.live';
 
 export function CinemaOSPlayer({
