@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
-const BASE = 'https://cinemaos.tech/player';
+// Use cinemaos.live embed endpoint (confirmed working)
+const BASE = 'https://cinemaos.live';
 
 export function CinemaOSPlayer({
   type,
@@ -26,18 +27,22 @@ export function CinemaOSPlayer({
   const buildUrl = () => {
     const path =
       type === 'movie'
-        ? `${BASE}/${mediaId}`
-        : `${BASE}/${mediaId}/${season}/${episode}`;
+        ? `${BASE}/movie/${mediaId}`
+        : `${BASE}/tv/${mediaId}`;
     const params = new URLSearchParams();
     params.set('theme', 'ffffff');
     if (!autoPlay) params.set('autoPlay', 'false');
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
+    if (type === 'tv' && season != null && episode != null) {
+      params.set('season', String(season));
+      params.set('episode', String(episode));
+    }
     return `${path}?${params.toString()}`;
   };
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== 'https://cinemaos.tech') return;
+      if (event.origin !== 'https://cinemaos.live') return;
       if (event.data?.type === 'MEDIA_DATA') {
         try {
           localStorage.setItem(

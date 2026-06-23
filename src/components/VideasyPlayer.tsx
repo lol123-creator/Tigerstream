@@ -4,9 +4,13 @@ import { useEffect, useRef } from 'react'
 
 /**
  * VideasyPlayer embeds a Videasy player inside an iframe.
- * Known embed pattern:
- *   Movie: https://player.videasy.net/embed/{mediaId}
- *   TV:    https://player.videasy.net/embed/{mediaId}?season={season}&episode={episode}
+ * Pattern (from Videasy docs):
+ *   Movie: https://player.videasy.net/movie/{mediaId}
+ *   TV:    https://player.videasy.net/tv/{mediaId}/{season}/{episode}
+ *
+ * Supported query params:
+ *   color, progress, nextEpisode, episodeSelector,
+ *   autoplayNextEpisode, overlay
  */
 export function VideasyPlayer({
   type,
@@ -26,13 +30,14 @@ export function VideasyPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const buildUrl = () => {
-    const base = `https://player.videasy.net/embed/${mediaId}`
+    let base
+    if (type === 'movie') {
+      base = `https://player.videasy.net/movie/${mediaId}`
+    } else {
+      base = `https://player.videasy.net/tv/${mediaId}/${season}/${episode}`
+    }
     const params = new URLSearchParams()
     if (autoPlay) params.set('autoplay', '1')
-    if (type === 'tv' && season != null && episode != null) {
-      params.set('season', String(season))
-      params.set('episode', String(episode))
-    }
     const qs = params.toString()
     return qs ? `${base}?${qs}` : base
   }
@@ -41,10 +46,14 @@ export function VideasyPlayer({
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       if (event.origin !== 'https://player.videasy.net') return
-      if (event.data?.type === 'MEDIA_DATA') {
+      // Videasy sends progress as JSON string in event.data
+      if (typeof event.data === 'string') {
         try {
-          localStorage.setItem('peachifyProgress', JSON.stringify(event.data.data))
-        } catch { }
+          const data = JSON.parse(event.data)
+          if (data && data.id && data.progress != null) {
+            localStorage.setItem('peachifyProgress', JSON.stringify(data))
+          }
+        } catch {}
       }
     }
     window.addEventListener('message', handler)
