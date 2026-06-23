@@ -90,4 +90,4 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
       </p>
     </Link>
   );
-}
+});
