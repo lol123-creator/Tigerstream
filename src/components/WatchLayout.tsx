@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { PeachifyPlayer } from '@/components/PeachifyPlayer';
 import { CinemaOSPlayer } from '@/components/CinemaOSPlayer';
+import { VideasyPlayer } from '@/components/VideasyPlayer';
 import { PLAYER_ACCENT } from '@/lib/brand';
 import { buildContinueWatching } from '@/lib/progress-client';
 import type { PeachifyEmbedTarget } from '@/peachify';
 
-type PlayerSource = 'peachify' | 'cinemaos';
+type PlayerSource = 'peachify' | 'cinemaos' | 'videasy';
 
 const STORAGE_KEY = 'tigerstream:player';
 
@@ -17,7 +18,7 @@ function loadPlayerPref(): PlayerSource {
   if (typeof window === 'undefined') return 'peachify';
   try {
     const val = localStorage.getItem(STORAGE_KEY);
-    if (val === 'cinemaos' || val === 'peachify') return val;
+    if (val === 'cinemaos' || val === 'peachify' || val === 'videasy') return val;
   } catch {}
   return 'peachify';
 }
@@ -103,8 +104,14 @@ export function WatchLayout({
           >
             CinemaOS
           </button>
+          <button
+            type="button"
+            onClick={() => switchPlayer('videasy')}
+            className={toggleClass(playerSource === 'videasy')}
+          >
+            Videasy
+          </button>
         </div>
-
         {playerSource === 'peachify' ? (
           <PeachifyPlayer
             target={{
@@ -126,7 +133,7 @@ export function WatchLayout({
             }}
             className="overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10"
           />
-        ) : (
+        ) : playerSource === 'cinemaos' ? (
           <CinemaOSPlayer
             type={target.type}
             mediaId={target.mediaId}
@@ -135,6 +142,15 @@ export function WatchLayout({
             title={title}
             autoPlay
             autoNext={target.type === 'tv'}
+          />
+        ) : (
+          <VideasyPlayer
+            type={target.type}
+            mediaId={target.mediaId}
+            season={target.type === 'tv' ? target.season : undefined}
+            episode={target.type === 'tv' ? target.episode : undefined}
+            title={title}
+            autoPlay
           />
         )}
 
