@@ -61,12 +61,12 @@ export function VideasyPlayer({
   }, [])
 
   return (
-    <div className="relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black">
+    <div className="relative w-full pt-[56.25%] rounded-xl bg-black">
       <iframe
         ref={iframeRef}
         src={buildUrl()}
         title={title || 'Video player'}
-        className="absolute top-0 left-0 w-full h-full border-0"
+        className="absolute top-0 left-0 w-full h-full border-0 rounded-xl"
         allowFullScreen
         
         
