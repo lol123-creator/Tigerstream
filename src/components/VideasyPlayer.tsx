@@ -68,7 +68,10 @@ export function VideasyPlayer({
       <button
         type="button"
         onClick={() => {
-          if (containerRef.current && containerRef.current.requestFullscreen) {
+          // Toggle fullscreen: if already in fullscreen, exit; otherwise request it.
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          } else if (containerRef.current && containerRef.current.requestFullscreen) {
             containerRef.current.requestFullscreen();
           }
         }}
