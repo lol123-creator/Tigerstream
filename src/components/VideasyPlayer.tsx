@@ -56,21 +56,32 @@ export function VideasyPlayer({
         } catch {}
       }
     }
-    window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
-  }, [])
-
   return (
-    <div className="relative w-full pt-[56.25%] rounded-xl bg-black">
+    <div className="relative w-full pt-[56.25%] bg-black">
+      {/* Fullscreen button – works on both desktop and mobile */}
+      <button
+        type="button"
+        onClick={() => {
+          if (iframeRef.current && iframeRef.current.requestFullscreen) {
+            iframeRef.current.requestFullscreen();
+          }
+        }}
+        className="absolute top-2 right-2 z-10 rounded bg-black/50 px-2 py-1 text-sm text-white hover:bg-black/70"
+        aria-label="Enter fullscreen"
+      >
+        ⛶
+      </button>
       <iframe
         ref={iframeRef}
         src={buildUrl()}
         title={title || 'Video player'}
-        className="absolute top-0 left-0 w-full h-full border-0 rounded-xl"
+        className="absolute inset-0 w-full h-full border-0"
         allowFullScreen
-        allow="autoplay; encrypted-media; fullscreen"
+        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
         referrerPolicy="origin"
       />
+    </div>
+  );
     </div>
   )
 }
