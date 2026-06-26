@@ -74,11 +74,8 @@ export function VideasyPlayer({
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [])
-
-  // Clean up timeout when component unmounts
-  // Monitor fullscreen changes to keep controls visible while fullscreen
   useEffect(() => {
+    // Monitor fullscreen changes to keep controls visible while fullscreen
     const handleFsChange = () => {
       const fullscreen = !!document.fullscreenElement
       setIsFullscreen(fullscreen)
@@ -86,8 +83,17 @@ export function VideasyPlayer({
       if (fullscreen) setShowControls(true)
     }
     document.addEventListener('fullscreenchange', handleFsChange)
+    // When the page becomes visible again (e.g., after an ad redirect), reset controls
+    const handleVisibility = () => {
+      if (!document.hidden) setShowControls(true)
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
+    }
+  }, [])
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
     }
   }, [])
