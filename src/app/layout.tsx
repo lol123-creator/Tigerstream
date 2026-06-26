@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
 };
 
-const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
+const inter = Inter({ subsets: ['latin'], display: 'optional', variable: '--font-inter' });
 
 export default function RootLayout({
   children,

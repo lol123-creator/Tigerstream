@@ -41,8 +41,8 @@ export default async function HomePage() {
       <div className="relative z-10 -mt-8 space-y-2 pb-16">
         <FavoritesRow />
         <ContinueWatchingRow />
-        <SportsRow title={sportsRow.title} streams={sportsRow.streams} />
-        <MediaRow title="Hot Right Now" items={row(trendingToday)} />
+        <div style={{contentVisibility:'auto', containIntrinsicSize:'auto 300px'}}><SportsRow title={sportsRow.title} streams={sportsRow.streams} /></div>
+        <div style={{contentVisibility:'auto', containIntrinsicSize:'auto 300px'}}><MediaRow title="Hot Right Now" items={row(trendingToday)} /></div>
         <MediaRow title="New Movies" items={row(newMovies)} />
         <MediaRow title="New TV Series" items={row(newTv)} />
 

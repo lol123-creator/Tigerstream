@@ -7,7 +7,7 @@ export function HomeMoreRowsSkeleton() {
           <div className="mb-4 h-5 w-40 rounded bg-white/5" />
           <div className="flex gap-3 overflow-hidden">
             {Array.from({ length: 6 }).map((__, j) => (
-              <div key={j} className="h-48 w-32 shrink-0 rounded-lg bg-white/5" />
+              <div key={j} className="aspect-[2/3] w-[clamp(140px,18vw,200px)] shrink-0 rounded-lg bg-white/5" />
             ))}
           </div>
         </section>

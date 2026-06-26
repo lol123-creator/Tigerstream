@@ -19,7 +19,7 @@ export function ContinueWatchingRow() {
       }
     };
     window.addEventListener('storage', onStorage);
-    const interval = setInterval(() => setItems(buildContinueWatching()), 5000);
+    const interval = setInterval(() => setItems(buildContinueWatching()), 30000);
     return () => {
       window.removeEventListener('storage', onStorage);
       clearInterval(interval);
