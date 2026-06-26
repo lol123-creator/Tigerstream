@@ -5,6 +5,11 @@ const PPV_API = 'https://api.ppv.to/api/streams';
 /** ppv.to recommends polling about every minute */
 const PPV_REVALIDATE = 60;
 
+const EMPTY_RESPONSE: PpvStreamsResponse = {
+  success: true,
+  streams: [],
+};
+
 let cachedPayload: PpvStreamsResponse | null = null;
 let cachedAt = 0;
 
@@ -14,22 +19,29 @@ async function fetchStreamsPayload(): Promise<PpvStreamsResponse> {
     return cachedPayload;
   }
 
-  const res = await fetch(PPV_API, {
-    next: { revalidate: PPV_REVALIDATE },
-  });
+  try {
+    const res = await fetch(PPV_API, {
+      next: { revalidate: PPV_REVALIDATE },
+    });
 
-  if (!res.ok) {
-    throw new Error(`PPV API ${res.status}`);
+    if (!res.ok) {
+      console.warn('PPV API returned ' + res.status + ' - using empty response');
+      return EMPTY_RESPONSE;
+    }
+
+    const data = (await res.json()) as PpvStreamsResponse;
+    if (!data.success) {
+      console.warn('PPV API returned unsuccessful response - using empty');
+      return EMPTY_RESPONSE;
+    }
+
+    cachedPayload = data;
+    cachedAt = now;
+    return data;
+  } catch (err) {
+    console.warn('PPV API fetch failed - using empty response:', err);
+    return EMPTY_RESPONSE;
   }
-
-  const data = (await res.json()) as PpvStreamsResponse;
-  if (!data.success) {
-    throw new Error('PPV API returned unsuccessful response');
-  }
-
-  cachedPayload = data;
-  cachedAt = now;
-  return data;
 }
 
 function flattenStreams(categories: PpvCategory[]): PpvStream[] {
