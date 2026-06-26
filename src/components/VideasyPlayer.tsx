@@ -85,8 +85,8 @@ export function VideasyPlayer({
         allowFullScreen
         webkitAllowFullScreen
         mozAllowFullScreen
-        allow=\"autoplay; fullscreen; encrypted-media; picture-in-picture\"
-        referrerPolicy=\"origin\"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        referrerPolicy="origin"
       />
     </div>
   )
