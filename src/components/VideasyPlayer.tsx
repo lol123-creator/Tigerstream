@@ -59,6 +59,7 @@ export function VideasyPlayer({
   }
 
   // Sync progress with the same localStorage key as Peachify
+  // Sync progress with the same localStorage key as Peachify
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       if (event.origin !== 'https://player.videasy.net') return
@@ -74,16 +75,16 @@ export function VideasyPlayer({
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
+  }, [])
+
+  // Monitor fullscreen changes and page visibility to keep controls visible when needed
   useEffect(() => {
-    // Monitor fullscreen changes to keep controls visible while fullscreen
     const handleFsChange = () => {
       const fullscreen = !!document.fullscreenElement
       setIsFullscreen(fullscreen)
-      // When entering fullscreen, ensure controls are shown
       if (fullscreen) setShowControls(true)
     }
     document.addEventListener('fullscreenchange', handleFsChange)
-    // When the page becomes visible again (e.g., after an ad redirect), reset controls
     const handleVisibility = () => {
       if (!document.hidden) setShowControls(true)
     }
@@ -91,9 +92,6 @@ export function VideasyPlayer({
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange)
       document.removeEventListener('visibilitychange', handleVisibility)
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
-    }
-  }, [])
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
     }
   }, [])
