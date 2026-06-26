@@ -32,13 +32,17 @@ export function VideasyPlayer({
   const containerRef = useRef<HTMLDivElement>(null)
   // UI visibility handling – hide the custom fullscreen button after inactivity
   const [showControls, setShowControls] = useState(true)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Reset hide timer on any user interaction (mouse move or touch)
   const resetHideTimer = () => {
     setShowControls(true)
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
-    hideTimeoutRef.current = setTimeout(() => setShowControls(false), 3000)
+    hideTimeoutRef.current = setTimeout(() => {
+      // Do not hide controls while in fullscreen; user might need the exit button
+      if (!isFullscreen) setShowControls(false)
+    }, 3000)
   }
 
   const buildUrl = () => {
@@ -73,21 +77,37 @@ export function VideasyPlayer({
   }, [])
 
   // Clean up timeout when component unmounts
+  // Monitor fullscreen changes to keep controls visible while fullscreen
   useEffect(() => {
+    const handleFsChange = () => {
+      const fullscreen = !!document.fullscreenElement
+      setIsFullscreen(fullscreen)
+      // When entering fullscreen, ensure controls are shown
+      if (fullscreen) setShowControls(true)
+    }
+    document.addEventListener('fullscreenchange', handleFsChange)
     return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange)
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
     }
   }, [])
 
+  // Choose container styling based on fullscreen state. When fullscreen we drop the
+  // 16:9 padding trick and make the container fill the screen so the iframe stays
+  // centered and covers the whole viewport.
+  const containerClass = isFullscreen
+    ? 'fixed inset-0 w-screen h-screen bg-black z-20 flex items-center justify-center'
+    : 'relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black';
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black"
+      className={containerClass}
       onMouseMove={resetHideTimer}
       onTouchStart={resetHideTimer}
     >
       {/* Custom fullscreen button – only visible when showControls is true */}
-      {showControls && (
+      {(showControls || isFullscreen) && (
         <button
           type="button"
           onClick={() => {
