@@ -92,10 +92,17 @@ export function VideasyPlayer({
     }
   }, [])
 
+  // Choose container styling based on fullscreen state. When fullscreen we drop the
+  // 16:9 padding trick and make the container fill the screen so the iframe stays
+  // centered and covers the whole viewport.
+  const containerClass = isFullscreen
+    ? 'fixed inset-0 w-screen h-screen bg-black z-20 flex items-center justify-center'
+    : 'relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black';
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black"
+      className={containerClass}
       onMouseMove={resetHideTimer}
       onTouchStart={resetHideTimer}
     >
