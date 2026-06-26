@@ -68,6 +68,8 @@ export function VideasyPlayer({
         title={title || 'Video player'}
         className="absolute top-0 left-0 w-full h-full border-0"
         allowFullScreen
+        webkitAllowFullScreen
+        mozAllowFullScreen
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         referrerPolicy="origin"
       />

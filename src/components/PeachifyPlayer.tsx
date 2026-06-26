@@ -149,7 +149,7 @@ export const PeachifyPlayer = forwardRef<
   }, []);
 
   return (
-    <div className={className} data-peachify-player>
+    <div className={`${className} animate-fadeIn`} data-peachify-player>
       <iframe
         ref={iframeRef}
         id={iframeId}
