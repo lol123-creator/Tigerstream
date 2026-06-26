@@ -45,17 +45,21 @@ export function VideasyPlayer({
   // Sync progress with the same localStorage key as Peachify
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== 'https://player.videasy.net') return
+      if (event.origin !== 'https://player.videasy.net') return;
       // Videasy sends progress as JSON string in event.data
       if (typeof event.data === 'string') {
         try {
-          const data = JSON.parse(event.data)
+          const data = JSON.parse(event.data);
           if (data && data.id && data.progress != null) {
-            localStorage.setItem('peachifyProgress', JSON.stringify(data))
+            localStorage.setItem('peachifyProgress', JSON.stringify(data));
           }
         } catch {}
       }
-    }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
   return (
     <div className="relative w-full pt-[56.25%] bg-black">
       {/* Fullscreen button – works on both desktop and mobile */}
@@ -82,6 +86,4 @@ export function VideasyPlayer({
       />
     </div>
   );
-    </div>
-  )
 }
