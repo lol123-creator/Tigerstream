@@ -59,7 +59,6 @@ export function VideasyPlayer({
   }
 
   // Sync progress with the same localStorage key as Peachify
-  // Sync progress with the same localStorage key as Peachify
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       if (event.origin !== 'https://player.videasy.net') return
@@ -84,16 +83,30 @@ export function VideasyPlayer({
       setIsFullscreen(fullscreen)
       if (fullscreen) setShowControls(true)
     }
-    document.addEventListener('fullscreenchange', handleFsChange)
     const handleVisibility = () => {
       if (!document.hidden) setShowControls(true)
     }
+    document.addEventListener('fullscreenchange', handleFsChange)
     document.addEventListener('visibilitychange', handleVisibility)
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange)
       document.removeEventListener('visibilitychange', handleVisibility)
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
     }
+  }, [])
+
+  // Handle returning to the page after an ad redirect (e.g., via browser back)
+  // The `pageshow` event fires when a page is loaded from the bfcache (back‑forward cache).
+  // When `event.persisted` is true we reset UI state so the fullscreen button reappears.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setShowControls(true)
+        setIsFullscreen(false)
+      }
+    }
+    window.addEventListener('pageshow', handlePageShow)
+    return () => window.removeEventListener('pageshow', handlePageShow)
   }, [])
 
   // Choose container styling based on fullscreen state. When fullscreen we drop the
@@ -115,11 +128,10 @@ export function VideasyPlayer({
         <button
           type="button"
           onClick={() => {
-            // Toggle fullscreen: if already in fullscreen, exit; otherwise request it.
             if (document.fullscreenElement) {
-              document.exitFullscreen();
+              document.exitFullscreen()
             } else if (containerRef.current && containerRef.current.requestFullscreen) {
-              containerRef.current.requestFullscreen();
+              containerRef.current.requestFullscreen()
             }
           }}
           className="absolute top-2 right-2 z-10 rounded bg-black/50 px-2 py-1 text-sm text-white hover:bg-black/70"
