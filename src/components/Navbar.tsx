@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { SITE_NAME } from '@/lib/brand';
-import dynamic from 'next/dynamic';
-const SearchDropdown = dynamic(() => import('@/components/SearchDropdown'), { ssr: false });
+import { SearchDropdown } from '@/components/SearchDropdown';
 
 const NAV_LINKS = [
   { label: 'Movies', href: '/movies' },
