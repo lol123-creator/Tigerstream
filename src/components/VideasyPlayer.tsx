@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { useEffect, useRef } from 'react'
 
@@ -94,3 +94,4 @@ export function VideasyPlayer({
     </div>
   )
 }
+// End of file
