@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * VideasyPlayer embeds a Videasy player inside an iframe.
@@ -30,6 +30,16 @@ export function VideasyPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null)
   // container ref for fullscreen request so our custom button stays visible
   const containerRef = useRef<HTMLDivElement>(null)
+  // UI visibility handling – hide the custom fullscreen button after inactivity
+  const [showControls, setShowControls] = useState(true)
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Reset hide timer on any user interaction (mouse move or touch)
+  const resetHideTimer = () => {
+    setShowControls(true)
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
+    hideTimeoutRef.current = setTimeout(() => setShowControls(false), 3000)
+  }
 
   const buildUrl = () => {
     let base
@@ -62,24 +72,38 @@ export function VideasyPlayer({
     return () => window.removeEventListener('message', handler)
   }, [])
 
+  // Clean up timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
+    }
+  }, [])
+
   return (
-    <div ref={containerRef} className="relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black">
-      {/* Custom fullscreen button – requests fullscreen on the container so the button remains visible */}
-      <button
-        type="button"
-        onClick={() => {
-          // Toggle fullscreen: if already in fullscreen, exit; otherwise request it.
-          if (document.fullscreenElement) {
-            document.exitFullscreen();
-          } else if (containerRef.current && containerRef.current.requestFullscreen) {
-            containerRef.current.requestFullscreen();
-          }
-        }}
-        className="absolute top-2 right-2 z-10 rounded bg-black/50 px-2 py-1 text-sm text-white hover:bg-black/70"
-        aria-label="Enter fullscreen"
-      >
-        ⛶
-      </button>
+    <div
+      ref={containerRef}
+      className="relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black"
+      onMouseMove={resetHideTimer}
+      onTouchStart={resetHideTimer}
+    >
+      {/* Custom fullscreen button – only visible when showControls is true */}
+      {showControls && (
+        <button
+          type="button"
+          onClick={() => {
+            // Toggle fullscreen: if already in fullscreen, exit; otherwise request it.
+            if (document.fullscreenElement) {
+              document.exitFullscreen();
+            } else if (containerRef.current && containerRef.current.requestFullscreen) {
+              containerRef.current.requestFullscreen();
+            }
+          }}
+          className="absolute top-2 right-2 z-10 rounded bg-black/50 px-2 py-1 text-sm text-white hover:bg-black/70"
+          aria-label="Enter fullscreen"
+        >
+          ⛶
+        </button>
+      )}
       <iframe
         ref={iframeRef}
         src={buildUrl()}
