@@ -2,7 +2,10 @@
 
 import { useEffect, useRef } from 'react';
 
-const BASE = 'https://cinemaos.tech/player';
+// Updated to the correct host for the CinemaOS player. The previous URL (cinemaos.tech)
+// no longer serves the embed, causing the iframe to error out and the postMessage
+// listener to never receive events. The live player is hosted at cinemaos.live.
+const BASE = 'https://cinemaos.live/player';
 
 export function CinemaOSPlayer({
   type,
@@ -37,7 +40,8 @@ export function CinemaOSPlayer({
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== 'https://cinemaos.tech') return;
+      // Listen for messages from the correct origin (cinemaos.live).
+      if (event.origin !== 'https://cinemaos.live') return;
       if (event.data?.type === 'MEDIA_DATA') {
         try {
           localStorage.setItem(
