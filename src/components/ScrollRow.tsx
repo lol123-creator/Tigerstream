@@ -95,12 +95,8 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     if (!didDrag.current) {
       if (Math.abs(e.pageX - dragStartPageX.current) > DRAG_THRESHOLD) {
         didDrag.current = true;
-        const overlay = document.createElement('div');
-        overlay.setAttribute('data-drag-overlay', '');
-        overlay.style.cssText =
-          'position:absolute;inset:0;z-index:20;cursor:grabbing;pointer-events:auto;';
-        el.style.position = 'relative';
-        el.appendChild(overlay);
+        el.style.outline = '2px solid rgba(255,255,255,0.05)';
+        el.style.outlineOffset = '-2px';
       }
     }
     const x = e.pageX - el.offsetLeft;
@@ -116,8 +112,8 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
       el.style.scrollBehavior = '';
       el.style.cursor = '';
       el.style.userSelect = '';
-      const overlay = el.querySelector('[data-drag-overlay]');
-      if (overlay) overlay.remove();
+      el.style.outline = '';
+      el.style.outlineOffset = '';
     }
     if (didDrag.current) {
       const el = scrollerRef.current;
