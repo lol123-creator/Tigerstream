@@ -28,6 +28,8 @@ export function VideasyPlayer({
   autoPlay?: boolean
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  // container ref for fullscreen request so our custom button stays visible
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const buildUrl = () => {
     let base
@@ -56,14 +58,18 @@ export function VideasyPlayer({
         } catch {}
       }
     }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [])
+
   return (
-    <div className="relative w-full pt-[56.25%] bg-black">
-      {/* Fullscreen button – works on both desktop and mobile */}
+    <div ref={containerRef} className="relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black">
+      {/* Custom fullscreen button – requests fullscreen on the container so the button remains visible */}
       <button
         type="button"
         onClick={() => {
-          if (iframeRef.current && iframeRef.current.requestFullscreen) {
-            iframeRef.current.requestFullscreen();
+          if (containerRef.current && containerRef.current.requestFullscreen) {
+            containerRef.current.requestFullscreen();
           }
         }}
         className="absolute top-2 right-2 z-10 rounded bg-black/50 px-2 py-1 text-sm text-white hover:bg-black/70"
@@ -75,11 +81,13 @@ export function VideasyPlayer({
         ref={iframeRef}
         src={buildUrl()}
         title={title || 'Video player'}
-        className="absolute inset-0 w-full h-full border-0"
+        className="absolute top-0 left-0 w-full h-full border-0"
         allowFullScreen
-        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-        referrerPolicy="origin"
+        webkitAllowFullScreen
+        mozAllowFullScreen
+        allow=\"autoplay; fullscreen; encrypted-media; picture-in-picture\"
+        referrerPolicy=\"origin\"
       />
     </div>
-  );
+  )
 }
