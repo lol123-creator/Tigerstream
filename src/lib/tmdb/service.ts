@@ -1,4 +1,4 @@
-import {
+﻿import {
   movies as fallbackMovies,
   tvShows as fallbackTvShows,
   getMovie as fallbackGetMovie,
@@ -30,7 +30,7 @@ import type {
   TmdbSearchResult,
 } from './types';
 
-/** Pages × 20 results — 15 pages = 300 titles per browse view */
+/** Pages Ã— 20 results â€” 15 pages = 300 titles per browse view */
 export const BROWSE_PAGE_COUNT = 15;
 
 /** Number of items per paginated browse page (1 TMDB page = 20 items) */
@@ -107,7 +107,7 @@ async function fetchNowPlayingPage(page: number): Promise<Movie[]> {
   return data.results.map((m) => mapMovieSummary(m));
 }
 
-/** Shorter cache for “what’s hot now” lists and the hero. */
+/** Shorter cache for â€œwhatâ€™s hot nowâ€ lists and the hero. */
 const HOT_REVALIDATE = 1800;
 
 export async function getTrendingToday(): Promise<MediaItem[]> {
@@ -428,8 +428,8 @@ export async function getWatchTvContext(
   }
 
   try {
-    const [show, seasonData] = await Promise.all([
-      tmdbFetch<{ name: string }>(`/tv/${showId}`),
+    const [showDetail, seasonData] = await Promise.all([
+      tmdbFetch<TmdbTvDetail>(`/tv/${showId}`),
       fetchSeason(showId, season),
     ]);
     if (!seasonData) return null;
@@ -448,7 +448,7 @@ export async function getWatchTvContext(
         title: nextInSeason.name,
       };
     } else {
-      const showDetail = await tmdbFetch<TmdbTvDetail>(`/tv/${showId}`);
+      
       const seasons = showDetail.seasons
         .filter((s) => s.season_number > 0)
         .sort((a, b) => a.season_number - b.season_number);
@@ -468,7 +468,7 @@ export async function getWatchTvContext(
     }
 
     return {
-      showTitle: show.name,
+      showTitle: showDetail.name,
       episodeTitle: current.name,
       next,
     };
@@ -477,7 +477,7 @@ export async function getWatchTvContext(
   }
 }
 
-// ─── Anime helpers ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Anime helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // TMDB uses keyword id 210024 ("anime") combined with Animation genre (16).
 // For TV we also include the Japanese origin-country filter which gives the
 // cleanest results on the free API tier.
@@ -549,7 +549,7 @@ export async function getAnimeTvPage(page = 1): Promise<PagedResult<TvShow>> {
     currentPage: page,
   };
 }
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getMovieTitle(id: number): Promise<string | null> {
   const movie = await getMovieById(id);
@@ -623,3 +623,10 @@ export async function getTvByGenrePage(
     currentPage: page,
   };
 }
+
+
+
+
+
+
+
