@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { PeachifyPlayer } from '@/components/PeachifyPlayer';
-import { CinemaOSPlayer } from '@/components/CinemaOSPlayer';
-import { VideasyPlayer } from '@/components/VideasyPlayer';
+import dynamic from 'next/dynamic';
+
+const PeachifyPlayer = dynamic(() => import('@/components/PeachifyPlayer'), { ssr: false });
+const CinemaOSPlayer = dynamic(() => import('@/components/CinemaOSPlayer'), { ssr: false });
+const VideasyPlayer = dynamic(() => import('@/components/VideasyPlayer'), { ssr: false });
 import { PLAYER_ACCENT } from '@/lib/brand';
 import { buildContinueWatching } from '@/lib/progress-client';
 import type { PeachifyEmbedTarget } from '@/peachify';
