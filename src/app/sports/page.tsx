@@ -45,7 +45,7 @@ export default async function SportsPage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
       <h1 className="font-display mb-2 text-3xl font-bold">Sports</h1>
       <p className="mb-2 text-sm text-white/45">
-        Live and upcoming events from ppv.to — {streams.length} streams
+        Live and upcoming events from ppv.is — {streams.length} streams
         {liveCount > 0 ? ` · ${liveCount} live now` : ''}
       </p>
       <p className="mb-6 text-xs text-white/30">
