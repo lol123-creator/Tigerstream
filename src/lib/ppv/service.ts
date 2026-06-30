@@ -1,6 +1,6 @@
 import type { PpvCategory, PpvStream, PpvStreamsResponse } from '@/types/sports';
 
-const PPV_API = 'https://api.ppv.to/api/streams';
+const PPV_API = 'https://api.ppv.is/api/streams';
 
 /** ppv.to recommends polling about every minute */
 const PPV_REVALIDATE = 60;
