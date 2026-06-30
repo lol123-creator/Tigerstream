@@ -20,7 +20,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'api.ppv.to',
+        hostname: 'api.ppv.is',
         pathname: '/**',
       },
     ],
