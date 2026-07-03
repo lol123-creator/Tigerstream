@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useCallback, useState, lazy, Suspense } from 'react';
 import { SITE_NAME } from '@/lib/brand';
-import { SearchDropdown } from '@/components/SearchDropdown';
+
+const SearchDropdown = lazy(() =>
+  import('@/components/SearchDropdown').then((m) => ({ default: m.SearchDropdown }))
+);
 
 const NAV_LINKS = [
   { label: 'Movies', href: '/movies' },
@@ -22,11 +25,18 @@ export function Navbar() {
   const isWatch =
     pathname.startsWith('/watch') || pathname.startsWith('/sports/watch');
 
+  const activeMap = useMemo(() => {
+    const m = {};
+    for (const { href } of NAV_LINKS) {
+      m[href] = href === '/' ? pathname === '/' : pathname.startsWith(href);
+    }
+    return m;
+  }, [pathname]);
 
-  function isActive(href: string) {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
-  }
+  const isActive = useCallback(
+    (href) => activeMap[href] ?? false,
+    [activeMap]
+  );
 
   return (
     <header
@@ -36,9 +46,7 @@ export function Navbar() {
           : 'bg-gradient-to-b from-black/80 to-transparent'
       }`}
     >
-      {/* ── Main nav row ── */}
       <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
-        {/* Logo */}
         <Link
           href="/"
           aria-label={`${SITE_NAME} home`}
@@ -47,7 +55,6 @@ export function Navbar() {
           Tiger<span className="text-accent">Stream</span>
         </Link>
 
-        {/* Desktop category links */}
         <div className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map(({ label, href }) => (
             <Link
@@ -64,10 +71,14 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* Search bar */}
-        <SearchDropdown />
+        <Suspense
+          fallback={
+            <div className="ml-auto h-9 w-full max-w-xs animate-pulse rounded-full bg-white/5 sm:max-w-sm" />
+          }
+        >
+          <SearchDropdown />
+        </Suspense>
 
-        {/* Mobile hamburger */}
         <button
           type="button"
           aria-label="Toggle menu"
@@ -75,12 +86,10 @@ export function Navbar() {
           className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-white/70 transition hover:bg-white/10 hover:text-white md:hidden"
         >
           {menuOpen ? (
-            /* X icon */
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
-            /* Hamburger icon */
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -88,7 +97,6 @@ export function Navbar() {
         </button>
       </nav>
 
-      {/* ── Mobile dropdown menu ── */}
       {menuOpen && (
         <div className="border-t border-white/10 bg-surface/95 backdrop-blur-md md:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">

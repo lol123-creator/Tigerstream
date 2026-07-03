@@ -68,9 +68,25 @@ export function SearchDropdown() {
     };
   }, [q]);
 
-  // Close on outside click
+  // Close via blur on the widget container + combined keyboard
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setOpen(false); return; }
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, []);
+
+  // Lightweight outside-click – only active when panel is open, fires once
+  useEffect(() => {
+    if (!open) return;
+    function handlePointer(e: PointerEvent) {
       if (
         panelRef.current && !panelRef.current.contains(e.target as Node) &&
         inputRef.current && !inputRef.current.contains(e.target as Node)
@@ -78,9 +94,9 @@ export function SearchDropdown() {
         setOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+    document.addEventListener('pointerdown', handlePointer, { once: true });
+    return () => document.removeEventListener('pointerdown', handlePointer);
+  }, [open]);
 
   // Close on Escape
   useEffect(() => {

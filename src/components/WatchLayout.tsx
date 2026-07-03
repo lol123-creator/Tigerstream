@@ -1,17 +1,9 @@
 'use client';
 
-
 import Link from 'next/link';
-
-
 import { useRouter } from 'next/navigation';
-
 import { useCallback, useEffect, useState } from 'react';
-
-import { PeachifyPlayer } from '@/components/PeachifyPlayer';
-import { CinemaOSPlayer } from '@/components/CinemaOSPlayer';
-import { VideasyPlayer } from '@/components/VideasyPlayer';
-
+import dynamic from 'next/dynamic';
 import { PLAYER_ACCENT } from '@/lib/brand';
 import { buildContinueWatching } from '@/lib/progress-client';
 import type { PeachifyEmbedTarget } from '@/peachify';
@@ -35,12 +27,33 @@ function savePlayerPref(source: PlayerSource) {
   } catch {}
 }
 
+const PeachifyPlayer = dynamic(
+  () => import('@/components/PeachifyPlayer').then((m) => ({ default: m.PeachifyPlayer })),
+  { ssr: false }
+);
+
+const CinemaOSPlayer = dynamic(
+  () => import('@/components/CinemaOSPlayer').then((m) => ({ default: m.CinemaOSPlayer })),
+  { ssr: false }
+);
+
+const VideasyPlayer = dynamic(
+  () => import('@/components/VideasyPlayer').then((m) => ({ default: m.VideasyPlayer })),
+  { ssr: false }
+);
+
 interface WatchLayoutProps {
   title: string;
   backHref: string;
   target: PeachifyEmbedTarget;
   nextHref?: string;
   nextLabel?: string;
+}
+
+function PlayerSkeleton() {
+  return (
+    <div className="aspect-video w-full animate-pulse rounded-xl bg-white/5 ring-1 ring-white/10" />
+  );
 }
 
 export function WatchLayout({
@@ -71,14 +84,21 @@ export function WatchLayout({
   const continueCount = progressSynced ? buildContinueWatching().length : 0;
 
   const toggleClass = (active: boolean) =>
-    `rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer select-none ${active ? 'bg-accent/20 text-accent ring-1 ring-accent/40' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80'}`;
+    `rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer select-none ${
+      active
+        ? 'bg-accent/20 text-accent ring-1 ring-accent/40'
+        : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80'
+    }`;
 
   return (
     <div className="min-h-screen bg-black pt-16">
       <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Link href={backHref} className="text-sm text-white/50 transition hover:text-white">
+            <Link
+              href={backHref}
+              className="text-sm text-white/50 transition hover:text-white"
+            >
               ← Back
             </Link>
             <h1 className="mt-1 text-xl font-semibold text-white md:text-2xl">
@@ -87,7 +107,10 @@ export function WatchLayout({
           </div>
           <div className="flex items-center gap-2">
             {nextHref && (
-              <Link href={nextHref} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10">
+              <Link
+                href={nextHref}
+                className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10"
+              >
                 {nextLabel} →
               </Link>
             )}
@@ -118,6 +141,7 @@ export function WatchLayout({
             Videasy
           </button>
         </div>
+
         {playerSource === 'peachify' ? (
           <PeachifyPlayer
             target={{
