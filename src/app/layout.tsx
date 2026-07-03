@@ -9,8 +9,7 @@ import { getSiteUrl } from '@/lib/site';
 import './globals.css';
 
 const ScrollToTop = dynamic(
-  () => import('@/components/ScrollToTop').then((m) => ({ default: m.ScrollToTop })),
-  { ssr: false }
+  () => import('@/components/ScrollToTop').then((m) => ({ default: m.ScrollToTop }))
 );
 
 export const metadata: Metadata = {
