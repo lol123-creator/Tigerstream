@@ -67,7 +67,7 @@ export function Hero({ slides }: HeroProps) {
     const preload = (idx: number) => {
       if (idx === current) return;
       const img = new window.Image();
-      img.src = tmdbImage(slides[idx].item.backdrop_path, 'original');
+      img.src = tmdbImage(slides[idx].item.backdrop_path, 'w1280');
     };
     const t = setTimeout(() => {
       preload(nextIndex);
@@ -99,7 +99,7 @@ export function Hero({ slides }: HeroProps) {
           style={{ opacity: i === current ? 1 : 0 }}
         >
           <Image
-            src={tmdbImage(s.item.backdrop_path, 'original')}
+            src={tmdbImage(s.item.backdrop_path, 'w1280')}
             alt=""
             fill
             priority={i === 0}
