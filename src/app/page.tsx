@@ -15,7 +15,7 @@ import {
 } from '@/lib/tmdb/service';
 
 /** Refresh hero + "hot today" rows every 30 minutes */
-export const revalidate = 1800;
+export const revalidate = 900;
 
 function row<T>(items: T[]): T[] {
   return items.slice(0, HOME_ROW_SIZE);
