@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { mergePeachifyProgress, type PeachifyProgressStore } from '@/peachify';
 
 // CinemaOS.live embed endpoint - https://cinemaos.live/embed
-const BASE = 'https://cinemaos.live/embed';
+// Path follows the same convention as every other embed in this family
+// (Peachify, VidLink): /embed/movie/{id} and /embed/tv/{id}/{season}/{episode}.
+const ORIGIN = 'https://cinemaos.live';
+const BASE = `${ORIGIN}/embed`;
 
 interface CinemaOSPlayerProps {
   type: 'movie' | 'tv';
@@ -13,6 +17,8 @@ interface CinemaOSPlayerProps {
   title?: string;
   autoPlay?: boolean;
   autoNext?: boolean;
+  /** Called after a MEDIA_DATA payload has been merged into storage. */
+  onMediaData?: (store: PeachifyProgressStore) => void;
 }
 
 export function CinemaOSPlayer({
@@ -23,66 +29,47 @@ export function CinemaOSPlayer({
   title,
   autoPlay = true,
   autoNext = true,
+  onMediaData,
 }: CinemaOSPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const buildUrl = () => {
+    const path =
+      type === 'movie'
+        ? `${BASE}/movie/${mediaId}`
+        : `${BASE}/tv/${mediaId}/${season || 1}/${episode || 1}`;
+
     const params = new URLSearchParams();
+    if (autoPlay === false) params.set('autoPlay', 'false');
+    if (autoNext && type === 'tv') params.set('autoNext', 'true');
 
-    // Set media ID as primary identifier
-    const mediaPath = type === 'tv' 
-      ? `${mediaId}/s${season || 1}/e${episode || 1}`
-      : `${mediaId}`;
-
-    // Base URL with media path
-    let url = `${BASE}/${mediaPath}`;
-
-    // Add optional parameters
-    const queryParams: string[] = [];
-    
-    if (autoPlay === false) queryParams.push('autoPlay=false');
-    if (autoNext && type === 'tv') queryParams.push('autoNext=true');
-
-    if (queryParams.length > 0) {
-      url += `?${queryParams.join('&')}`;
-    }
-
-    return url;
+    const qs = params.toString();
+    return qs ? `${path}?${qs}` : path;
   };
 
   useEffect(() => {
-    if (!iframeRef.current) return;
-
     const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== ORIGIN) return;
+      if (event.data?.type !== 'MEDIA_DATA') return;
+
       try {
-        // Verify origin is from cinemaos.live
-        if (!event.origin.includes('cinemaos.live')) return;
-
-        // Handle player events
-        if (event.data?.event) {
-          // Log events for debugging (optional)
-          // console.log('CinemaOS event:', event.data.event);
-        }
-
-        // Handle progress/watchlist data
-        if (event.data?.type === 'progress') {
-          try {
-            localStorage.setItem(
-              'cinemaosProgress',
-              JSON.stringify(event.data.data),
-            );
-          } catch {
-            // Silently ignore storage errors
-          }
-        }
+        // CinemaOS uses the same MEDIA_DATA protocol as Peachify/VidLink:
+        // the payload is the *entire* progress store keyed by media id,
+        // not a single entry. Merge it in rather than overwrite — a raw
+        // localStorage.setItem here would wipe out every other title's
+        // continue-watching progress from other players.
+        const merged = mergePeachifyProgress(
+          event.data.data as PeachifyProgressStore,
+        );
+        onMediaData?.(merged);
       } catch {
-        // Silently ignore cross-origin errors
+        // Corrupt payload — ignore rather than risk clobbering storage.
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [onMediaData]);
 
   return (
     <div className="relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black">
