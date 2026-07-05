@@ -39,14 +39,19 @@ export function CinemaOSPlayer({
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== 'https://cinemaos.tech' && event.origin !== 'https://cinemaos.live') return;
-      if (event.data?.type === 'MEDIA_DATA') {
-        try {
-          localStorage.setItem(
-            'peachifyProgress',
-            JSON.stringify(event.data.data),
-          );
-        } catch {}
+      try {
+        // Safely check origin without triggering cross-origin errors
+        if (!event.origin.includes('cinemaos')) return;
+        if (event.data?.type === 'MEDIA_DATA') {
+          try {
+            localStorage.setItem(
+              'peachifyProgress',
+              JSON.stringify(event.data.data),
+            );
+          } catch {}
+        }
+      } catch {
+        // Silently ignore cross-origin access errors
       }
     };
     window.addEventListener('message', handler);
@@ -63,6 +68,7 @@ export function CinemaOSPlayer({
         allowFullScreen
         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
         referrerPolicy="origin"
+        sandbox="allow-same-origin allow-scripts allow-presentation allow-forms"
       />
     </div>
   );
