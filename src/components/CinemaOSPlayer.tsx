@@ -39,7 +39,7 @@ export function CinemaOSPlayer({
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== 'https://cinemaos.tech') return;
+      if (event.origin !== 'https://cinemaos.tech' && event.origin !== 'https://cinemaos.live') return;
       if (event.data?.type === 'MEDIA_DATA') {
         try {
           localStorage.setItem(

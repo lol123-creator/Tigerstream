@@ -77,6 +77,10 @@ export function mapTvSummary(t: TmdbTvSummary, genres: string[] = []): TvShow {
 
 /** Hero banner: full metadata without loading every episode. */
 export function mapTvHeroDetail(t: TmdbTvDetail): TvShow {
+  const trailer = (t.videos?.results || [])
+    .find((v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
+    ?.key;
+
   return {
     ...mapTvSummary(
       {
@@ -92,6 +96,7 @@ export function mapTvHeroDetail(t: TmdbTvDetail): TvShow {
     ),
     tagline: t.tagline || undefined,
     seasons: [],
+    trailer_key: trailer || undefined,
   };
 }
 
