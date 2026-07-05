@@ -38,7 +38,7 @@ export async function checkAndUpdateQuality(
     if (!data.success) return null;
 
     // Extract quality from available streams
-    let quality = 'Coming Soon';
+    let quality = 'Availabe';
     let found = false;
 
     for (const category of data.streams || []) {
