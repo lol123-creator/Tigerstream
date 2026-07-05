@@ -33,12 +33,15 @@ export interface TmdbMovieSummary {
   original_language?: string;
 }
 
+export interface TmdbVideo { id: string; key: string; name: string; site: string; type: string; official?: boolean; }
+
 export interface TmdbMovieDetail extends TmdbMovieSummary {
   runtime: number | null;
   tagline?: string | null;
   genres: TmdbGenre[];
   status?: string;
   credits?: TmdbCredits;
+  videos?: { results: TmdbVideo[] };
 }
 
 export interface TmdbTvSummary {
@@ -62,6 +65,7 @@ export interface TmdbTvDetail extends TmdbTvSummary {
   }[];
   status?: string;
   credits?: TmdbCredits;
+  videos?: { results: TmdbVideo[] };
 }
 
 export interface TmdbSeasonDetail {

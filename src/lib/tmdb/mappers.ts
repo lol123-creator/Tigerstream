@@ -27,18 +27,17 @@ function mapCast(cast: TmdbCast[] | undefined): Cast[] {
 }
 
 export function mapMovieSummary(m: TmdbMovieSummary, genres: string[] = []): Movie {
+  const trailer = (m.videos?.results || [])
+    .find((v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
+    ?.key;
+
   return {
-    id: m.id,
-    type: 'movie',
-    title: m.title,
-    overview: m.overview ?? '',
-    poster_path: m.poster_path ?? '',
-    backdrop_path: m.backdrop_path ?? '',
-    release_date: m.release_date ?? '',
-    runtime: 0,
-    vote_average: m.vote_average ?? 0,
-    genres,
-    original_language: m.original_language,
+    ...mapMovieSummary(m, genreNames(m.genres)),
+    runtime: m.runtime ?? 0,
+    tagline: m.tagline || undefined,
+    cast: mapCast(cast),
+    status: (m.status as any) || undefined,
+    trailer_key: trailer || undefined,
   };
 }
 
@@ -46,12 +45,17 @@ export function mapMovieDetail(
   m: TmdbMovieDetail,
   cast?: TmdbCast[],
 ): Movie {
+  const trailer = (m.videos?.results || [])
+    .find((v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
+    ?.key;
+
   return {
     ...mapMovieSummary(m, genreNames(m.genres)),
     runtime: m.runtime ?? 0,
     tagline: m.tagline || undefined,
     cast: mapCast(cast),
     status: (m.status as any) || undefined,
+    trailer_key: trailer || undefined,
   };
 }
 
@@ -117,12 +121,17 @@ export function mapTvDetail(
       ),
     }));
 
+  const trailer = (t.videos?.results || [])
+    .find((v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
+    ?.key;
+
   return {
     ...mapTvSummary(t, genreNames(t.genres)),
     tagline: t.tagline || undefined,
     seasons,
     cast: mapCast(cast),
     status: (t.status as any) || undefined,
+    trailer_key: trailer || undefined,
   };
 }
 
