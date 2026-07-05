@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
-// CinemaOS provides a proxy endpoint that wraps Videasy player embeds
-// The direct player.videasy.net endpoint works, but we use CinemaOS proxy for consistency
+// CinemaOS provides a proxy endpoint that wraps Videasy player embeds (cinemaos.live/embed is 404)
+// Use the working proxy endpoint to get Videasy player with CinemaOS branding
 const BASE = 'https://cinemaos.live/api/proxy?url=https://player.videasy.net';
 
 export function CinemaOSPlayer({
@@ -31,7 +31,7 @@ export function CinemaOSPlayer({
         ? `/movie/${mediaId}`
         : `/tv/${mediaId}/${season}/${episode}`;
     const params = new URLSearchParams();
-    params.set('color', '000000');
+    params.set('theme', 'ffffff');
     if (autoPlay === false) params.set('autoPlay', 'false');
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
     return `${BASE}${path}?${params.toString()}`;
