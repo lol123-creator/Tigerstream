@@ -2,10 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 
-// Updated to the correct host for the CinemaOS player. The previous URL (cinemaos.tech)
-// no longer serves the embed, causing the iframe to error out and the postMessage
-// listener to never receive events. The live player is hosted at cinemaos.live.
-const BASE = 'https://cinemaos.live/player';
+// CinemaOS embeds use the same Videasy player endpoint (player.videasy.net)
+// The cinemaos.live/player endpoint returns 500 error, so we fallback to Videasy directly
+const BASE = 'https://player.videasy.net';
 
 export function CinemaOSPlayer({
   type,
@@ -29,19 +28,18 @@ export function CinemaOSPlayer({
   const buildUrl = () => {
     const path =
       type === 'movie'
-        ? `${BASE}/${mediaId}`
-        : `${BASE}/${mediaId}/${season}/${episode}`;
+        ? `/movie/${mediaId}`
+        : `/tv/${mediaId}/${season}/${episode}`;
     const params = new URLSearchParams();
-    params.set('theme', 'ffffff');
-    if (!autoPlay) params.set('autoPlay', 'false');
+    params.set('color', '000000');
+    if (autoPlay === false) params.set('autoPlay', 'false');
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
-    return `${path}?${params.toString()}`;
+    return `${BASE}${path}?${params.toString()}`;
   };
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      // Listen for messages from the correct origin (cinemaos.live).
-      if (event.origin !== 'https://cinemaos.live') return;
+      if (event.origin !== 'https://player.videasy.net') return;
       if (event.data?.type === 'MEDIA_DATA') {
         try {
           localStorage.setItem(
@@ -63,7 +61,7 @@ export function CinemaOSPlayer({
         title={title || 'Video player'}
         className="absolute top-0 left-0 w-full h-full border-0"
         allowFullScreen
-        allow="autoplay; encrypted-media; fullscreen"
+        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
         referrerPolicy="origin"
       />
     </div>
