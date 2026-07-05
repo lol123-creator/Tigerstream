@@ -13,14 +13,23 @@ import {
   getNewTvSeries,
   getTrendingToday,
 } from '@/lib/tmdb/service';
-
-/** Refresh hero + "hot today" rows every 30 minutes */
-export const revalidate = 900;
-
+ 
+/**
+ * Render on-demand instead of at build time.
+ *
+ * This page mixes live external data (PPV sports feed, TMDB trending)
+ * inside a top-level Promise.all + a nested Suspense boundary, which
+ * triggers a stack-overflow bug in Next 15.5.x's static-generation
+ * worker ("Generating static pages" step). Forcing dynamic rendering
+ * skips that codepath entirely; the underlying fetch() calls still use
+ * their own `revalidate` windows, so response caching is unaffected.
+ */
+export const dynamic = 'force-dynamic';
+ 
 function row<T>(items: T[]): T[] {
   return items.slice(0, HOME_ROW_SIZE);
 }
-
+ 
 export default async function HomePage() {
   const [trendingToday, newMovies, newTv, sportsRow] =
     await Promise.all([
@@ -29,12 +38,12 @@ export default async function HomePage() {
       getNewTvSeries(3),
       getHomeSportsRow(16),
     ]);
-
+ 
   const heroSlides: HeroSlide[] = trendingToday.slice(0, 6).map((t) => ({
     item: t,
     badge: t.type === 'movie' ? 'Hot Movie Today' : 'Hot Series Today',
   }));
-
+ 
   return (
     <>
       <Hero slides={heroSlides} />
@@ -45,7 +54,7 @@ export default async function HomePage() {
         <div style={{contentVisibility:'auto', containIntrinsicSize:'auto 300px'}}><MediaRow title="Hot Right Now" items={row(trendingToday)} /></div>
         <MediaRow title="New Movies" items={row(newMovies)} />
         <MediaRow title="New TV Series" items={row(newTv)} />
-
+ 
         <Suspense fallback={<HomeMoreRowsSkeleton />}>
           <HomeMoreRows />
         </Suspense>
@@ -53,3 +62,4 @@ export default async function HomePage() {
     </>
   );
 }
+ 
