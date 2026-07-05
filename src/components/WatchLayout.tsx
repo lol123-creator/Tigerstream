@@ -44,10 +44,10 @@ function PlayerSkeleton() {
 }
 
 class PlayerErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallback?: React.ReactNode },
+  { children: React.ReactNode; fallback?: React.ReactNode; key?: string },
   { hasError: boolean }
 > {
-  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode; key?: string }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -81,6 +81,7 @@ export function WatchLayout({
   const router = useRouter();
   const [progressSynced, setProgressSynced] = useState(false);
   const [playerSource, setPlayerSource] = useState<PlayerSource>('peachify');
+  const [errorKey, setErrorKey] = useState(0);
 
   useEffect(() => {
     setPlayerSource(loadPlayerPref());
@@ -90,6 +91,8 @@ export function WatchLayout({
     setPlayerSource(source);
     savePlayerPref(source);
     setProgressSynced(false);
+    // Reset error boundary by changing key
+    setErrorKey((prev) => prev + 1);
   };
 
   const onMediaData = useCallback(() => {
@@ -157,7 +160,7 @@ export function WatchLayout({
           </button>
         </div>
 
-        <PlayerErrorBoundary>
+        <PlayerErrorBoundary key={`${playerSource}-${errorKey}`}>
           {playerSource === 'peachify' ? (
             <PeachifyPlayer
               target={{
