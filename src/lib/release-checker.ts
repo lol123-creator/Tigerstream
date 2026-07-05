@@ -15,10 +15,13 @@ export function isComingSoon(media: Movie | TvShow): boolean {
   const [y, m, d] = releaseDate.split('-').map(Number);
   if (!y || !m || !d) return false;
   const release = Date.UTC(y, m - 1, d);
-  
-  // Get today's date in UTC (not local timezone)
+
+  // Get today's date in UTC (not local timezone).
+  // Date.UTC's month param is 0-indexed, and getUTCMonth() already
+  // returns a 0-indexed month — do not add 1 here, or "today" ends up
+  // calculated a month ahead of the real date.
   const now = new Date();
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate());
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 
   return release > today;
 }
