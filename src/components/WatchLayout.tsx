@@ -191,6 +191,7 @@ export function WatchLayout({
               title={title}
               autoPlay
               autoNext={target.type === 'tv'}
+              onMediaData={onMediaData}
             />
           ) : (
             <VideasyPlayer
@@ -200,6 +201,7 @@ export function WatchLayout({
               episode={target.type === 'tv' ? target.episode : undefined}
               title={title}
               autoPlay
+              onMediaData={onMediaData}
             />
           )}
         </PlayerErrorBoundary>
