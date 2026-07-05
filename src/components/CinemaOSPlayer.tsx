@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 // CinemaOS direct embed endpoint
-const BASE = 'https://cinemaos.tech/embed';
+const BASE = 'https://cinemaos.tech/player';
 
 export function CinemaOSPlayer({
   type,
@@ -27,17 +27,14 @@ export function CinemaOSPlayer({
   const buildUrl = () => {
     const params = new URLSearchParams();
     params.set('theme', 'ffffff');
-    if (type === 'movie') {
-      params.set('tmdb', String(mediaId));
-    } else {
+    if (type === 'tv') {
       params.set('type', 'tv');
-      params.set('tmdb', String(mediaId));
       params.set('season', String(season));
       params.set('episode', String(episode));
     }
     if (autoPlay === false) params.set('autoPlay', 'false');
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
-    return `${BASE}?${params.toString()}`;
+    return `${BASE}/${mediaId}?${params.toString()}`;
   };
 
   useEffect(() => {
