@@ -32,11 +32,17 @@ export function mapMovieSummary(m: TmdbMovieSummary, genres: string[] = []): Mov
     ?.key;
 
   return {
-    ...mapMovieSummary(m, genreNames(m.genres)),
+    id: m.id,
+    type: 'movie',
+    title: m.title,
+    overview: m.overview ?? '',
+    poster_path: m.poster_path ?? '',
+    backdrop_path: m.backdrop_path ?? '',
+    release_date: m.release_date ?? '',
     runtime: m.runtime ?? 0,
-    tagline: m.tagline || undefined,
-    cast: mapCast(cast),
-    status: (m.status as any) || undefined,
+    vote_average: m.vote_average ?? 0,
+    genres: genres.length > 0 ? genres : genreNames(m.genres),
+    original_language: m.original_language,
     trailer_key: trailer || undefined,
   };
 }
