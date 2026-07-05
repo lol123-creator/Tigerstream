@@ -8,6 +8,7 @@ export interface Cast {
 }
 
 export interface Movie {
+  trailer_key?: string;
   id: number;
   type: 'movie';
   title: string;
@@ -45,6 +46,7 @@ export interface Season {
 }
 
 export interface TvShow {
+  trailer_key?: string;
   id: number;
   type: 'tv';
   title: string;

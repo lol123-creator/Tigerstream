@@ -344,7 +344,7 @@ export async function getMovieById(id: number): Promise<Movie | null> {
     // so the detail page can show it without a second round-trip.
     const data = await tmdbFetch<TmdbMovieDetail>(
       `/movie/${id}`,
-      { append_to_response: "credits" },
+      { append_to_response: "credits,videos" },
     );
     return mapMovieDetail(data, data.credits?.cast);
   } catch {
@@ -373,7 +373,7 @@ export async function getTvShowById(id: number): Promise<TvShow | null> {
     // so the detail page can show it without a second round-trip.
     const show = await tmdbFetch<TmdbTvDetail>(
       `/tv/${id}`,
-      { append_to_response: "credits" },
+      { append_to_response: "credits,videos" },
     );
     const seasonNumbers = show.seasons
       .filter((s) => s.season_number > 0 && s.episode_count > 0)
