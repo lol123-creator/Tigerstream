@@ -1,3 +1,5 @@
+"use client";
+ 
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -5,14 +7,14 @@ import { tmdbImage } from "@/lib/tmdb-images";
 import type { MediaItem } from "@/types/media";
 import { watchMovieHref, watchTvHref } from "@/lib/routes";
 import { TrailerModal } from "@/components/TrailerModal";
-
+ 
 interface DetailHeroProps {
   item: MediaItem;
   playLabel?: string;
   playHref?: string;
   disablePlay?: boolean;
 }
-
+ 
 export function DetailHero({
   item,
   playLabel = "Play",
@@ -23,12 +25,12 @@ export function DetailHero({
     item.type === "movie"
       ? watchMovieHref(item.id)
       : watchTvHref(item.id, 1, item.seasons[0]?.episodes[0]?.episode ?? 1);
-
+ 
   const finalHref = playHref ?? defaultPlay;
   const isDisabled = disablePlay || !finalHref;
   const trailerKey = "trailer_key" in item ? item.trailer_key : undefined;
   const [showTrailer, setShowTrailer] = useState(false);
-
+ 
   return (
     <section className="relative min-h-[50vh] overflow-hidden">
       <Image
@@ -40,7 +42,7 @@ export function DetailHero({
         sizes="100vw"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-surface/30" />
-
+ 
       <div className="relative mx-auto flex max-w-7xl gap-6 px-4 pb-12 pt-28 sm:px-6 md:gap-10">
         <div className="relative hidden h-64 w-44 shrink-0 overflow-hidden rounded-lg shadow-2xl sm:block md:h-80 md:w-52">
           <Image
@@ -111,10 +113,11 @@ export function DetailHero({
           </div>
         </div>
       </div>
-
+ 
       {showTrailer && (
         <TrailerModal trailerKey={trailerKey!} onClose={() => setShowTrailer(false)} />
       )}
     </section>
   );
 }
+ 
