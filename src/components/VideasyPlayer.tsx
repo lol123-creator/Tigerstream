@@ -1,17 +1,28 @@
 "use client"
 
 import { useEffect, useRef, useState } from 'react'
+import { mergePeachifyProgress, type PeachifyProgressStore } from '@/peachify'
 
 /**
  * VideasyPlayer embeds a Videasy player inside an iframe.
- * Pattern (from Videasy docs):
- *   Movie: https://player.videasy.net/movie/{mediaId}
- *   TV:    https://player.videasy.net/tv/{mediaId}/{season}/{episode}
  *
- * Supported query params:
- *   color, progress, nextEpisode, episodeSelector,
- *   autoplayNextEpisode, overlay
+ * Domain migrated from player.videasy.net -> player.videasy.to
+ * (the .net domain is deprecated; see Videasy's own recent announcements).
+ *
+ * URL pattern (confirmed current, e.g. player.videasy.to/movie/1159559?...):
+ *   Movie: https://player.videasy.to/movie/{mediaId}
+ *   TV:    https://player.videasy.to/tv/{mediaId}/{season}/{episode}
+ *
+ * Confirmed query params: color (hex, no #), episodeSelector, nextEpisode,
+ * autoplayNextEpisode, overlay.
+ *
+ * Known third-party issue (not fixable client-side): Videasy's player
+ * hijacks the first click on play to open an ad tab, and actively
+ * detects/blocks the sandbox iframe attribute that would normally
+ * prevent that popup.
  */
+const ORIGIN = 'https://player.videasy.to'
+
 export function VideasyPlayer({
   type,
   mediaId,
@@ -19,6 +30,7 @@ export function VideasyPlayer({
   episode,
   title,
   autoPlay = true,
+  onMediaData,
 }: {
   type: 'movie' | 'tv'
   mediaId: string | number
@@ -26,6 +38,8 @@ export function VideasyPlayer({
   episode?: number
   title?: string
   autoPlay?: boolean
+  /** Called after a MEDIA_DATA payload has been merged into storage. */
+  onMediaData?: (store: PeachifyProgressStore) => void
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   // container ref for fullscreen request so our custom button stays visible
@@ -46,35 +60,42 @@ export function VideasyPlayer({
   }
 
   const buildUrl = () => {
-    let base
-    if (type === 'movie') {
-      base = `https://player.videasy.net/movie/${mediaId}`
-    } else {
-      base = `https://player.videasy.net/tv/${mediaId}/${season}/${episode}`
-    }
+    const base =
+      type === 'movie'
+        ? `${ORIGIN}/movie/${mediaId}`
+        : `${ORIGIN}/tv/${mediaId}/${season}/${episode}`
     const params = new URLSearchParams()
-    if (autoPlay) params.set('autoplay', '1')
+    if (type === 'tv') {
+      params.set('nextEpisode', 'true')
+      params.set('autoplayNextEpisode', 'true')
+      params.set('episodeSelector', 'true')
+    }
+    if (autoPlay === false) params.set('autoplay', 'false')
     const qs = params.toString()
     return qs ? `${base}?${qs}` : base
   }
 
-  // Sync progress with the same localStorage key as Peachify
+  // Sync progress with the same store/protocol as Peachify. This is the
+  // same MEDIA_DATA convention every other embed in this family uses
+  // (Peachify, VidLink, CinemaOS) — the payload is the full progress
+  // store keyed by media id, merged rather than overwritten.
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== 'https://player.videasy.net') return
-      // Videasy sends progress as JSON string in event.data
-      if (typeof event.data === 'string') {
-        try {
-          const data = JSON.parse(event.data)
-          if (data && data.id && data.progress != null) {
-            localStorage.setItem('peachifyProgress', JSON.stringify(data))
-          }
-        } catch {}
+      if (event.origin !== ORIGIN) return
+      if (event.data?.type !== 'MEDIA_DATA') return
+
+      try {
+        const merged = mergePeachifyProgress(
+          event.data.data as PeachifyProgressStore,
+        )
+        onMediaData?.(merged)
+      } catch {
+        // Corrupt payload — ignore rather than risk clobbering storage.
       }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [])
+  }, [onMediaData])
 
   // Monitor fullscreen changes and page visibility to keep controls visible when needed
   useEffect(() => {
