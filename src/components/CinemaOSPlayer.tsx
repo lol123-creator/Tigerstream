@@ -2,8 +2,18 @@
 
 import { useEffect, useRef } from 'react';
 
-// CinemaOS direct embed endpoint
-const BASE = 'https://cinemaos.tech/player';
+// CinemaOS.live embed endpoint - https://cinemaos.live/embed
+const BASE = 'https://cinemaos.live/embed';
+
+interface CinemaOSPlayerProps {
+  type: 'movie' | 'tv';
+  mediaId: string | number;
+  season?: number;
+  episode?: number;
+  title?: string;
+  autoPlay?: boolean;
+  autoNext?: boolean;
+}
 
 export function CinemaOSPlayer({
   type,
@@ -13,49 +23,65 @@ export function CinemaOSPlayer({
   title,
   autoPlay = true,
   autoNext = true,
-}: {
-  type: 'movie' | 'tv';
-  mediaId: string | number;
-  season?: number;
-  episode?: number;
-  title?: string;
-  autoPlay?: boolean;
-  autoNext?: boolean;
-}) {
+}: CinemaOSPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const buildUrl = () => {
     const params = new URLSearchParams();
-    params.set('theme', 'ffffff');
-    if (type === 'tv') {
-      params.set('type', 'tv');
-      params.set('season', String(season));
-      params.set('episode', String(episode));
+
+    // Set media ID as primary identifier
+    const mediaPath = type === 'tv' 
+      ? `${mediaId}/s${season || 1}/e${episode || 1}`
+      : `${mediaId}`;
+
+    // Base URL with media path
+    let url = `${BASE}/${mediaPath}`;
+
+    // Add optional parameters
+    const queryParams: string[] = [];
+    
+    if (autoPlay === false) queryParams.push('autoPlay=false');
+    if (autoNext && type === 'tv') queryParams.push('autoNext=true');
+
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
     }
-    if (autoPlay === false) params.set('autoPlay', 'false');
-    if (autoNext && type === 'tv') params.set('autoNext', 'true');
-    return `${BASE}/${mediaId}?${params.toString()}`;
+
+    return url;
   };
 
   useEffect(() => {
-    const handler = (event: MessageEvent) => {
+    if (!iframeRef.current) return;
+
+    const handleMessage = (event: MessageEvent) => {
       try {
-        // Safely check origin without triggering cross-origin errors
-        if (!event.origin.includes('cinemaos')) return;
-        if (event.data?.type === 'MEDIA_DATA') {
+        // Verify origin is from cinemaos.live
+        if (!event.origin.includes('cinemaos.live')) return;
+
+        // Handle player events
+        if (event.data?.event) {
+          // Log events for debugging (optional)
+          // console.log('CinemaOS event:', event.data.event);
+        }
+
+        // Handle progress/watchlist data
+        if (event.data?.type === 'progress') {
           try {
             localStorage.setItem(
-              'peachifyProgress',
+              'cinemaosProgress',
               JSON.stringify(event.data.data),
             );
-          } catch {}
+          } catch {
+            // Silently ignore storage errors
+          }
         }
       } catch {
-        // Silently ignore cross-origin access errors
+        // Silently ignore cross-origin errors
       }
     };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   return (
@@ -67,8 +93,8 @@ export function CinemaOSPlayer({
         className="absolute top-0 left-0 w-full h-full border-0"
         allowFullScreen
         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-        referrerPolicy="origin"
-        sandbox="allow-same-origin allow-scripts allow-presentation allow-forms"
+        referrerPolicy="no-referrer"
+        sandbox="allow-same-origin allow-scripts allow-presentation allow-forms allow-popups"
       />
     </div>
   );
