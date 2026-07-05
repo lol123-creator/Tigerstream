@@ -3,11 +3,11 @@
 import { useEffect, useRef } from 'react';
 import { mergePeachifyProgress, type PeachifyProgressStore } from '@/peachify';
 
-// CinemaOS.live embed endpoint - https://cinemaos.live/embed
-// Path follows the same convention as every other embed in this family
-// (Peachify, VidLink): /embed/movie/{id} and /embed/tv/{id}/{season}/{episode}.
-const ORIGIN = 'https://cinemaos.live';
-const BASE = `${ORIGIN}/embed`;
+// Per CinemaOS's official integration guide:
+//   Movie:   https://cinemaos.tech/player/{tmdb_id}
+//   TV Show: https://cinemaos.tech/player/{tmdb_id}/{season}/{episode}
+const ORIGIN = 'https://cinemaos.tech';
+const BASE = `${ORIGIN}/player`;
 
 interface CinemaOSPlayerProps {
   type: 'movie' | 'tv';
@@ -19,6 +19,36 @@ interface CinemaOSPlayerProps {
   autoNext?: boolean;
   /** Called after a MEDIA_DATA payload has been merged into storage. */
   onMediaData?: (store: PeachifyProgressStore) => void;
+}
+
+interface CinemaOSMediaEntry {
+  id: number;
+  type: 'movie' | 'tv';
+  title: string;
+  poster_path?: string;
+  progress: { watched: number; duration: number };
+  last_updated?: number;
+  last_season_watched?: string | number;
+  last_episode_watched?: string | number;
+  show_progress?: Record<string, unknown>;
+}
+
+/**
+ * CinemaOS keys its MEDIA_DATA store entries like "m550" (per its own
+ * docs example), but Peachify's PeachifyProgressStore is keyed by the
+ * bare id string ("550"). Re-keying by each entry's own `id` field
+ * (rather than trusting the object's key) makes this robust to that
+ * difference so continue-watching lookups actually find these entries.
+ */
+function toPeachifyStore(
+  raw: Record<string, CinemaOSMediaEntry>,
+): PeachifyProgressStore {
+  const out: PeachifyProgressStore = {};
+  for (const entry of Object.values(raw ?? {})) {
+    if (!entry || entry.id == null) continue;
+    out[String(entry.id)] = entry as PeachifyProgressStore[string];
+  }
+  return out;
 }
 
 export function CinemaOSPlayer({
@@ -36,15 +66,15 @@ export function CinemaOSPlayer({
   const buildUrl = () => {
     const path =
       type === 'movie'
-        ? `${BASE}/movie/${mediaId}`
-        : `${BASE}/tv/${mediaId}/${season || 1}/${episode || 1}`;
+        ? `${BASE}/${mediaId}`
+        : `${BASE}/${mediaId}/${season || 1}/${episode || 1}`;
 
     const params = new URLSearchParams();
+    params.set('theme', 'ffffff');
     if (autoPlay === false) params.set('autoPlay', 'false');
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
 
-    const qs = params.toString();
-    return qs ? `${path}?${qs}` : path;
+    return `${path}?${params.toString()}`;
   };
 
   useEffect(() => {
@@ -53,14 +83,10 @@ export function CinemaOSPlayer({
       if (event.data?.type !== 'MEDIA_DATA') return;
 
       try {
-        // CinemaOS uses the same MEDIA_DATA protocol as Peachify/VidLink:
-        // the payload is the *entire* progress store keyed by media id,
-        // not a single entry. Merge it in rather than overwrite — a raw
-        // localStorage.setItem here would wipe out every other title's
-        // continue-watching progress from other players.
-        const merged = mergePeachifyProgress(
-          event.data.data as PeachifyProgressStore,
+        const store = toPeachifyStore(
+          event.data.data as Record<string, CinemaOSMediaEntry>,
         );
+        const merged = mergePeachifyProgress(store);
         onMediaData?.(merged);
       } catch {
         // Corrupt payload — ignore rather than risk clobbering storage.
@@ -81,7 +107,6 @@ export function CinemaOSPlayer({
         allowFullScreen
         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
         referrerPolicy="no-referrer"
-        sandbox="allow-same-origin allow-scripts allow-presentation allow-forms allow-popups"
       />
     </div>
   );
