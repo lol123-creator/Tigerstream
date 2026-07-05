@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 // CinemaOS direct embed endpoint
-const BASE = 'https://cinemaos.live/embed';
+const BASE = 'https://cinemaos.tech/embed';
 
 export function CinemaOSPlayer({
   type,
@@ -25,20 +25,24 @@ export function CinemaOSPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const buildUrl = () => {
-    const path =
-      type === 'movie'
-        ? `/movie/${mediaId}`
-        : `/tv/${mediaId}/${season}/${episode}`;
     const params = new URLSearchParams();
     params.set('theme', 'ffffff');
+    if (type === 'movie') {
+      params.set('tmdb', String(mediaId));
+    } else {
+      params.set('type', 'tv');
+      params.set('tmdb', String(mediaId));
+      params.set('season', String(season));
+      params.set('episode', String(episode));
+    }
     if (autoPlay === false) params.set('autoPlay', 'false');
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
-    return `${BASE}${path}?${params.toString()}`;
+    return `${BASE}?${params.toString()}`;
   };
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== 'https://cinemaos.live') return;
+      if (event.origin !== 'https://cinemaos.tech') return;
       if (event.data?.type === 'MEDIA_DATA') {
         try {
           localStorage.setItem(
