@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 
-// CinemaOS embeds use the same Videasy player endpoint (player.videasy.net)
-// The cinemaos.live/player endpoint returns 500 error, so we fallback to Videasy directly
-const BASE = 'https://player.videasy.net';
+// CinemaOS provides a proxy endpoint that wraps Videasy player embeds
+// The direct player.videasy.net endpoint works, but we use CinemaOS proxy for consistency
+const BASE = 'https://cinemaos.live/api/proxy?url=https://player.videasy.net';
 
 export function CinemaOSPlayer({
   type,
