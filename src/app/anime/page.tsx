@@ -15,7 +15,16 @@ export const metadata: Metadata = {
   description: 'Browse anime movies and TV shows.',
 };
 
-export const revalidate = 3600;
+/**
+ * Render on-demand instead of at build time.
+ *
+ * This page fetches live external data (TMDB anime listings)
+ * which triggers a stack-overflow bug in Next 15.5.x's static-generation
+ * worker ("Generating static pages" step). Forcing dynamic rendering
+ * skips that codepath entirely; the underlying fetch() calls still use
+ * their own `revalidate` windows, so response caching is unaffected.
+ */
+export const dynamic = 'force-dynamic';
 
 type Tab = 'all' | 'movies' | 'shows';
 
