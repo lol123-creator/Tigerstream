@@ -18,7 +18,7 @@ export function isComingSoon(media: Movie | TvShow): boolean {
   
   // Get today's date in UTC (not local timezone)
   const now = new Date();
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate());
 
   return release > today;
 }
