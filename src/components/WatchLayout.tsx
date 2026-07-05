@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useCallback, useEffect, useState } from 'react';
 import { PLAYER_ACCENT } from '@/lib/brand';
 import { buildContinueWatching } from '@/lib/progress-client';
+import { PeachifyPlayer } from '@/components/PeachifyPlayer';
+import { CinemaOSPlayer } from '@/components/CinemaOSPlayer';
+import { VideasyPlayer } from '@/components/VideasyPlayer';
 import type { PeachifyEmbedTarget } from '@/peachify';
 
 type PlayerSource = 'peachify' | 'cinemaos' | 'videasy';
@@ -27,21 +29,6 @@ function savePlayerPref(source: PlayerSource) {
   } catch {}
 }
 
-const PeachifyPlayer = dynamic(
-  () => import('@/components/PeachifyPlayer').then((m) => ({ default: m.PeachifyPlayer })),
-  { ssr: false }
-);
-
-const CinemaOSPlayer = dynamic(
-  () => import('@/components/CinemaOSPlayer').then((m) => ({ default: m.CinemaOSPlayer })),
-  { ssr: false }
-);
-
-const VideasyPlayer = dynamic(
-  () => import('@/components/VideasyPlayer').then((m) => ({ default: m.VideasyPlayer })),
-  { ssr: false }
-);
-
 interface WatchLayoutProps {
   title: string;
   backHref: string;
@@ -54,6 +41,34 @@ function PlayerSkeleton() {
   return (
     <div className="aspect-video w-full animate-pulse rounded-xl bg-white/5 ring-1 ring-white/10" />
   );
+}
+
+class PlayerErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error) {
+    console.error('Player error:', error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        this.props.fallback || (
+          <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-white/5 text-sm text-white/40">
+            Player failed to load. Try switching to another player.
+          </div>
+        )
+      );
+    }
+    return this.props.children;
+  }
 }
 
 export function WatchLayout({
@@ -142,47 +157,49 @@ export function WatchLayout({
           </button>
         </div>
 
-        {playerSource === 'peachify' ? (
-          <PeachifyPlayer
-            target={{
-              ...target,
-              options: {
-                accent: PLAYER_ACCENT,
-                sub: 'English',
-                autoNext: target.type === 'tv',
-                showNextBtn: true,
-                ...target.options,
-              },
-            }}
-            autoResume
-            onMediaData={onMediaData}
-            onPlayerEvent={(e) => {
-              if (e.event === 'ended' && nextHref) {
-                router.push(nextHref);
-              }
-            }}
-            className="overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10"
-          />
-        ) : playerSource === 'cinemaos' ? (
-          <CinemaOSPlayer
-            type={target.type}
-            mediaId={target.mediaId}
-            season={target.type === 'tv' ? target.season : undefined}
-            episode={target.type === 'tv' ? target.episode : undefined}
-            title={title}
-            autoPlay
-            autoNext={target.type === 'tv'}
-          />
-        ) : (
-          <VideasyPlayer
-            type={target.type}
-            mediaId={target.mediaId}
-            season={target.type === 'tv' ? target.season : undefined}
-            episode={target.type === 'tv' ? target.episode : undefined}
-            title={title}
-            autoPlay
-          />
-        )}
+        <PlayerErrorBoundary>
+          {playerSource === 'peachify' ? (
+            <PeachifyPlayer
+              target={{
+                ...target,
+                options: {
+                  accent: PLAYER_ACCENT,
+                  sub: 'English',
+                  autoNext: target.type === 'tv',
+                  showNextBtn: true,
+                  ...target.options,
+                },
+              }}
+              autoResume
+              onMediaData={onMediaData}
+              onPlayerEvent={(e) => {
+                if (e.event === 'ended' && nextHref) {
+                  router.push(nextHref);
+                }
+              }}
+              className="overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10"
+            />
+          ) : playerSource === 'cinemaos' ? (
+            <CinemaOSPlayer
+              type={target.type}
+              mediaId={target.mediaId}
+              season={target.type === 'tv' ? target.season : undefined}
+              episode={target.type === 'tv' ? target.episode : undefined}
+              title={title}
+              autoPlay
+              autoNext={target.type === 'tv'}
+            />
+          ) : (
+            <VideasyPlayer
+              type={target.type}
+              mediaId={target.mediaId}
+              season={target.type === 'tv' ? target.season : undefined}
+              episode={target.type === 'tv' ? target.episode : undefined}
+              title={title}
+              autoPlay
+            />
+          )}
+        </PlayerErrorBoundary>
 
         {progressSynced && (
           <p className="mt-4 text-center text-xs text-white/30">

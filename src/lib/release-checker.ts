@@ -11,9 +11,12 @@ export function isComingSoon(media: Movie | TvShow): boolean {
 
   if (!releaseDate) return false;
 
-  const release = new Date(releaseDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Parse as UTC to avoid timezone mismatches with TMDB dates (YYYY-MM-DD format)
+  const [y, m, d] = releaseDate.split('-').map(Number);
+  if (!y || !m || !d) return false;
+  const release = Date.UTC(y, m - 1, d);
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 
   return release > today;
 }
