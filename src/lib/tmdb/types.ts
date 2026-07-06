@@ -35,6 +35,23 @@ export interface TmdbMovieSummary {
 
 export interface TmdbVideo { id: string; key: string; name: string; site: string; type: string; official?: boolean; }
 
+/**
+ * A single regional release entry from TMDB's /movie/{id}/release_dates
+ * (fetched via append_to_response=release_dates).
+ * type: 1 Premiere, 2 Theatrical (limited), 3 Theatrical, 4 Digital,
+ *       5 Physical, 6 TV.
+ */
+export interface TmdbReleaseDateEntry {
+  certification?: string;
+  release_date: string;
+  type: number;
+}
+
+export interface TmdbReleaseDatesResult {
+  iso_3166_1: string;
+  release_dates: TmdbReleaseDateEntry[];
+}
+
 export interface TmdbMovieDetail extends TmdbMovieSummary {
   runtime: number | null;
   tagline?: string | null;
@@ -42,6 +59,7 @@ export interface TmdbMovieDetail extends TmdbMovieSummary {
   status?: string;
   credits?: TmdbCredits;
   videos?: { results: TmdbVideo[] };
+  release_dates?: { results: TmdbReleaseDatesResult[] };
 }
 
 export interface TmdbTvSummary {
