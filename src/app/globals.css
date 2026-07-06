@@ -74,3 +74,26 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out both;
 }
+
+/* Hero signature motion: slow background drift so the backdrop feels
+   alive rather than a static poster pinned behind the text. */
+@keyframes kenburns {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(1.08) translate(-1%, -1%); }
+}
+
+/* Staggered hero text entrance - each element passes its own delay via
+   inline style, so the title lands first and supporting content
+   follows a beat behind rather than everything fading in at once. */
+@keyframes heroRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
