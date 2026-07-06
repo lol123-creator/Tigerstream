@@ -30,7 +30,7 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
       onClick={storeReturnPath}
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      className={`group relative block overflow-hidden rounded-xl bg-surface-card transition-all duration-300 hover:z-10 hover:scale-[1.04] hover:shadow-glow hover:ring-1 hover:ring-accent/20 ${
+      className={`group relative block overflow-hidden rounded-xl bg-surface-card transition-all duration-300 ease-out hover:z-10 hover:-translate-y-2 hover:scale-[1.06] hover:shadow-glow-lg hover:ring-1 hover:ring-accent/40 ${
         variant === 'row'
           ? 'shrink-0 snap-start'
           : 'w-full'
@@ -48,7 +48,7 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           fill
           sizes="(max-width: 640px) 35vw, (max-width: 1024px) 18vw, 200px"
           priority={priority}
-          className="object-cover transition-all duration-300 group-hover:scale-105 group-hover:opacity-80"
+          className="object-cover transition-all duration-300 group-hover:scale-110 group-hover:opacity-70"
         />
         <div className="absolute inset-0 bg-card-shine opacity-0 transition-opacity group-hover:opacity-100" />
         <FavoriteButton
@@ -58,6 +58,16 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
         <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-accent">
           {item.vote_average.toFixed(1)}
         </span>
+
+        {/* Play affordance - appears center-stage on hover, the direct
+            "press play" cue modern streaming UIs use to signal action. */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100">
+          <div className="flex h-12 w-12 scale-75 items-center justify-center rounded-full bg-accent/90 shadow-glow transition-transform duration-300 group-hover:scale-100">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" className="translate-x-0.5">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
 
         {/* Hover overlay with details */}
         <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
