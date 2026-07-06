@@ -40,17 +40,17 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 bg-surface/80 backdrop-blur-xl transition-colors ${
+      className={`fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-surface/60 backdrop-blur-2xl transition-colors ${
         isWatch
-          ? 'bg-surface/90 backdrop-blur-md'
-          : 'bg-gradient-to-b from-black/80 to-transparent'
+          ? 'bg-surface/80 backdrop-blur-xl'
+          : 'bg-gradient-to-b from-black/60 to-transparent'
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           href="/"
           aria-label={`${SITE_NAME} home`}
-          className="font-display shrink-0 text-xl font-semibold tracking-tight"
+          className="font-display shrink-0 text-xl font-medium tracking-tight"
         >
           Tiger<span className="text-accent">Stream</span>
         </Link>
@@ -60,7 +60,7 @@ export function Navbar() {
             <Link
               key={href}
               href={href}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                 isActive(href)
                   ? 'bg-accent/15 text-accent'
                   : 'text-white/70 hover:bg-white/[0.06] hover:text-white'
@@ -83,7 +83,7 @@ export function Navbar() {
           type="button"
           aria-label="Toggle menu"
           onClick={() => setMenuOpen((o) => !o)}
-          className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-white/70 transition hover:bg-white/10 hover:text-white md:hidden"
+          className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white md:hidden"
         >
           {menuOpen ? (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
@@ -97,23 +97,15 @@ export function Navbar() {
         </button>
       </nav>
 
-      {/*
-        Signature element (Tiger Editorial): a thin tiger-stripe accent
-        bar under the nav. This is the one deliberately bold, ownable
-        visual detail - kept to this single spot rather than repeated
-        as decoration elsewhere on the site.
-      */}
-      <div className="h-[3px] w-full bg-tiger-stripe opacity-90" />
-
       {menuOpen && (
-        <div className="border-t border-white/10 bg-surface/95 backdrop-blur-md md:hidden">
+        <div className="border-t border-white/10 bg-surface/90 backdrop-blur-2xl md:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
             {NAV_LINKS.map(({ label, href }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMenuOpen(false)}
-                className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`block rounded-full px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive(href)
                     ? 'bg-accent/15 text-accent'
                     : 'text-white/70 hover:bg-white/[0.06] hover:text-white'
