@@ -91,8 +91,11 @@ export function Hero({ slides }: HeroProps) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Background slides (crossfade + slow Ken Burns drift for a
-          cinematic, alive feel rather than a static poster) */}
+      {/* Soft ambient glow - the signature touch for this direction,
+          restraint over a bold motif */}
+      <div className="pointer-events-none absolute inset-0 bg-ambient-glow" />
+
+      {/* Background slides (crossfade + gentle drift) */}
       {slides.map((s, i) => (
         <div
           key={s.item.id}
@@ -101,7 +104,7 @@ export function Hero({ slides }: HeroProps) {
         >
           <div
             className="absolute inset-0"
-            style={i === current ? { animation: 'kenburns 10s ease-out forwards' } : undefined}
+            style={i === current ? { animation: 'kenburns 12s ease-out forwards' } : undefined}
           >
             <Image
               src={tmdbImage(s.item.backdrop_path, 'w1280')}
@@ -117,49 +120,44 @@ export function Hero({ slides }: HeroProps) {
         </div>
       ))}
 
-      {/* Content - staggered entrance so the title lands first and the
-          rest follows a beat behind, instead of one flat fade-in block */}
+      {/* Content - staggered entrance */}
       <div className="relative mx-auto flex max-w-7xl flex-col justify-end px-4 pb-16 pt-32 sm:px-6 md:pb-24">
         <div key={item.id}>
           <p
-            className="mb-2 inline-block rounded-full bg-accent/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-accent backdrop-blur-sm"
+            className="mb-2 inline-block rounded-full bg-accent/15 px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-accent backdrop-blur-sm"
             style={{ animation: 'heroRise 0.5s ease-out both' }}
           >
             {badge}
           </p>
           <h1
-            className="font-display max-w-3xl text-4xl font-semibold leading-[1.05] text-white md:text-6xl"
+            className="font-display max-w-3xl text-4xl font-medium leading-[1.08] tracking-tight text-white md:text-6xl"
             style={{ animation: 'heroRise 0.55s ease-out 0.08s both' }}
           >
             {item.title}
           </h1>
-          <div
-            className="mt-3 h-[3px] w-16 bg-tiger-stripe"
-            style={{ animation: 'heroRise 0.5s ease-out 0.16s both' }}
-          />
           {'tagline' in item && item.tagline && (
             <p
-              className="mt-3 text-lg text-white/70 italic"
-              style={{ animation: 'heroRise 0.5s ease-out 0.2s both' }}
+              className="mt-3 text-lg text-white/60 italic"
+              style={{ animation: 'heroRise 0.5s ease-out 0.16s both' }}
             >
               {item.tagline}
             </p>
           )}
           <p
-            className="mt-4 max-w-xl text-sm leading-relaxed text-white/75 md:text-base"
-            style={{ animation: 'heroRise 0.5s ease-out 0.26s both' }}
+            className="mt-4 max-w-xl text-sm leading-relaxed text-white/70 md:text-base"
+            style={{ animation: 'heroRise 0.5s ease-out 0.22s both' }}
           >
             {item.overview?.slice(0, 200)}{item.overview && item.overview.length > 200 ? '...' : ''}
           </p>
           {item.genres.length > 0 && (
             <div
               className="mt-4 flex flex-wrap gap-2"
-              style={{ animation: 'heroRise 0.5s ease-out 0.32s both' }}
+              style={{ animation: 'heroRise 0.5s ease-out 0.28s both' }}
             >
               {item.genres.slice(0, 3).map((g) => (
                 <span
                   key={g}
-                  className="rounded-full border border-white/15 bg-white/5 px-3 py-0.5 text-xs text-white/70"
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/60"
                 >
                   {g}
                 </span>
@@ -168,11 +166,11 @@ export function Hero({ slides }: HeroProps) {
           )}
           <div
             className="mt-8 flex flex-wrap gap-3"
-            style={{ animation: 'heroRise 0.5s ease-out 0.38s both' }}
+            style={{ animation: 'heroRise 0.5s ease-out 0.34s both' }}
           >
             <Link
               href={watchHref}
-              className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition-all duration-200 hover:bg-accent-hover hover:shadow-glow-lg hover:scale-[1.03] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-2xl bg-accent px-6 py-3 text-sm font-medium text-[#0A1F2B] shadow-lg shadow-accent/20 transition-all duration-200 hover:bg-accent-hover hover:shadow-glow-lg hover:scale-[1.02] active:scale-95"
             >
               <PlayIcon />
               Watch Now
@@ -180,7 +178,7 @@ export function Hero({ slides }: HeroProps) {
             <Link
               href={detailHref}
               onClick={storeReturnPath}
-              className="inline-flex items-center rounded-xl border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur-sm transition-all duration-200 hover:bg-white/[0.12] hover:text-white hover:scale-[1.03] active:scale-95"
+              className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/85 backdrop-blur-md transition-all duration-200 hover:bg-white/[0.1] hover:text-white hover:scale-[1.02] active:scale-95"
             >
               More Info
             </Link>
@@ -195,7 +193,7 @@ export function Hero({ slides }: HeroProps) {
           type="button"
           onClick={prev}
           aria-label="Previous slide"
-          className="absolute left-2 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-sm transition opacity-0 hover:opacity-100 group-hover/hero:opacity-100 md:left-6"
+          className="absolute left-2 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-md transition opacity-0 hover:opacity-100 group-hover/hero:opacity-100 md:left-6"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -209,7 +207,7 @@ export function Hero({ slides }: HeroProps) {
           type="button"
           onClick={next}
           aria-label="Next slide"
-          className="absolute right-2 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-sm transition opacity-0 hover:opacity-100 group-hover/hero:opacity-100 md:right-6"
+          className="absolute right-2 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-md transition opacity-0 hover:opacity-100 group-hover/hero:opacity-100 md:right-6"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -227,7 +225,7 @@ export function Hero({ slides }: HeroProps) {
               onClick={() => goTo(i)}
               aria-label={`Go to slide ${i + 1}`}
               className={`h-2 rounded-full transition-all duration-300 ${
-                i === current ? 'w-8 bg-accent' : 'w-2 bg-white/40 hover:bg-white/60'
+                i === current ? 'w-8 bg-accent' : 'w-2 bg-white/30 hover:bg-white/50'
               }`}
             />
           ))}
