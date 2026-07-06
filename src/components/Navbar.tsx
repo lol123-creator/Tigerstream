@@ -40,7 +40,7 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 border-b border-white/[0.03] bg-surface/80 backdrop-blur-xl transition-colors ${
+      className={`fixed inset-x-0 top-0 z-50 bg-surface/80 backdrop-blur-xl transition-colors ${
         isWatch
           ? 'bg-surface/90 backdrop-blur-md'
           : 'bg-gradient-to-b from-black/80 to-transparent'
@@ -50,7 +50,7 @@ export function Navbar() {
         <Link
           href="/"
           aria-label={`${SITE_NAME} home`}
-          className="font-display shrink-0 text-xl font-bold tracking-tight"
+          className="font-display shrink-0 text-xl font-semibold tracking-tight"
         >
           Tiger<span className="text-accent">Stream</span>
         </Link>
@@ -96,6 +96,14 @@ export function Navbar() {
           )}
         </button>
       </nav>
+
+      {/*
+        Signature element (Tiger Editorial): a thin tiger-stripe accent
+        bar under the nav. This is the one deliberately bold, ownable
+        visual detail - kept to this single spot rather than repeated
+        as decoration elsewhere on the site.
+      */}
+      <div className="h-[3px] w-full bg-tiger-stripe opacity-90" />
 
       {menuOpen && (
         <div className="border-t border-white/10 bg-surface/95 backdrop-blur-md md:hidden">
