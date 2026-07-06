@@ -1,4 +1,4 @@
-import { Inter } from 'next/font/google';
+import { Inter, Fraunces } from 'next/font/google';
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -37,6 +37,16 @@ export const metadata: Metadata = {
 
 const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
 
+// Display face for hero titles and big headings (Tiger Editorial direction).
+// Kept off the body font so it reads as a deliberate accent, not the
+// default typeface for everything.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['500', '600', '700'],
+  variable: '--font-fraunces',
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -52,7 +62,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://api.themoviedb.org" />
       </head>
-      <body className={`min-h-screen font-sans ${inter.variable}`}>
+      <body className={`min-h-screen font-sans ${inter.variable} ${fraunces.variable}`}>
         <Navbar />
         <main>{children}</main>
         <ScrollToTop />
