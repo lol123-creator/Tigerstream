@@ -1,11 +1,11 @@
 import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
+import { EpisodeList } from '@/components/EpisodeList';
 import { BackButton } from '@/components/BackButton';
-import { QualityBadge } from '@/components/QualityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
-import { getMovieById } from '@/lib/tmdb/service';
-import { watchMovieHref } from '@/lib/routes';
+import { getTvShowById } from '@/lib/tmdb/service';
+import { watchTvHref } from '@/lib/routes';
 import { isComingSoon } from '@/lib/release-checker';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -18,59 +18,40 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const movie = await getMovieById(Number(id));
-  if (!movie) return { title: 'Movie' };
+  const show = await getTvShowById(Number(id));
+  if (!show) return { title: 'TV Show' };
   return {
-    title: movie.title,
-    description: movie.overview || `${movie.title} on TigerStream`,
+    title: show.title,
+    description: show.overview || `${show.title} on TigerStream`,
     openGraph: {
-      title: movie.title,
-      description: movie.overview || `${movie.title} on TigerStream`,
+      title: show.title,
+      description: show.overview || `${show.title} on TigerStream`,
       images: [
-        { url: `https://image.tmdb.org/t/p/w780${movie.backdrop_path || movie.poster_path}`, width: 780, height: 439 },
+        { url: `https://image.tmdb.org/t/p/w780${show.backdrop_path || show.poster_path}`, width: 780, height: 439 },
       ],
-      type: 'video.movie',
+      type: 'video.tv_show',
     },
     twitter: {
       card: 'summary_large_image',
-      title: movie.title,
-      description: movie.overview || `${movie.title} on TigerStream`,
-      images: [`https://image.tmdb.org/t/p/w780${movie.backdrop_path || movie.poster_path}`],
+      title: show.title,
+      description: show.overview || `${show.title} on TigerStream`,
+      images: [`https://image.tmdb.org/t/p/w780${show.backdrop_path || show.poster_path}`],
     },
   };
 }
 
-export default async function MovieDetailPage({
+export default async function TvDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const show = await getTvShowById(Number(id));
+  if (!show) notFound();
 
-  // Use the shared TMDB service so we get the same fallback handling,
-  // normalized `Movie` shape, and consistent error handling as the TV page.
-  const movie = await getMovieById(Number(id));
-
-  if (!movie) notFound();
-
-  const comingSoon = isComingSoon(movie);
-
-  // All of these fields are normalized by `mapMovieDetail` to safe defaults
-  // (empty string / 0 / []), but we still guard the display values so a
-  // partial response (e.g. a new title with no rating yet) never crashes
-  // the page with "Cannot read properties of undefined".
-  const rating =
-    typeof movie.vote_average === 'number' && movie.vote_average > 0
-      ? movie.vote_average.toFixed(1)
-      : '—';
-  const runtime =
-    typeof movie.runtime === 'number' && movie.runtime > 0
-      ? `${movie.runtime} min`
-      : '—';
-  const releaseDate = movie.release_date
-    ? new Date(movie.release_date).toLocaleDateString()
-    : '—';
-  const genresText = movie.genres?.length ? movie.genres.join(', ') : '—';
+  const firstSeason = show.seasons[0];
+  const firstEp = firstSeason?.episodes[0];
+  const comingSoon = isComingSoon(show);
 
   return (
     <>
@@ -78,43 +59,39 @@ export default async function MovieDetailPage({
         <BackButton />
       </div>
       <DetailHero
-        item={movie}
-        playLabel={comingSoon ? 'Coming Soon' : 'Watch Movie'}
-        playHref={comingSoon ? undefined : watchMovieHref(movie.id)}
+        item={show}
+        playLabel={
+          comingSoon
+            ? 'Coming Soon'
+            : firstEp
+              ? `Watch S${firstEp.season} E${firstEp.episode}`
+              : 'Watch S1 E1'
+        }
+        playHref={
+          comingSoon
+            ? undefined
+            : firstEp
+              ? watchTvHref(show.id, firstEp.season, firstEp.episode)
+              : watchTvHref(show.id, 1, 1)
+        }
         disablePlay={comingSoon}
       />
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <StatusBadge media={movie} />
-          <QualityBadge media={movie} />
-          <FavoriteButton entry={{ id: movie.id, type: 'movie', title: movie.title, poster_path: movie.poster_path }} />
+          <StatusBadge media={show} />
+          <FavoriteButton entry={{ id: show.id, type: 'tv', title: show.title, poster_path: show.poster_path }} />
         </div>
 
-        <h2 className="mb-3 text-lg font-semibold">About</h2>
-        <p className="leading-relaxed text-white/70">
-          {movie.overview || 'No overview available.'}
-        </p>
-        <dl className="mt-8 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-          <div>
-            <dt className="text-white/40">Released</dt>
-            <dd>{releaseDate}</dd>
-          </div>
-          <div>
-            <dt className="text-white/40">Runtime</dt>
-            <dd>{runtime}</dd>
-          </div>
-          <div>
-            <dt className="text-white/40">Rating</dt>
-            <dd>{rating} / 10</dd>
-          </div>
-          <div>
-            <dt className="text-white/40">Genres</dt>
-            <dd>{genresText}</dd>
-          </div>
-        </dl>
+        <h2 className="mb-6 text-lg font-semibold">Episodes</h2>
+        {show.seasons.length > 0 ? (
+          <EpisodeList show={show} />
+        ) : (
+          <p className="text-white/50">
+            Episode list loading failed - use Watch from the hero.
+          </p>
+        )}
 
-        {/* CastSection already handles undefined / empty cast gracefully */}
-        <CastSection cast={movie.cast} />
+        <CastSection cast={show.cast} />
       </div>
     </>
   );
