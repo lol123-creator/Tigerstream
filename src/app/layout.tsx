@@ -1,8 +1,9 @@
-import { Inter, Fraunces } from 'next/font/google';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Navbar } from '@/components/Navbar';
+import { IntroSplash } from '@/components/IntroSplash';
 import dynamic from 'next/dynamic';
 import { SITE_NAME } from '@/lib/brand';
 import { getSiteUrl } from '@/lib/site';
@@ -37,14 +38,13 @@ export const metadata: Metadata = {
 
 const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
 
-// Display face for hero titles and big headings (Tiger Editorial direction).
-// Kept off the body font so it reads as a deliberate accent, not the
-// default typeface for everything.
-const fraunces = Fraunces({
+// Display face for headings (Frosted Minimal direction) - clean and
+// geometric, used with tight tracking rather than a loud personality.
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   display: 'swap',
-  weight: ['500', '600', '700'],
-  variable: '--font-fraunces',
+  weight: ['500', '600'],
+  variable: '--font-jakarta',
 });
 
 export default function RootLayout({
@@ -62,7 +62,8 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://api.themoviedb.org" />
       </head>
-      <body className={`min-h-screen font-sans ${inter.variable} ${fraunces.variable}`}>
+      <body className={`min-h-screen font-sans ${inter.variable} ${jakarta.variable}`}>
+        <IntroSplash />
         <Navbar />
         <main>{children}</main>
         <ScrollToTop />
