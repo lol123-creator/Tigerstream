@@ -26,6 +26,41 @@ function mapCast(cast: TmdbCast[] | undefined): Cast[] {
     }));
 }
 
+/**
+ * TMDB's top-level `release_date` on a movie is the *earliest* known
+ * release anywhere in the world - often a festival premiere or a
+ * different territory's date, which can be well before the actual
+ * U.S./wide release everyone thinks of as "the release date". That
+ * mismatch was making already-announced, not-yet-out movies (e.g. one
+ * releasing July 16) show up as already released with a live rating.
+ *
+ * This looks at the regional release_dates (fetched via
+ * append_to_response=release_dates) and picks the U.S. theatrical date
+ * when available, falling back sensibly if not.
+ *
+ * TMDB release type codes: 1 Premiere, 2 Theatrical (limited),
+ * 3 Theatrical, 4 Digital, 5 Physical, 6 TV.
+ */
+function resolveReleaseDate(m: TmdbMovieDetail): string {
+  const us = m.release_dates?.results?.find((r) => r.iso_3166_1 === 'US');
+  const entries = us?.release_dates ?? [];
+
+  const byType = (type: number) =>
+    entries.find((e) => e.type === type && e.release_date)?.release_date;
+
+  const resolved =
+    byType(3) ?? // Theatrical (wide) - the one people mean by "release date"
+    byType(2) ?? // Theatrical (limited)
+    byType(4) ?? // Digital
+    byType(1) ?? // Premiere
+    undefined;
+
+  // ISO datetime like "2026-07-16T00:00:00.000Z" -> keep just the date part
+  const normalized = resolved ? resolved.slice(0, 10) : undefined;
+
+  return normalized || m.release_date || '';
+}
+
 export function mapMovieSummary(m: TmdbMovieSummary, genres: string[] = []): Movie {
   const trailer = (m.videos?.results || [])
     .find((v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
@@ -57,6 +92,7 @@ export function mapMovieDetail(
 
   return {
     ...mapMovieSummary(m, genreNames(m.genres)),
+    release_date: resolveReleaseDate(m),
     runtime: m.runtime ?? 0,
     tagline: m.tagline || undefined,
     cast: mapCast(cast),
