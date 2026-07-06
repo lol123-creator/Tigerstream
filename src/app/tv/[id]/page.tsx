@@ -2,7 +2,6 @@ import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
 import { EpisodeList } from '@/components/EpisodeList';
 import { BackButton } from '@/components/BackButton';
-import { QualityBadge } from '@/components/QualityBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { getTvShowById } from '@/lib/tmdb/service';
@@ -80,7 +79,6 @@ export default async function TvDetailPage({
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <StatusBadge media={show} />
-          <QualityBadge media={show} />
           <FavoriteButton entry={{ id: show.id, type: 'tv', title: show.title, poster_path: show.poster_path }} />
         </div>
 
