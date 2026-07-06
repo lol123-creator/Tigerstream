@@ -1,4 +1,4 @@
-﻿import {
+import {
   movies as fallbackMovies,
   tvShows as fallbackTvShows,
   getMovie as fallbackGetMovie,
@@ -30,10 +30,7 @@ import type {
   TmdbSearchResult,
 } from './types';
 
-/** Pages Ã— 20 results â€” 15 pages = 300 titles per browse view */
 export const BROWSE_PAGE_COUNT = 15;
-
-/** Number of items per paginated browse page (1 TMDB page = 20 items) */
 export const PAGE_SIZE = 20;
 
 const HOME_ROW_SIZE = 24;
@@ -107,7 +104,6 @@ async function fetchNowPlayingPage(page: number): Promise<Movie[]> {
   return data.results.map((m) => mapMovieSummary(m));
 }
 
-/** Shorter cache for â€œwhatâ€™s hot nowâ€ lists and the hero. */
 const HOT_REVALIDATE = 1800;
 
 export async function getTrendingToday(): Promise<MediaItem[]> {
@@ -181,10 +177,6 @@ function pickHeroCandidate(items: MediaItem[]): MediaItem | undefined {
   );
 }
 
-/**
- * Featured hero: #1 hot title today, with full detail (tagline, genres).
- * Refreshes every ~30 minutes via page revalidate.
- */
 export async function getFeaturedHero(): Promise<{
   item: MediaItem;
   badge: string;
@@ -340,11 +332,15 @@ export async function searchMedia(query: string): Promise<MediaItem[]> {
 export async function getMovieById(id: number): Promise<Movie | null> {
   if (!isTmdbEnabled()) return fallbackGetMovie(id) ?? null;
   try {
-    // `append_to_response=credits` returns the top cast in the same call
-    // so the detail page can show it without a second round-trip.
+    // `append_to_response=credits,videos,release_dates` gets cast, the
+    // trailer, and the regional release-date breakdown in one call.
+    // release_dates is what lets us resolve the *actual* U.S./wide
+    // release date instead of TMDB's top-level `release_date`, which
+    // can be an earlier festival/foreign premiere date - see
+    // resolveReleaseDate() in mappers.ts.
     const data = await tmdbFetch<TmdbMovieDetail>(
       `/movie/${id}`,
-      { append_to_response: "credits,videos" },
+      { append_to_response: "credits,videos,release_dates" },
     );
     return mapMovieDetail(data, data.credits?.cast);
   } catch {
@@ -369,8 +365,6 @@ export async function getTvShowById(id: number): Promise<TvShow | null> {
   if (!isTmdbEnabled()) return fallbackGetTvShow(id) ?? null;
 
   try {
-    // `append_to_response=credits` returns the top cast in the same call
-    // so the detail page can show it without a second round-trip.
     const show = await tmdbFetch<TmdbTvDetail>(
       `/tv/${id}`,
       { append_to_response: "credits,videos" },
@@ -448,7 +442,6 @@ export async function getWatchTvContext(
         title: nextInSeason.name,
       };
     } else {
-      
       const seasons = showDetail.seasons
         .filter((s) => s.season_number > 0)
         .sort((a, b) => a.season_number - b.season_number);
@@ -476,11 +469,6 @@ export async function getWatchTvContext(
     return null;
   }
 }
-
-// â”€â”€â”€ Anime helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// TMDB uses keyword id 210024 ("anime") combined with Animation genre (16).
-// For TV we also include the Japanese origin-country filter which gives the
-// cleanest results on the free API tier.
 
 const ANIME_MOVIE_PARAMS = {
   with_genres: '16',
@@ -549,7 +537,6 @@ export async function getAnimeTvPage(page = 1): Promise<PagedResult<TvShow>> {
     currentPage: page,
   };
 }
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getMovieTitle(id: number): Promise<string | null> {
   const movie = await getMovieById(id);
@@ -623,10 +610,3 @@ export async function getTvByGenrePage(
     currentPage: page,
   };
 }
-
-
-
-
-
-
-
