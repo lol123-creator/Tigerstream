@@ -40,9 +40,9 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-surface/60 backdrop-blur-2xl transition-colors ${
+      className={`fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-surface/60 backdrop-blur-md transition-colors ${
         isWatch
-          ? 'bg-surface/80 backdrop-blur-xl'
+          ? 'bg-surface/80 backdrop-blur-md'
           : 'bg-gradient-to-b from-black/60 to-transparent'
       }`}
     >
@@ -98,7 +98,7 @@ export function Navbar() {
       </nav>
 
       {menuOpen && (
-        <div className="border-t border-white/10 bg-surface/90 backdrop-blur-2xl md:hidden">
+        <div className="border-t border-white/10 bg-surface/90 backdrop-blur-md md:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
             {NAV_LINKS.map(({ label, href }) => (
               <Link
