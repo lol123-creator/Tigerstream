@@ -36,7 +36,9 @@ export default async function TvPage({
         Page {currentPage} of {totalPages} — browse all series below
       </p>
 
-      <div className="sticky top-[4.25rem] z-40 -mx-4 mb-8 border-b border-white/5 bg-surface/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
+      {/* top-16 matches the navbar's fixed h-16 exactly, so this sits
+          flush underneath it with no gap and no overlap */}
+      <div className="sticky top-16 z-40 -mx-4 mb-8 border-b border-white/5 bg-surface/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
         <p className="mb-3 text-sm font-medium text-white/60">Browse by genre</p>
         <GenreChips type="tv" genres={genres} />
       </div>
