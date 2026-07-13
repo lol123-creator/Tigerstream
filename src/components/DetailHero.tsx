@@ -45,12 +45,12 @@ export function DetailHero({
   );
 
   return (
-    <section className="relative h-[42vh] min-h-[320px] overflow-hidden bg-surface-card sm:h-[52vh] md:h-[62vh]">
+    <section className="relative h-[48vh] min-h-[360px] overflow-hidden bg-surface-card sm:h-[58vh] md:h-[68vh]">
       <Image
         src={backdropSrc}
         alt=""
         fill
-        className="object-cover object-center"
+        className="object-cover object-top"
         priority
         sizes="100vw"
         onError={() => setBackdropSrc(PLACEHOLDER)}
