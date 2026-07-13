@@ -42,6 +42,15 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
   const dragStartPageX = useRef(0);
   const dragScrollLeft = useRef(0);
 
+  // Drag updates are batched into requestAnimationFrame instead of
+  // writing scrollLeft synchronously on every mousemove. mousemove can
+  // fire far faster than the display refresh rate, and each direct
+  // scrollLeft write forces an immediate layout/paint - batching to one
+  // write per animation frame is what actually makes the drag feel
+  // smooth instead of janky.
+  const rafId = useRef<number | null>(null);
+  const pendingX = useRef<number | null>(null);
+
   const updateArrows = useCallback(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -63,12 +72,26 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     };
   }, [updateArrows, children]);
 
+  useEffect(() => {
+    return () => {
+      if (rafId.current != null) cancelAnimationFrame(rafId.current);
+    };
+  }, []);
+
   const scroll = (direction: 'left' | 'right') => {
     const el = scrollerRef.current;
     if (!el) return;
     const distance = Math.max(el.clientWidth * 0.9, 280);
     el.scrollBy({ left: direction === 'left' ? -distance : distance, behavior: 'smooth' });
   };
+
+  const applyPendingScroll = useCallback(() => {
+    rafId.current = null;
+    const el = scrollerRef.current;
+    if (!el || pendingX.current == null) return;
+    const walk = (pendingX.current - dragStartX.current) * 1.5;
+    el.scrollLeft = dragScrollLeft.current - walk;
+  }, []);
 
   const onMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -99,14 +122,20 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
         el.style.outlineOffset = '-2px';
       }
     }
-    const x = e.pageX - el.offsetLeft;
-    const walk = (x - dragStartX.current) * 1.5;
-    el.scrollLeft = dragScrollLeft.current - walk;
+    pendingX.current = e.pageX - el.offsetLeft;
+    if (rafId.current == null) {
+      rafId.current = requestAnimationFrame(applyPendingScroll);
+    }
   };
 
   const stopDrag = () => {
     if (!isDragging.current) return;
     isDragging.current = false;
+    if (rafId.current != null) {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    }
+    pendingX.current = null;
     const el = scrollerRef.current;
     if (el) {
       el.style.scrollBehavior = '';
