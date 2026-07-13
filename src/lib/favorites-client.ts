@@ -16,19 +16,36 @@ export interface FavoriteEntry {
   addedAt: number;
 }
 
+// In-memory cache of the favorites map. Without this, every single
+// FavoriteButton on the page (there can be hundreds on the homepage)
+// independently calls localStorage.getItem + JSON.parse on mount -
+// hundreds of redundant synchronous reads of the exact same data,
+// firing right after hydration. That was a real, measurable contributor
+// to poor INP/FID, especially on mobile. Cached here and kept in sync
+// on every write instead.
+let cache: Record<string, FavoriteEntry> | null = null;
+
 function loadFavorites(): Record<string, FavoriteEntry> {
   if (typeof window === 'undefined') return {};
+  if (cache) return cache;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    cache = raw ? JSON.parse(raw) : {};
   } catch {
-    return {};
+    cache = {};
   }
+  return cache;
 }
 
 function saveFavorites(data: Record<string, FavoriteEntry>) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  cache = data;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Storage full or unavailable - the in-memory cache still reflects
+    // the change for this session even if it can't persist.
+  }
 }
 
 function key(type: MediaType, id: number) {
@@ -61,8 +78,6 @@ export function useFavorites(type: MediaType, id: number) {
       delete data[k];
       setFav(false);
     } else {
-      // We need title & poster — caller sets them via a wrapper.
-      // For the hook, just store what we have.
       data[k] = { id, type, title: '', poster_path: '', addedAt: Date.now() };
       setFav(true);
     }
