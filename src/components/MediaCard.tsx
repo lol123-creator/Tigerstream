@@ -37,7 +37,7 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
       onClick={storeReturnPath}
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      className={`group relative block overflow-hidden rounded-2xl bg-surface-card transition-[transform,box-shadow] duration-300 ease-out will-change-transform hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-glow-lg hover:ring-1 hover:ring-accent/30 ${
+      className={`group relative block overflow-hidden rounded-2xl bg-surface-card transition-[transform,box-shadow] duration-300 ease-out hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-glow-lg hover:ring-1 hover:ring-accent/30 ${
         variant === 'row'
           ? 'shrink-0 snap-start'
           : 'w-full'
