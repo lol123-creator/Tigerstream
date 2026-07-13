@@ -17,19 +17,21 @@ export default function OpengraphImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #0a0a0c 0%, #1a1a20 50%, #0a0a0c 100%)',
+          background: '#121316',
           position: 'relative',
         }}
       >
-        {/* Accent bar at top */}
+        {/* Soft ambient glow, matching the Frosted Minimal hero treatment */}
         <div
           style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 6,
-            background: '#f59e0b',
+            top: '-10%',
+            left: '25%',
+            width: 500,
+            height: 500,
+            borderRadius: '50%',
+            background: 'rgba(127,184,217,0.18)',
+            filter: 'blur(0px)',
           }}
         />
         {/* Title */}
@@ -38,19 +40,24 @@ export default function OpengraphImage() {
             display: 'flex',
             alignItems: 'center',
             gap: 16,
+            zIndex: 1,
           }}
         >
-          <svg
-            width="64"
-            height="64"
-            viewBox="0 0 24 24"
-            fill="none"
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 72,
+              height: 72,
+              borderRadius: 20,
+              background: '#7FB8D9',
+            }}
           >
-            <path
-              d="M5 4v16l11-8z"
-              fill="#f59e0b"
-            />
-          </svg>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <path d="M5 4v16l11-8z" fill="#121316" />
+            </svg>
+          </div>
           <div
             style={{
               display: 'flex',
@@ -60,14 +67,14 @@ export default function OpengraphImage() {
             <span
               style={{
                 fontSize: 56,
-                fontWeight: 800,
-                color: '#ffffff',
+                fontWeight: 600,
+                color: '#EDEDEF',
                 fontFamily: 'system-ui, sans-serif',
                 letterSpacing: '-0.02em',
               }}
             >
               Tiger
-              <span style={{ color: '#f59e0b' }}>Stream</span>
+              <span style={{ color: '#7FB8D9' }}>Stream</span>
             </span>
           </div>
         </div>
@@ -75,11 +82,12 @@ export default function OpengraphImage() {
         <span
           style={{
             fontSize: 22,
-            color: 'rgba(255,255,255,0.6)',
+            color: 'rgba(237,237,239,0.55)',
             fontFamily: 'system-ui, sans-serif',
-            marginTop: 16,
+            marginTop: 20,
             letterSpacing: '0.05em',
             textTransform: 'uppercase',
+            zIndex: 1,
           }}
         >
           Stream movies & TV shows for free
