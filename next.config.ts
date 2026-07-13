@@ -7,6 +7,15 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    // TMDB already serves pre-sized images (w185/w342/w500/w780/original)
+    // from its own CDN, and we pick the right size per component. Running
+    // those through Vercel's Image Optimization API on top of that adds
+    // little value and was blowing through the plan's monthly image
+    // optimization quota - once that's hit, Vercel returns 402 for any
+    // image it hasn't already cached, which is what was causing posters
+    // to randomly fail to load. Serving the TMDB/placeholder URLs
+    // directly (unoptimized) avoids that limit entirely.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
