@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -24,13 +24,20 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
     ? new Date(item.release_date).getFullYear()
     : new Date(item.first_air_date).getFullYear();
 
+  // Falls back to a placeholder if the poster fails to load for any
+  // reason - a stale/expired TMDB path, a CDN hiccup, or the image
+  // optimizer timing out - rather than leaving a blank/broken box with
+  // no retry, which is what a bare <Image> does on error.
+  const [imgSrc, setImgSrc] = useState(() => tmdbImage(item.poster_path, 'w342'));
+  const [failed, setFailed] = useState(false);
+
   return (
     <Link
       href={href}
       onClick={storeReturnPath}
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      className={`group relative block overflow-hidden rounded-2xl bg-surface-card transition-all duration-300 ease-out hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-glow-lg hover:ring-1 hover:ring-accent/30 ${
+      className={`group relative block overflow-hidden rounded-2xl bg-surface-card transition-[transform,box-shadow] duration-300 ease-out will-change-transform hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-glow-lg hover:ring-1 hover:ring-accent/30 ${
         variant === 'row'
           ? 'shrink-0 snap-start'
           : 'w-full'
@@ -43,11 +50,17 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
         <Image
-          src={tmdbImage(item.poster_path, 'w342')}
+          src={imgSrc}
           alt={item.title}
           fill
           sizes="(max-width: 640px) 35vw, (max-width: 1024px) 18vw, 200px"
           priority={priority}
+          onError={() => {
+            if (!failed) {
+              setFailed(true);
+              setImgSrc(`https://placehold.co/500x750/1a1a20/666?text=No+Image`);
+            }
+          }}
           className="object-cover transition-all duration-300 group-hover:scale-110 group-hover:opacity-70"
         />
         <div className="absolute inset-0 bg-card-shine opacity-0 transition-opacity group-hover:opacity-100" />
