@@ -16,7 +16,7 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a0a0c',
+          background: '#121316',
         }}
       >
         <div
@@ -26,8 +26,8 @@ export default function AppleIcon() {
             justifyContent: 'center',
             width: 140,
             height: 140,
-            borderRadius: 30,
-            background: '#f59e0b',
+            borderRadius: 34,
+            background: '#7FB8D9',
           }}
         >
           <svg
@@ -38,7 +38,7 @@ export default function AppleIcon() {
           >
             <path
               d="M5 4v16l11-8z"
-              fill="#0a0a0c"
+              fill="#121316"
             />
           </svg>
         </div>
