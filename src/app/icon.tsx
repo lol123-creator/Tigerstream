@@ -16,8 +16,8 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#f59e0b',
-          borderRadius: 6,
+          background: '#7FB8D9',
+          borderRadius: 8,
         }}
       >
         <svg
@@ -29,7 +29,7 @@ export default function Icon() {
         >
           <path
             d="M5 4v16l11-8z"
-            fill="#0a0a0c"
+            fill="#121316"
           />
         </svg>
       </div>
