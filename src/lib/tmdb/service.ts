@@ -33,7 +33,19 @@ import type {
 export const BROWSE_PAGE_COUNT = 15;
 export const PAGE_SIZE = 20;
 
-const HOME_ROW_SIZE = 24;
+/**
+ * Items per row on the homepage.
+ *
+ * The homepage renders up to 20 rows in one page (3 on the main page +
+ * 17 in HomeMoreRows). At 24 items/row that's up to ~480 <MediaCard>
+ * components at once - each with its own image, hover transitions, and
+ * a FavoriteButton doing post-hydration work. That volume was a real,
+ * measurable contributor to poor mobile INP/FID (Speed Insights showed
+ * 912ms INP / 262ms FID on mobile). Cutting this to 14 reduces total
+ * homepage card count by roughly 40% while each row still scrolls for
+ * more - full catalogs remain available via the dedicated browse pages.
+ */
+const HOME_ROW_SIZE = 14;
 
 export { HOME_ROW_SIZE };
 
