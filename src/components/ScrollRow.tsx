@@ -75,6 +75,8 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
   useEffect(() => {
     return () => {
       if (rafId.current != null) cancelAnimationFrame(rafId.current);
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('mouseup', onWindowMouseUp);
     };
   }, []);
 
@@ -108,11 +110,21 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     el.style.scrollBehavior = 'auto';
     el.style.cursor = 'grabbing';
     el.style.userSelect = 'none';
+    // Hint the browser this element's scroll position is about to change
+    // repeatedly, and disable pointer events on its contents so dragging
+    // across dozens of cards doesn't trigger a hover transition/box-shadow
+    // recalculation on every single one along the way. Listeners are
+    // attached to window (below) rather than this element, so removing
+    // its own pointer events doesn't break drag tracking.
+    el.style.willChange = 'scroll-position';
+    el.style.pointerEvents = 'none';
+
+    window.addEventListener('mousemove', onWindowMouseMove);
+    window.addEventListener('mouseup', onWindowMouseUp);
   };
 
-  const onMouseMove = (e: React.MouseEvent) => {
+  const onWindowMouseMove = (e: MouseEvent) => {
     if (!isDragging.current) return;
-    e.preventDefault();
     const el = scrollerRef.current;
     if (!el) return;
     if (!didDrag.current) {
@@ -126,6 +138,12 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     if (rafId.current == null) {
       rafId.current = requestAnimationFrame(applyPendingScroll);
     }
+  };
+
+  const onWindowMouseUp = () => {
+    stopDrag();
+    window.removeEventListener('mousemove', onWindowMouseMove);
+    window.removeEventListener('mouseup', onWindowMouseUp);
   };
 
   const stopDrag = () => {
@@ -143,6 +161,8 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
       el.style.userSelect = '';
       el.style.outline = '';
       el.style.outlineOffset = '';
+      el.style.willChange = '';
+      el.style.pointerEvents = '';
     }
     if (didDrag.current) {
       const el = scrollerRef.current;
@@ -176,7 +196,7 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
           </button>
         )}
 
-        <div ref={scrollerRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={stopDrag} onMouseLeave={stopDrag} onDragStart={(e) => e.preventDefault()} draggable={false} className="scrollbar-hide flex cursor-grab gap-3 overflow-x-auto px-4 pb-2 active:cursor-grabbing sm:gap-4 sm:px-6">
+        <div ref={scrollerRef} onMouseDown={onMouseDown} onDragStart={(e) => e.preventDefault()} draggable={false} className="scrollbar-hide flex cursor-grab gap-3 overflow-x-auto px-4 pb-2 active:cursor-grabbing sm:gap-4 sm:px-6">
           {children}
         </div>
       </div>
