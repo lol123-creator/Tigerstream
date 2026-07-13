@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { toggleFavorite, type FavoriteEntry } from '@/lib/favorites-client';
+import { isFavorited, toggleFavorite, type FavoriteEntry } from '@/lib/favorites-client';
 
 interface FavoriteButtonProps {
   /** Data needed to save the favorite. */
@@ -19,8 +19,9 @@ export function FavoriteButton({
   const [active, setActive] = useState(false);
 
   useEffect(() => {
-    // Check initial state on mount (client only)
-    const { isFavorited } = require('@/lib/favorites-client');
+    // Was previously a require() call re-resolved on every mount - a
+    // plain top-level import is both more idiomatic and avoids any
+    // extra module-interop overhead across hundreds of card instances.
     setActive(isFavorited(entry.type, entry.id));
   }, [entry.type, entry.id]);
 
@@ -43,8 +44,8 @@ export function FavoriteButton({
           width="16"
           height="16"
           viewBox="0 0 24 24"
-          fill={active ? '#f59e0b' : 'none'}
-          stroke={active ? '#f59e0b' : 'currentColor'}
+          fill={active ? '#7FB8D9' : 'none'}
+          stroke={active ? '#7FB8D9' : 'currentColor'}
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -70,8 +71,8 @@ export function FavoriteButton({
         width="16"
         height="16"
         viewBox="0 0 24 24"
-        fill={active ? '#f59e0b' : 'none'}
-        stroke={active ? '#f59e0b' : 'currentColor'}
+        fill={active ? '#7FB8D9' : 'none'}
+        stroke={active ? '#7FB8D9' : 'currentColor'}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
