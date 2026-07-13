@@ -1,7 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
-import { mergePeachifyProgress, type PeachifyProgressStore } from '@/peachify'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  mergePeachifyProgress,
+  loadPeachifyProgress,
+  getResumeSeconds,
+  type PeachifyProgressStore,
+} from '@/peachify'
 
 /**
  * VideasyPlayer embeds a Videasy player inside an iframe.
@@ -13,8 +18,9 @@ import { mergePeachifyProgress, type PeachifyProgressStore } from '@/peachify'
  *   Movie: https://player.videasy.to/movie/{mediaId}
  *   TV:    https://player.videasy.to/tv/{mediaId}/{season}/{episode}
  *
- * Confirmed query params: color (hex, no #), episodeSelector, nextEpisode,
- * autoplayNextEpisode, overlay.
+ * Confirmed query params (per videasy.to/docs): color, episodeSelector,
+ * nextEpisode, autoplayNextEpisode, overlay, and `progress` - sets the
+ * start time in seconds (e.g. progress=120 starts at 2 minutes).
  *
  * Known third-party issue (not fixable client-side): Videasy's player
  * hijacks the first click on play to open an ad tab, and actively
@@ -30,6 +36,7 @@ export function VideasyPlayer({
   episode,
   title,
   autoPlay = true,
+  autoResume = true,
   onMediaData,
 }: {
   type: 'movie' | 'tv'
@@ -38,6 +45,8 @@ export function VideasyPlayer({
   episode?: number
   title?: string
   autoPlay?: boolean
+  /** Resume from the saved position for this title, if any. Defaults to true. */
+  autoResume?: boolean
   /** Called after a MEDIA_DATA payload has been merged into storage. */
   onMediaData?: (store: PeachifyProgressStore) => void
 }) {
@@ -59,7 +68,10 @@ export function VideasyPlayer({
     }, 3000)
   }
 
-  const buildUrl = () => {
+  // Built once per title/episode - looks up the saved position from the
+  // shared progress store (same one Peachify and CinemaOS read/write)
+  // and passes it as Videasy's documented `progress` param.
+  const embedUrl = useMemo(() => {
     const base =
       type === 'movie'
         ? `${ORIGIN}/movie/${mediaId}`
@@ -71,9 +83,21 @@ export function VideasyPlayer({
       params.set('episodeSelector', 'true')
     }
     if (autoPlay === false) params.set('autoplay', 'false')
+
+    if (autoResume && typeof window !== 'undefined') {
+      const store = loadPeachifyProgress()
+      const resume =
+        type === 'tv'
+          ? getResumeSeconds(store, mediaId, season, episode)
+          : getResumeSeconds(store, mediaId)
+      if (resume != null) {
+        params.set('progress', String(Math.floor(resume)))
+      }
+    }
+
     const qs = params.toString()
     return qs ? `${base}?${qs}` : base
-  }
+  }, [type, mediaId, season, episode, autoPlay, autoResume])
 
   // Sync progress with the same store/protocol as Peachify. This is the
   // same MEDIA_DATA convention every other embed in this family uses
@@ -163,7 +187,7 @@ export function VideasyPlayer({
       )}
       <iframe
         ref={iframeRef}
-        src={buildUrl()}
+        src={embedUrl}
         title={title || 'Video player'}
         className="absolute top-0 left-0 w-full h-full border-0"
         allowFullScreen
