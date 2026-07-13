@@ -1,11 +1,17 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { mergePeachifyProgress, type PeachifyProgressStore } from '@/peachify';
+import { useEffect, useMemo, useRef } from 'react';
+import {
+  mergePeachifyProgress,
+  loadPeachifyProgress,
+  getResumeSeconds,
+  type PeachifyProgressStore,
+} from '@/peachify';
 
 // Per CinemaOS's official integration guide:
 //   Movie:   https://cinemaos.tech/player/{tmdb_id}
 //   TV Show: https://cinemaos.tech/player/{tmdb_id}/{season}/{episode}
+// `startTime` (seconds) is a documented param for resuming playback.
 const ORIGIN = 'https://cinemaos.tech';
 const BASE = `${ORIGIN}/player`;
 
@@ -17,6 +23,8 @@ interface CinemaOSPlayerProps {
   title?: string;
   autoPlay?: boolean;
   autoNext?: boolean;
+  /** Resume from the saved position for this title, if any. Defaults to true. */
+  autoResume?: boolean;
   /** Called after a MEDIA_DATA payload has been merged into storage. */
   onMediaData?: (store: PeachifyProgressStore) => void;
 }
@@ -59,11 +67,16 @@ export function CinemaOSPlayer({
   title,
   autoPlay = true,
   autoNext = true,
+  autoResume = true,
   onMediaData,
 }: CinemaOSPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const buildUrl = () => {
+  // Built once per title/episode - looks up the saved position from the
+  // shared progress store (same one Peachify reads/writes) and passes it
+  // as CinemaOS's documented `startTime` param, the same way
+  // PeachifyPlayer already does for its own embed URL.
+  const embedUrl = useMemo(() => {
     const path =
       type === 'movie'
         ? `${BASE}/${mediaId}`
@@ -74,8 +87,19 @@ export function CinemaOSPlayer({
     if (autoPlay === false) params.set('autoPlay', 'false');
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
 
+    if (autoResume && typeof window !== 'undefined') {
+      const store = loadPeachifyProgress();
+      const resume =
+        type === 'tv'
+          ? getResumeSeconds(store, mediaId, season, episode)
+          : getResumeSeconds(store, mediaId);
+      if (resume != null) {
+        params.set('startTime', String(Math.floor(resume)));
+      }
+    }
+
     return `${path}?${params.toString()}`;
-  };
+  }, [type, mediaId, season, episode, autoPlay, autoNext, autoResume]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -101,7 +125,7 @@ export function CinemaOSPlayer({
     <div className="relative w-full pt-[56.25%] overflow-hidden rounded-xl bg-black">
       <iframe
         ref={iframeRef}
-        src={buildUrl()}
+        src={embedUrl}
         title={title || 'Video player'}
         className="absolute top-0 left-0 w-full h-full border-0"
         allowFullScreen
