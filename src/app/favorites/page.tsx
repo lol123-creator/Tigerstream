@@ -55,13 +55,19 @@ export default function FavoritesPage() {
       {items.length > 0 ? (
         <MediaGrid items={items} />
       ) : (
-        <div className="flex min-h-[30vh] flex-col items-center justify-center text-center">
-          <p className="text-white/40">
-            Tap the ❤ on any movie or show to save it here.
+        <div className="relative flex min-h-[40vh] flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/5 bg-surface-card/40 px-6 text-center">
+          <div className="pointer-events-none absolute inset-0 bg-ambient-glow opacity-60" />
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </div>
+          <p className="relative mt-4 max-w-xs text-sm text-white/50">
+            Nothing saved yet. Tap the heart on any movie or show to keep it here.
           </p>
           <Link
             href="/"
-            className="mt-4 text-sm text-accent underline-offset-2 hover:underline"
+            className="relative mt-5 rounded-2xl bg-accent px-5 py-2.5 text-sm font-medium text-[#0A1F2B] transition hover:bg-accent-hover hover:shadow-glow"
           >
             Browse titles
           </Link>
