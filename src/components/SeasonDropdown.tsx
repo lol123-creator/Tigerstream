@@ -120,7 +120,7 @@ export function SeasonDropdown({ seasons, selectedSeasonNumber: selNum, onChange
           role="listbox"
           aria-label="Seasons"
           tabIndex={-1}
-          className="animate-season-dropdown absolute left-0 right-0 z-50 mt-2 origin-top overflow-hidden rounded-2xl border border-white/10 bg-[#111116]/95 p-1.5 shadow-2xl shadow-black/70 backdrop-blur-xl sm:w-80"
+          className="animate-season-dropdown absolute left-0 right-0 z-50 mt-2 origin-top overflow-hidden rounded-2xl border border-white/10 bg-surface-card/95 p-1.5 shadow-2xl shadow-black/70 backdrop-blur-xl sm:w-80"
         >
           {seasons.map((season, idx) => {
             const isSel = season.season_number === selNum;
