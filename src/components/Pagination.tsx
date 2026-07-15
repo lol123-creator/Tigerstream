@@ -12,25 +12,24 @@ export function Pagination({ currentPage, totalPages, buildHref }: PaginationPro
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
 
-  // Build page window: always show first, last, current ±2
   const pages: (number | 'ellipsis')[] = [];
-  const window = new Set<number>();
-  window.add(1);
-  window.add(totalPages);
+  const windowSet = new Set<number>();
+  windowSet.add(1);
+  windowSet.add(totalPages);
   for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
-    window.add(i);
+    windowSet.add(i);
   }
-  const sorted = [...window].sort((a, b) => a - b);
+  const sorted = [...windowSet].sort((a, b) => a - b);
   for (let i = 0; i < sorted.length; i++) {
     if (i > 0 && sorted[i] - sorted[i - 1] > 1) pages.push('ellipsis');
     pages.push(sorted[i]);
   }
 
   const btnBase =
-    'flex h-9 min-w-[2.25rem] items-center justify-center rounded-lg border px-3 text-sm font-medium transition';
-  const active = 'border-accent bg-accent/20 text-white';
-  const inactive = 'border-white/10 bg-white/5 text-white/70 hover:border-accent/40 hover:bg-accent/10 hover:text-white';
-  const disabled = 'border-white/5 bg-white/5 text-white/20 cursor-not-allowed pointer-events-none';
+    'flex h-9 min-w-[2.25rem] items-center justify-center rounded-full border px-3.5 text-sm font-medium transition-all duration-200';
+  const active = 'border-accent bg-accent text-[#0A1F2B] shadow-glow';
+  const inactive = 'border-white/10 bg-white/[0.04] text-white/65 hover:border-accent/30 hover:bg-accent/10 hover:text-white';
+  const disabled = 'border-white/5 bg-white/[0.02] text-white/15 cursor-not-allowed pointer-events-none';
 
   return (
     <nav
@@ -53,10 +52,10 @@ export function Pagination({ currentPage, totalPages, buildHref }: PaginationPro
         </span>
       )}
 
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1.5">
         {pages.map((p, i) =>
           p === 'ellipsis' ? (
-            <span key={`ellipsis-${i}`} className="px-1 text-white/30 select-none">
+            <span key={`ellipsis-${i}`} className="px-1 text-white/25 select-none">
               …
             </span>
           ) : (
