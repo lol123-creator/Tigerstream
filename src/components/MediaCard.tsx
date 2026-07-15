@@ -81,10 +81,9 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           </div>
         </div>
 
-        {/* Hover overlay - trimmed to title + one compact metadata line
-            instead of stacking title/year-rating/language/genres/overview
-            separately, which read as cluttered and took up too much of
-            the card. */}
+        {/* Hover overlay - title + one compact metadata line (year,
+            rating, language, top genre) instead of stacking each as its
+            own separate line, which read as cluttered. */}
         <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/45 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <p className="text-sm font-semibold text-white leading-snug line-clamp-2">
             {item.title}
@@ -93,6 +92,12 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
             {year}
             <span className="mx-1.5 text-white/25">·</span>
             <span className="text-accent">★ {item.vote_average.toFixed(1)}</span>
+            {item.original_language && (
+              <>
+                <span className="mx-1.5 text-white/25">·</span>
+                {item.original_language.toUpperCase()}
+              </>
+            )}
             {item.genres && item.genres.length > 0 && (
               <>
                 <span className="mx-1.5 text-white/25">·</span>
