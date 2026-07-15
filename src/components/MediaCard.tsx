@@ -81,27 +81,25 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           </div>
         </div>
 
-        {/* Hover overlay with details */}
-        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
-          <p className="text-sm font-medium text-white leading-tight">{item.title}</p>
-          <p className="mt-1 text-xs text-white/55">
-            {year} · ★ {item.vote_average.toFixed(1)}
+        {/* Hover overlay - trimmed to title + one compact metadata line
+            instead of stacking title/year-rating/language/genres/overview
+            separately, which read as cluttered and took up too much of
+            the card. */}
+        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/45 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <p className="text-sm font-semibold text-white leading-snug line-clamp-2">
+            {item.title}
           </p>
-          {item.original_language && (
-            <p className="mt-0.5 text-xs text-white/35">
-              {item.original_language.toUpperCase()}
-            </p>
-          )}
-          {item.genres && item.genres.length > 0 && (
-            <p className="mt-1 text-xs text-white/45 line-clamp-2 leading-relaxed">
-              {item.genres.slice(0, 3).join(", ")}
-            </p>
-          )}
-          {item.overview && (
-            <p className="mt-1 text-[11px] text-white/35 line-clamp-3 leading-relaxed">
-              {item.overview}
-            </p>
-          )}
+          <p className="mt-1 truncate text-xs text-white/55">
+            {year}
+            <span className="mx-1.5 text-white/25">·</span>
+            <span className="text-accent">★ {item.vote_average.toFixed(1)}</span>
+            {item.genres && item.genres.length > 0 && (
+              <>
+                <span className="mx-1.5 text-white/25">·</span>
+                {item.genres[0]}
+              </>
+            )}
+          </p>
         </div>
       </div>
       <p className="mt-2 truncate px-1 text-sm font-medium text-white/80 group-hover:text-white transition-colors duration-200">
