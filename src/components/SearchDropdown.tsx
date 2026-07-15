@@ -98,29 +98,6 @@ export function SearchDropdown() {
     return () => document.removeEventListener('pointerdown', handlePointer);
   }, [open]);
 
-  // Close on Escape
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, []);
-
-  // Keyboard shortcut: / to focus search
-  useEffect(() => {
-    function handleShortcut(e: KeyboardEvent) {
-      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const tag = (e.target as HTMLElement).tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
-    }
-    document.addEventListener('keydown', handleShortcut);
-    return () => document.removeEventListener('keydown', handleShortcut);
-  }, []);
-
   function submitFullSearch(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = q.trim();
@@ -130,9 +107,26 @@ export function SearchDropdown() {
     }
   }
 
+  const trimmedQ = q.trim();
+  const showEmpty = open && !loading && trimmedQ.length >= 2 && results.length === 0;
+
   return (
     <div className="relative ml-auto flex max-w-xs flex-1 sm:max-w-sm">
-      <form onSubmit={submitFullSearch} className="w-full">
+      <form onSubmit={submitFullSearch} className="relative w-full">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/35"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
         <input
           ref={inputRef}
           type="search"
@@ -140,35 +134,40 @@ export function SearchDropdown() {
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => { if (results.length > 0) setOpen(true); }}
           placeholder="Search titles, genres..."
-          className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40 outline-none ring-accent/50 focus:border-accent/50 focus:ring-2"
+          className="w-full rounded-full border border-white/10 bg-white/5 py-2 pl-9 pr-9 text-sm text-white placeholder:text-white/40 outline-none ring-accent/50 transition focus:border-accent/50 focus:bg-white/[0.07] focus:ring-2"
           role="combobox"
           aria-expanded={open && results.length > 0}
           aria-autocomplete="list"
         />
+        {loading && (
+          <span className="absolute right-3.5 top-1/2 -translate-y-1/2">
+            <span className="block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+          </span>
+        )}
       </form>
 
       {open && results.length > 0 && (
         <div
           ref={panelRef}
           role="listbox"
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[70vh] overflow-y-auto rounded-xl border border-white/10 bg-surface/95 shadow-2xl backdrop-blur-md"
+          className="animate-dropdown-in absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-white/10 bg-surface/95 shadow-2xl backdrop-blur-md"
         >
           {results.map((r) => (
             <a
               key={r.type + '-' + r.id}
               href={href(r)}
               role="option"
-              className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-white/8"
+              className="flex items-center gap-3 px-3 py-2.5 transition hover:bg-accent/10"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => { storeReturnPath(); setOpen(false); }}
             >
-              <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded bg-white/10">
+              <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-lg bg-white/10">
                 <Image
                   src={tmdbImage(r.poster_path, 'w92')}
                   alt=""
                   fill
                   className="object-cover"
-                  sizes="32px"
+                  sizes="40px"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -179,12 +178,18 @@ export function SearchDropdown() {
           ))}
           <a
             href={'/search?q=' + encodeURIComponent(q.trim())}
-            className="block border-t border-white/10 px-3 py-2.5 text-center text-sm font-medium text-accent transition hover:bg-white/8"
+            className="block border-t border-white/10 px-3 py-2.5 text-center text-sm font-medium text-accent transition hover:bg-accent/10"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setOpen(false)}
           >
             View all results for &ldquo;{q.trim()}&rdquo;
           </a>
+        </div>
+      )}
+
+      {showEmpty && (
+        <div className="animate-dropdown-in absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-white/10 bg-surface/95 px-4 py-6 text-center shadow-2xl backdrop-blur-md">
+          <p className="text-sm text-white/50">No results for &ldquo;{trimmedQ}&rdquo;</p>
         </div>
       )}
     </div>
