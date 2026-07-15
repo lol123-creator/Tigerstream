@@ -172,11 +172,14 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     }
     if (didDrag.current) {
       const el = scrollerRef.current;
+      if (!el) return;
+      const controller = new AbortController();
       const suppress = (ev: Event) => {
         ev.preventDefault();
         ev.stopPropagation();
       };
-      el?.addEventListener('click', suppress, { capture: true, once: true });
+      el.addEventListener('click', suppress, { capture: true, once: true, signal: controller.signal });
+      setTimeout(() => { try { controller.abort(); } catch {} }, 300);
     }
   };
 
