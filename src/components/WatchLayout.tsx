@@ -14,6 +14,12 @@ type PlayerSource = 'peachify' | 'cinemaos' | 'videasy';
 
 const STORAGE_KEY = 'tigerstream:player';
 
+const PLAYERS: { id: PlayerSource; label: string }[] = [
+  { id: 'peachify', label: 'Peachify' },
+  { id: 'cinemaos', label: 'CinemaOS' },
+  { id: 'videasy', label: 'Videasy' },
+];
+
 function loadPlayerPref(): PlayerSource {
   if (typeof window === 'undefined') return 'peachify';
   try {
@@ -37,12 +43,6 @@ interface WatchLayoutProps {
   nextLabel?: string;
 }
 
-function PlayerSkeleton() {
-  return (
-    <div className="aspect-video w-full animate-pulse rounded-xl bg-white/5 ring-1 ring-white/10" />
-  );
-}
-
 class PlayerErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode; key?: string },
   { hasError: boolean }
@@ -61,7 +61,7 @@ class PlayerErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         this.props.fallback || (
-          <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-white/5 text-sm text-white/40">
+          <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-white/5 text-sm text-white/40">
             Player failed to load. Try switching to another player.
           </div>
         )
@@ -91,7 +91,6 @@ export function WatchLayout({
     setPlayerSource(source);
     savePlayerPref(source);
     setProgressSynced(false);
-    // Reset error boundary by changing key
     setErrorKey((prev) => prev + 1);
   };
 
@@ -101,17 +100,10 @@ export function WatchLayout({
 
   const continueCount = progressSynced ? buildContinueWatching().length : 0;
 
-  const toggleClass = (active: boolean) =>
-    `rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer select-none ${
-      active
-        ? 'bg-accent/20 text-accent ring-1 ring-accent/40'
-        : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80'
-    }`;
-
   return (
     <div className="min-h-screen bg-black pt-16">
       <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <Link
               href={backHref}
@@ -119,7 +111,7 @@ export function WatchLayout({
             >
               ← Back
             </Link>
-            <h1 className="mt-1 text-xl font-semibold text-white md:text-2xl">
+            <h1 className="font-display mt-1 text-xl font-semibold text-white md:text-2xl">
               {title}
             </h1>
           </div>
@@ -127,7 +119,7 @@ export function WatchLayout({
             {nextHref && (
               <Link
                 href={nextHref}
-                className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10"
+                className="rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/80 transition hover:border-accent/30 hover:bg-accent/10 hover:text-white"
               >
                 {nextLabel} →
               </Link>
@@ -135,29 +127,23 @@ export function WatchLayout({
           </div>
         </div>
 
-        <div className="mb-3 flex items-center gap-2">
-          <span className="text-xs text-white/40">Player:</span>
-          <button
-            type="button"
-            onClick={() => switchPlayer('peachify')}
-            className={toggleClass(playerSource === 'peachify')}
-          >
-            Peachify
-          </button>
-          <button
-            type="button"
-            onClick={() => switchPlayer('cinemaos')}
-            className={toggleClass(playerSource === 'cinemaos')}
-          >
-            CinemaOS
-          </button>
-          <button
-            type="button"
-            onClick={() => switchPlayer('videasy')}
-            className={toggleClass(playerSource === 'videasy')}
-          >
-            Videasy
-          </button>
+        {/* Player switcher - a proper segmented control instead of loose
+            pill buttons, so it reads as one grouped choice. */}
+        <div className="mb-4 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
+          {PLAYERS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => switchPlayer(id)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                playerSource === id
+                  ? 'bg-accent text-[#0A1F2B] shadow-glow'
+                  : 'text-white/50 hover:text-white/80'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         <PlayerErrorBoundary key={`${playerSource}-${errorKey}`}>
@@ -180,7 +166,7 @@ export function WatchLayout({
                   router.push(nextHref);
                 }
               }}
-              className="overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10"
+              className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10"
             />
           ) : playerSource === 'cinemaos' ? (
             <CinemaOSPlayer
@@ -191,6 +177,7 @@ export function WatchLayout({
               title={title}
               autoPlay
               autoNext={target.type === 'tv'}
+              autoResume
               onMediaData={onMediaData}
             />
           ) : (
@@ -201,6 +188,7 @@ export function WatchLayout({
               episode={target.type === 'tv' ? target.episode : undefined}
               title={title}
               autoPlay
+              autoResume
               onMediaData={onMediaData}
             />
           )}
