@@ -196,7 +196,7 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
           </button>
         )}
 
-        <div ref={scrollerRef} onMouseDown={onMouseDown} onDragStart={(e) => e.preventDefault()} draggable={false} className="scrollbar-hide flex cursor-grab gap-3 overflow-x-auto px-4 pb-2 active:cursor-grabbing sm:gap-4 sm:px-6">
+        <div ref={scrollerRef} onMouseDown={onMouseDown} onDragStart={(e) => e.preventDefault()} draggable={false} className="scrollbar-hide flex cursor-grab gap-3 overflow-x-auto px-4 pb-2 pt-5 -mt-5 active:cursor-grabbing sm:gap-4 sm:px-6">
           {children}
         </div>
       </div>
