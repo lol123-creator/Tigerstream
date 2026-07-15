@@ -12,7 +12,7 @@ interface GenreChipsProps {
 
 function ChevronLeft() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M15 6l-6 6 6 6"
         stroke="currentColor"
@@ -26,7 +26,7 @@ function ChevronLeft() {
 
 function ChevronRight() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M9 6l6 6-6 6"
         stroke="currentColor"
@@ -85,10 +85,10 @@ export function GenreChips({ type, genres, activeId }: GenreChipsProps) {
   };
 
   const chipClass = (active: boolean) =>
-    `shrink-0 snap-start rounded-full border px-4 py-1.5 text-sm transition ${
+    `shrink-0 snap-start rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
       active
-        ? 'border-accent bg-accent/20 text-white'
-        : 'border-white/15 text-white/70 hover:border-white/30 hover:text-white'
+        ? 'border-accent bg-accent text-[#0A1F2B] shadow-glow'
+        : 'border-white/10 bg-white/[0.04] text-white/65 hover:border-accent/30 hover:bg-accent/10 hover:text-white'
     }`;
 
   return (
@@ -98,7 +98,7 @@ export function GenreChips({ type, genres, activeId }: GenreChipsProps) {
           type="button"
           onClick={() => scroll('left')}
           aria-label="Scroll genres left"
-          className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-surface/95 text-white shadow-lg backdrop-blur transition hover:border-accent/50 hover:bg-accent/20"
+          className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-surface/95 text-white/80 shadow-lg backdrop-blur-md transition hover:border-accent/40 hover:text-accent"
         >
           <ChevronLeft />
         </button>
@@ -109,7 +109,7 @@ export function GenreChips({ type, genres, activeId }: GenreChipsProps) {
           type="button"
           onClick={() => scroll('right')}
           aria-label="Scroll genres right"
-          className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-surface/95 text-white shadow-lg backdrop-blur transition hover:border-accent/50 hover:bg-accent/20"
+          className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-surface/95 text-white/80 shadow-lg backdrop-blur-md transition hover:border-accent/40 hover:text-accent"
         >
           <ChevronRight />
         </button>
