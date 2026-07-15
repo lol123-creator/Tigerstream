@@ -110,14 +110,6 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     el.style.scrollBehavior = 'auto';
     el.style.cursor = 'grabbing';
     el.style.userSelect = 'none';
-    // Hint the browser this element's scroll position is about to change
-    // repeatedly, and disable pointer events on its contents so dragging
-    // across dozens of cards doesn't trigger a hover transition/box-shadow
-    // recalculation on every single one along the way. Listeners are
-    // attached to window (below) rather than this element, so removing
-    // its own pointer events doesn't break drag tracking.
-    el.style.willChange = 'scroll-position';
-    el.style.pointerEvents = 'none';
 
     window.addEventListener('mousemove', onWindowMouseMove);
     window.addEventListener('mouseup', onWindowMouseUp);
@@ -132,6 +124,15 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
         didDrag.current = true;
         el.style.outline = '2px solid rgba(255,255,255,0.05)';
         el.style.outlineOffset = '-2px';
+        // Only now - once we know this is genuinely a drag, not a click -
+        // hint the browser and disable pointer events on the row's
+        // contents so dragging across dozens of cards doesn't trigger a
+        // hover transition/box-shadow recalculation on every one of them.
+        // Doing this on every mousedown (including plain clicks) was the
+        // bug: it could interfere with the browser's native click
+        // detection on the card underneath before a drag was confirmed.
+        el.style.willChange = 'scroll-position';
+        el.style.pointerEvents = 'none';
       }
     }
     pendingX.current = e.pageX - el.offsetLeft;
