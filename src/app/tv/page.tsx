@@ -37,9 +37,14 @@ export default async function TvPage({
       </p>
 
       {/* top-16 matches the navbar's fixed h-16 exactly, so this sits
-          flush underneath it with no gap and no overlap */}
-      <div className="sticky top-16 z-40 -mx-4 mb-8 border-b border-white/5 bg-surface/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
-        <p className="mb-3 text-sm font-medium text-white/60">Browse by genre</p>
+          flush underneath it with no gap and no overlap. Lighter/more
+          translucent than before (was bg-surface/95) to actually read
+          as frosted glass matching the nav, instead of a solid opaque
+          bar. */}
+      <div className="sticky top-16 z-40 -mx-4 mb-8 border-b border-white/5 bg-surface/70 px-4 py-3 backdrop-blur-lg sm:-mx-6 sm:px-6">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/35">
+          Browse by genre
+        </p>
         <GenreChips type="tv" genres={genres} />
       </div>
 
