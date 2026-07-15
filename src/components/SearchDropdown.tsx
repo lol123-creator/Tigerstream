@@ -72,6 +72,12 @@ export function SearchDropdown() {
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') { setOpen(false); return; }
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+        return;
+      }
       if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const tag = (e.target as HTMLElement).tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
@@ -97,6 +103,11 @@ export function SearchDropdown() {
     document.addEventListener('pointerdown', handlePointer, { once: true });
     return () => document.removeEventListener('pointerdown', handlePointer);
   }, [open]);
+
+  const [isMac, setIsMac] = useState<boolean | null>(null);
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform ?? navigator.userAgent));
+  }, []);
 
   function submitFullSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -139,10 +150,17 @@ export function SearchDropdown() {
           aria-expanded={open && results.length > 0}
           aria-autocomplete="list"
         />
-        {loading && (
+        {loading ? (
           <span className="absolute right-3.5 top-1/2 -translate-y-1/2">
             <span className="block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
           </span>
+        ) : (
+          isMac !== null &&
+          !q && (
+            <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 select-none items-center gap-0.5 rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-white/35 sm:inline-flex">
+              {isMac ? '⌘' : 'Ctrl'} K
+            </kbd>
+          )
         )}
       </form>
 
