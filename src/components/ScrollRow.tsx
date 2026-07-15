@@ -30,7 +30,12 @@ function ChevronRight() {
   );
 }
 
-const DRAG_THRESHOLD = 5;
+// 5px was too tight - ordinary clicks (especially on trackpads, or a
+// slightly imprecise mouse click) often include a couple pixels of
+// incidental movement, which was getting misclassified as a real drag
+// and silently suppressing the click that followed. 10px still catches
+// intentional drags quickly while giving normal clicks enough slack.
+const DRAG_THRESHOLD = 10;
 
 export function ScrollRow({ title, children, className }: ScrollRowProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
