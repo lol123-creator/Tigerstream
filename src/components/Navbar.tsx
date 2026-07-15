@@ -168,17 +168,20 @@ export function Navbar() {
 
       {/* Backdrop - dims the page behind the mobile menu and gives it
           somewhere to visually sit, instead of a flat list floating
-          directly under the nav */}
+          directly under the nav. z-[60] - strictly above the fixed nav
+          (z-50) and any page-level sticky bars like the genre filter
+          row (z-40), which were previously the same z-index as this
+          menu and could render on top of it, blocking taps underneath. */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm animate-fadeIn md:hidden"
+          className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm animate-fadeIn md:hidden"
           onClick={() => setMenuOpen(false)}
           aria-hidden="true"
         />
       )}
 
       {menuOpen && (
-        <div className="fixed inset-x-3 top-[4.5rem] z-40 overflow-hidden rounded-2xl border border-white/10 bg-surface-card/95 shadow-2xl backdrop-blur-md md:hidden">
+        <div className="fixed inset-x-3 top-[4.5rem] z-[60] overflow-hidden rounded-2xl border border-white/10 bg-surface-card/95 shadow-2xl backdrop-blur-md md:hidden">
           <div className="p-2">
             {NAV_LINKS.map(({ label, href, icon }, i) => (
               <Link
