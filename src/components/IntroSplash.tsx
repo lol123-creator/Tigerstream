@@ -9,8 +9,11 @@ const SESSION_KEY = 'tigerstream:intro-shown';
  * site in a given browser session (not on every internal navigation -
  * gated by sessionStorage). Skipped entirely for prefers-reduced-motion.
  *
- * Timeline: reveal (0-0.7s) -> hold (0.7-1.4s) -> fade out (1.4-1.9s) ->
- * unmount. Total ~1.9s so it reads as a deliberate beat, not a delay.
+ * Timeline: reveal (0-0.5s) -> hold (0.5-0.9s) -> fade out (0.9-1.2s) ->
+ * unmount. Shortened from an original ~1.9s total - that was adding a
+ * fixed, unavoidable delay before every new visitor saw any real
+ * content, which reads as "the site is slow to load" even though the
+ * page itself is loading normally underneath it.
  */
 export function IntroSplash() {
   const [phase, setPhase] = useState<'hidden' | 'showing' | 'leaving'>('hidden');
@@ -29,11 +32,11 @@ export function IntroSplash() {
     }
 
     setPhase('showing');
-    const leaveTimer = setTimeout(() => setPhase('leaving'), 1400);
+    const leaveTimer = setTimeout(() => setPhase('leaving'), 900);
     const doneTimer = setTimeout(() => {
       setPhase('hidden');
       sessionStorage.setItem(SESSION_KEY, '1');
-    }, 1900);
+    }, 1200);
 
     return () => {
       clearTimeout(leaveTimer);
@@ -46,19 +49,19 @@ export function IntroSplash() {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-surface transition-opacity duration-500 ease-in-out"
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-surface transition-opacity duration-300 ease-in-out"
       style={{ opacity: phase === 'leaving' ? 0 : 1 }}
     >
       <div className="flex flex-col items-center">
         <span
           className="font-display text-4xl font-medium tracking-tight text-white md:text-5xl"
-          style={{ animation: 'introReveal 0.7s ease-out both' }}
+          style={{ animation: 'introReveal 0.5s ease-out both' }}
         >
           Tiger<span className="text-accent">Stream</span>
         </span>
         <span
           className="mt-4 h-[2px] w-10 origin-center bg-accent/60"
-          style={{ animation: 'introLine 0.5s ease-out 0.35s both' }}
+          style={{ animation: 'introLine 0.4s ease-out 0.25s both' }}
         />
       </div>
     </div>
