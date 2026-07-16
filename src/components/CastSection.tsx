@@ -1,49 +1,48 @@
-'use client';
-
 import Image from 'next/image';
-import type { Cast } from '@/types/media';
+import Link from 'next/link';
 import { tmdbImage } from '@/lib/tmdb-images';
+import { personDetailHref } from '@/lib/routes';
+import type { Cast } from '@/types/media';
 
 interface CastSectionProps {
-  cast: Cast[] | undefined;
+  cast?: Cast[];
 }
 
 export function CastSection({ cast }: CastSectionProps) {
-  if (!cast || cast.length === 0) {
-    return null;
-  }
+  if (!cast || cast.length === 0) return null;
 
   return (
-    <section className="mt-12">
-      <h2 className="mb-6 text-lg font-semibold">Cast</h2>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        {cast.map((actor) => (
-          <div
-            key={`${actor.name}-${actor.character}`}
-            className="overflow-hidden rounded-lg bg-white/5 transition hover:bg-white/10"
+    <section className="mt-10">
+      <h2 className="mb-4 text-lg font-semibold text-white">Cast</h2>
+      <div className="scrollbar-hide flex gap-4 overflow-x-auto pb-2">
+        {cast.map((member) => (
+          <Link
+            key={member.id ?? member.name}
+            href={member.id ? personDetailHref(member.id) : '#'}
+            className={`group w-24 shrink-0 text-center sm:w-28 ${
+              member.id ? '' : 'pointer-events-none'
+            }`}
           >
-            {actor.profile_path ? (
-              <div className="relative h-40 w-full">
+            <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full bg-surface-card ring-1 ring-white/10 transition group-hover:ring-accent/50 sm:h-28 sm:w-28">
+              {member.profile_path ? (
                 <Image
-                  src={tmdbImage(actor.profile_path, 'w185')}
-                  alt={actor.name}
+                  src={tmdbImage(member.profile_path, 'w185')}
+                  alt={member.name}
                   fill
-                  className="object-cover"
-                  sizes="200px"
+                  className="object-cover transition duration-300 group-hover:scale-105"
+                  sizes="112px"
                 />
-              </div>
-            ) : (
-              <div className="flex h-40 w-full items-center justify-center bg-white/5 text-white/40 text-center text-sm">
-                No Image
-              </div>
-            )}
-            <div className="p-3">
-              <p className="truncate text-sm font-medium text-white">
-                {actor.name}
-              </p>
-              <p className="truncate text-xs text-white/50">{actor.character}</p>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-white/20">
+                  {member.name.charAt(0)}
+                </div>
+              )}
             </div>
-          </div>
+            <p className="mt-2 truncate text-xs font-medium text-white/85 transition group-hover:text-accent">
+              {member.name}
+            </p>
+            <p className="truncate text-[11px] text-white/40">{member.character}</p>
+          </Link>
         ))}
       </div>
     </section>
