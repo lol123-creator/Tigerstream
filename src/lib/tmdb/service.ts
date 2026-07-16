@@ -28,6 +28,8 @@ import type {
   TmdbTvDetail,
   TmdbTvSummary,
   TmdbSearchResult,
+  TmdbPersonDetail,
+  TmdbPersonCombinedCredits,
 } from './types';
 
 export const BROWSE_PAGE_COUNT = 15;
@@ -360,6 +362,23 @@ export async function getMovieById(id: number): Promise<Movie | null> {
   }
 }
 
+/**
+ * Recommendations (not "similar") tend to be a better "if you liked
+ * this, watch that" signal than TMDB's /similar endpoint, which mostly
+ * matches on shared keywords/genres rather than actual audience overlap.
+ */
+export async function getSimilarMovies(id: number, limit = 14): Promise<Movie[]> {
+  if (!isTmdbEnabled()) return [];
+  try {
+    const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(
+      `/movie/${id}/recommendations`,
+    );
+    return dedupeById(data.results.map((m) => mapMovieSummary(m))).slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
 async function fetchSeason(
   tvId: number,
   seasonNumber: number,
@@ -393,6 +412,208 @@ export async function getTvShowById(id: number): Promise<TvShow | null> {
     return mapTvDetail(show, seasonDetails, show.credits?.cast);
   } catch {
     return fallbackGetTvShow(id) ?? null;
+  }
+}
+
+export async function getSimilarTv(id: number, limit = 14): Promise<TvShow[]> {
+  if (!isTmdbEnabled()) return [];
+  try {
+    const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(
+      `/tv/${id}/recommendations`,
+    );
+    return dedupeById(data.results.map((t) => mapTvSummary(t))).slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+export interface PersonProfile {
+  id: number;
+  name: string;
+  biography: string;
+  profile_path: string | null;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  known_for_department: string | null;
+}
+
+export interface PersonCredits {
+  movies: Movie[];
+  tvShows: TvShow[];
+}
+
+export async function getPersonById(id: number): Promise<PersonProfile | null> {
+  if (!isTmdbEnabled()) return null;
+  try {
+    const data = await tmdbFetch<TmdbPersonDetail>(`/person/${id}`);
+    return {
+      id: data.id,
+      name: data.name,
+      biography: data.biography,
+      profile_path: data.profile_path,
+      birthday: data.birthday,
+      deathday: data.deathday,
+      place_of_birth: data.place_of_birth,
+      known_for_department: data.known_for_department,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getPersonCredits(id: number): Promise<PersonCredits> {
+  if (!isTmdbEnabled()) return { movies: [], tvShows: [] };
+  try {
+    const data = await tmdbFetch<TmdbPersonCombinedCredits>(
+      `/person/${id}/combined_credits`,
+    );
+    const movies = data.cast
+      .filter((c) => c.media_type === 'movie' && c.title)
+      .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+      .map((c) =>
+        mapMovieSummary({
+          id: c.id,
+          title: c.title ?? 'Untitled',
+          overview: '',
+          poster_path: c.poster_path,
+          backdrop_path: c.backdrop_path,
+          release_date: c.release_date ?? '',
+          vote_average: c.vote_average ?? 0,
+          original_language: c.original_language,
+        }),
+      );
+    const tvShows = data.cast
+      .filter((c) => c.media_type === 'tv' && c.name)
+      .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+      .map((c) =>
+        mapTvSummary({
+          id: c.id,
+          name: c.name ?? 'Untitled',
+          overview: '',
+          poster_path: c.poster_path,
+          backdrop_path: c.backdrop_path,
+          first_air_date: c.first_air_date ?? '',
+          vote_average: c.vote_average ?? 0,
+        }),
+      );
+    return {
+      movies: dedupeById(movies),
+      tvShows: dedupeById(tvShows),
+    };
+  } catch {
+    return { movies: [], tvShows: [] };
+  }
+}
+
+/**
+ * Similar/recommended titles for a detail page's "More Like This" row.
+ * TMDB's /recommendations endpoint tends to be more relevant than
+ * /similar (which is closer to a genre/keyword match), so that's the
+ * primary source; if a title is too new/obscure to have recommendation
+ * data yet, /similar is used as a fallback.
+ */
+export async function getSimilarMovies(id: number, limit = 14): Promise<Movie[]> {
+  if (!isTmdbEnabled()) return fallbackMovies.slice(0, limit);
+  try {
+    let data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(
+      `/movie/${id}/recommendations`,
+    );
+    if (data.results.length === 0) {
+      data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(`/movie/${id}/similar`);
+    }
+    return dedupeById(data.results.map((m) => mapMovieSummary(m))).slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+export async function getSimilarTv(id: number, limit = 14): Promise<TvShow[]> {
+  if (!isTmdbEnabled()) return fallbackTvShows.slice(0, limit);
+  try {
+    let data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(
+      `/tv/${id}/recommendations`,
+    );
+    if (data.results.length === 0) {
+      data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(`/tv/${id}/similar`);
+    }
+    return dedupeById(data.results.map((t) => mapTvSummary(t))).slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+export interface PersonProfile {
+  id: number;
+  name: string;
+  biography: string;
+  profile_path: string | null;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  known_for_department: string | null;
+  credits: MediaItem[];
+}
+
+/**
+ * Person detail + their combined (movie + TV) filmography in one call,
+ * sorted by popularity so the roles they're best known for surface
+ * first. Filters out anything without a poster or release/air date,
+ * since those tend to be low-quality/incomplete TMDB entries that
+ * aren't worth showing.
+ */
+export async function getPersonById(id: number): Promise<PersonProfile | null> {
+  if (!isTmdbEnabled()) return null;
+  try {
+    const [person, credits] = await Promise.all([
+      tmdbFetch<TmdbPersonDetail>(`/person/${id}`),
+      tmdbFetch<TmdbPersonCombinedCredits>(`/person/${id}/combined_credits`),
+    ]);
+
+    const items = credits.cast
+      .filter((c) => c.poster_path && (c.release_date || c.first_air_date))
+      .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+      .map((c): MediaItem | null => {
+        if (c.media_type === 'movie') {
+          return mapMovieSummary({
+            id: c.id,
+            title: c.title ?? 'Untitled',
+            overview: '',
+            poster_path: c.poster_path,
+            backdrop_path: c.backdrop_path,
+            release_date: c.release_date ?? '',
+            vote_average: c.vote_average ?? 0,
+            original_language: c.original_language,
+          });
+        }
+        if (c.media_type === 'tv') {
+          return mapTvSummary({
+            id: c.id,
+            name: c.name ?? 'Untitled',
+            overview: '',
+            poster_path: c.poster_path,
+            backdrop_path: c.backdrop_path,
+            first_air_date: c.first_air_date ?? '',
+            vote_average: c.vote_average ?? 0,
+          });
+        }
+        return null;
+      })
+      .filter((x): x is MediaItem => x != null);
+
+    return {
+      id: person.id,
+      name: person.name,
+      biography: person.biography,
+      profile_path: person.profile_path,
+      birthday: person.birthday,
+      deathday: person.deathday,
+      place_of_birth: person.place_of_birth,
+      known_for_department: person.known_for_department,
+      credits: dedupeById(items),
+    };
+  } catch {
+    return null;
   }
 }
 
