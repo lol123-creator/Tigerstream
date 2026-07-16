@@ -1,10 +1,11 @@
 import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
+import { SimilarTitles } from '@/components/SimilarTitles';
 import { EpisodeList } from '@/components/EpisodeList';
 import { BackButton } from '@/components/BackButton';
 import { StatusBadge } from '@/components/StatusBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
-import { getTvShowById } from '@/lib/tmdb/service';
+import { getTvShowById, getSimilarTv } from '@/lib/tmdb/service';
 import { watchTvHref } from '@/lib/routes';
 import { isComingSoon } from '@/lib/release-checker';
 import type { Metadata } from 'next';
@@ -48,6 +49,8 @@ export default async function TvDetailPage({
   const { id } = await params;
   const show = await getTvShowById(Number(id));
   if (!show) notFound();
+
+  const similar = await getSimilarTv(show.id);
 
   const firstSeason = show.seasons[0];
   const firstEp = firstSeason?.episodes[0];
@@ -93,6 +96,8 @@ export default async function TvDetailPage({
 
         <CastSection cast={show.cast} />
       </div>
+
+      <SimilarTitles items={similar} />
     </>
   );
 }
