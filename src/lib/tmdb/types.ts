@@ -11,6 +11,7 @@ export interface TmdbGenre {
 }
 
 export interface TmdbCast {
+  id: number;
   name: string;
   character: string;
   profile_path: string | null;
@@ -126,4 +127,36 @@ export interface TmdbSearchResult {
   first_air_date?: string;
   vote_average: number;
   original_language?: string;
+}
+
+/** /person/{id} - basic bio fields we display on the person page. */
+export interface TmdbPersonDetail {
+  id: number;
+  name: string;
+  biography: string;
+  profile_path: string | null;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  known_for_department: string | null;
+}
+
+/** A single credit row from /person/{id}/combined_credits (movie or tv). */
+export interface TmdbPersonCreditItem {
+  id: number;
+  media_type: 'movie' | 'tv';
+  title?: string;
+  name?: string;
+  character?: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date?: string;
+  first_air_date?: string;
+  vote_average: number;
+  original_language?: string;
+  popularity?: number;
+}
+
+export interface TmdbPersonCombinedCredits {
+  cast: TmdbPersonCreditItem[];
 }
