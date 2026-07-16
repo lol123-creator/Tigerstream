@@ -19,6 +19,7 @@ function mapCast(cast: TmdbCast[] | undefined): Cast[] {
   return cast
     .slice(0, 12)
     .map((c) => ({
+      id: c.id,
       name: c.name,
       character: c.character,
       profile_path: c.profile_path ?? undefined,
