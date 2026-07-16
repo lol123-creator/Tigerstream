@@ -1,9 +1,10 @@
 import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
+import { SimilarTitles } from '@/components/SimilarTitles';
 import { BackButton } from '@/components/BackButton';
 import { StatusBadge } from '@/components/StatusBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
-import { getMovieById } from '@/lib/tmdb/service';
+import { getMovieById, getSimilarMovies } from '@/lib/tmdb/service';
 import { watchMovieHref } from '@/lib/routes';
 import { isComingSoon } from '@/lib/release-checker';
 import type { Metadata } from 'next';
@@ -51,6 +52,8 @@ export default async function MovieDetailPage({
   const movie = await getMovieById(Number(id));
 
   if (!movie) notFound();
+
+  const similar = await getSimilarMovies(movie.id);
 
   const comingSoon = isComingSoon(movie);
 
@@ -114,6 +117,8 @@ export default async function MovieDetailPage({
         {/* CastSection already handles undefined / empty cast gracefully */}
         <CastSection cast={movie.cast} />
       </div>
+
+      <SimilarTitles items={similar} />
     </>
   );
 }
