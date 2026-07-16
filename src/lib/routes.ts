@@ -14,6 +14,10 @@ export function tvDetailHref(id: number): string {
   return `/tv/${id}`;
 }
 
+export function personDetailHref(id: number): string {
+  return `/person/${id}`;
+}
+
 export function sportsHref(): string {
   return '/sports';
 }
