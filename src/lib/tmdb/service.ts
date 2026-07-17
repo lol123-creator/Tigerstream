@@ -35,18 +35,6 @@ import type {
 export const BROWSE_PAGE_COUNT = 15;
 export const PAGE_SIZE = 20;
 
-/**
- * Items per row on the homepage.
- *
- * The homepage renders up to 20 rows in one page (3 on the main page +
- * 17 in HomeMoreRows). At 24 items/row that's up to ~480 <MediaCard>
- * components at once - each with its own image, hover transitions, and
- * a FavoriteButton doing post-hydration work. That volume was a real,
- * measurable contributor to poor mobile INP/FID (Speed Insights showed
- * 912ms INP / 262ms FID on mobile). Cutting this to 14 reduces total
- * homepage card count by roughly 40% while each row still scrolls for
- * more - full catalogs remain available via the dedicated browse pages.
- */
 const HOME_ROW_SIZE = 14;
 
 export { HOME_ROW_SIZE };
@@ -346,12 +334,6 @@ export async function searchMedia(query: string): Promise<MediaItem[]> {
 export async function getMovieById(id: number): Promise<Movie | null> {
   if (!isTmdbEnabled()) return fallbackGetMovie(id) ?? null;
   try {
-    // `append_to_response=credits,videos,release_dates` gets cast, the
-    // trailer, and the regional release-date breakdown in one call.
-    // release_dates is what lets us resolve the *actual* U.S./wide
-    // release date instead of TMDB's top-level `release_date`, which
-    // can be an earlier festival/foreign premiere date - see
-    // resolveReleaseDate() in mappers.ts.
     const data = await tmdbFetch<TmdbMovieDetail>(
       `/movie/${id}`,
       { append_to_response: "credits,videos,release_dates" },
@@ -366,13 +348,18 @@ export async function getMovieById(id: number): Promise<Movie | null> {
  * Recommendations (not "similar") tend to be a better "if you liked
  * this, watch that" signal than TMDB's /similar endpoint, which mostly
  * matches on shared keywords/genres rather than actual audience overlap.
+ * Falls back to /similar if a title is too new/obscure to have
+ * recommendation data yet.
  */
 export async function getSimilarMovies(id: number, limit = 14): Promise<Movie[]> {
   if (!isTmdbEnabled()) return [];
   try {
-    const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(
+    let data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(
       `/movie/${id}/recommendations`,
     );
+    if (data.results.length === 0) {
+      data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(`/movie/${id}/similar`);
+    }
     return dedupeById(data.results.map((m) => mapMovieSummary(m))).slice(0, limit);
   } catch {
     return [];
@@ -418,9 +405,12 @@ export async function getTvShowById(id: number): Promise<TvShow | null> {
 export async function getSimilarTv(id: number, limit = 14): Promise<TvShow[]> {
   if (!isTmdbEnabled()) return [];
   try {
-    const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(
+    let data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(
       `/tv/${id}/recommendations`,
     );
+    if (data.results.length === 0) {
+      data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(`/tv/${id}/similar`);
+    }
     return dedupeById(data.results.map((t) => mapTvSummary(t))).slice(0, limit);
   } catch {
     return [];
@@ -503,117 +493,6 @@ export async function getPersonCredits(id: number): Promise<PersonCredits> {
     };
   } catch {
     return { movies: [], tvShows: [] };
-  }
-}
-
-/**
- * Similar/recommended titles for a detail page's "More Like This" row.
- * TMDB's /recommendations endpoint tends to be more relevant than
- * /similar (which is closer to a genre/keyword match), so that's the
- * primary source; if a title is too new/obscure to have recommendation
- * data yet, /similar is used as a fallback.
- */
-export async function getSimilarMovies(id: number, limit = 14): Promise<Movie[]> {
-  if (!isTmdbEnabled()) return fallbackMovies.slice(0, limit);
-  try {
-    let data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(
-      `/movie/${id}/recommendations`,
-    );
-    if (data.results.length === 0) {
-      data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(`/movie/${id}/similar`);
-    }
-    return dedupeById(data.results.map((m) => mapMovieSummary(m))).slice(0, limit);
-  } catch {
-    return [];
-  }
-}
-
-export async function getSimilarTv(id: number, limit = 14): Promise<TvShow[]> {
-  if (!isTmdbEnabled()) return fallbackTvShows.slice(0, limit);
-  try {
-    let data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(
-      `/tv/${id}/recommendations`,
-    );
-    if (data.results.length === 0) {
-      data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(`/tv/${id}/similar`);
-    }
-    return dedupeById(data.results.map((t) => mapTvSummary(t))).slice(0, limit);
-  } catch {
-    return [];
-  }
-}
-
-export interface PersonProfile {
-  id: number;
-  name: string;
-  biography: string;
-  profile_path: string | null;
-  birthday: string | null;
-  deathday: string | null;
-  place_of_birth: string | null;
-  known_for_department: string | null;
-  credits: MediaItem[];
-}
-
-/**
- * Person detail + their combined (movie + TV) filmography in one call,
- * sorted by popularity so the roles they're best known for surface
- * first. Filters out anything without a poster or release/air date,
- * since those tend to be low-quality/incomplete TMDB entries that
- * aren't worth showing.
- */
-export async function getPersonById(id: number): Promise<PersonProfile | null> {
-  if (!isTmdbEnabled()) return null;
-  try {
-    const [person, credits] = await Promise.all([
-      tmdbFetch<TmdbPersonDetail>(`/person/${id}`),
-      tmdbFetch<TmdbPersonCombinedCredits>(`/person/${id}/combined_credits`),
-    ]);
-
-    const items = credits.cast
-      .filter((c) => c.poster_path && (c.release_date || c.first_air_date))
-      .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
-      .map((c): MediaItem | null => {
-        if (c.media_type === 'movie') {
-          return mapMovieSummary({
-            id: c.id,
-            title: c.title ?? 'Untitled',
-            overview: '',
-            poster_path: c.poster_path,
-            backdrop_path: c.backdrop_path,
-            release_date: c.release_date ?? '',
-            vote_average: c.vote_average ?? 0,
-            original_language: c.original_language,
-          });
-        }
-        if (c.media_type === 'tv') {
-          return mapTvSummary({
-            id: c.id,
-            name: c.name ?? 'Untitled',
-            overview: '',
-            poster_path: c.poster_path,
-            backdrop_path: c.backdrop_path,
-            first_air_date: c.first_air_date ?? '',
-            vote_average: c.vote_average ?? 0,
-          });
-        }
-        return null;
-      })
-      .filter((x): x is MediaItem => x != null);
-
-    return {
-      id: person.id,
-      name: person.name,
-      biography: person.biography,
-      profile_path: person.profile_path,
-      birthday: person.birthday,
-      deathday: person.deathday,
-      place_of_birth: person.place_of_birth,
-      known_for_department: person.known_for_department,
-      credits: dedupeById(items),
-    };
-  } catch {
-    return null;
   }
 }
 
