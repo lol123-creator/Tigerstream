@@ -16,21 +16,16 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#7FB8D9',
+          background: 'linear-gradient(135deg, #9DCCE8 0%, #7FB8D9 35%, #3D6E8C 100%)',
           borderRadius: 8,
         }}
       >
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
+        <svg width="20" height="20" viewBox="0 0 96 96" fill="none">
           <path
-            d="M5 4v16l11-8z"
-            fill="#121316"
+            d="M14 22 H82 L82 40 H58 V80 H38 V40 H14 Z"
+            fill="#0A1F2B"
           />
+          <path d="M44 22 L52 30 L44 38 Z" fill="#7FB8D9" />
         </svg>
       </div>
     ),
