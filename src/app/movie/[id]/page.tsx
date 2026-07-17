@@ -1,7 +1,6 @@
 import { DetailHero } from '@/components/DetailHero';
 import { CastSection } from '@/components/CastSection';
 import { SimilarTitles } from '@/components/SimilarTitles';
-import { BackButton } from '@/components/BackButton';
 import { StatusBadge } from '@/components/StatusBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { getMovieById, getSimilarMovies } from '@/lib/tmdb/service';
@@ -76,9 +75,6 @@ export default async function MovieDetailPage({
 
   return (
     <>
-      <div className="mx-auto max-w-7xl px-4 pt-20 sm:px-6">
-        <BackButton />
-      </div>
       <DetailHero
         item={movie}
         playLabel={comingSoon ? 'Coming Soon' : 'Watch Movie'}
