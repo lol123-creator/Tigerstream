@@ -12,24 +12,35 @@ export async function GET() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#121316',
+          background: 'linear-gradient(135deg, #9DCCE8 0%, #7FB8D9 35%, #3D6E8C 100%)',
+          position: 'relative',
         }}
       >
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 400,
-            height: 400,
-            borderRadius: 96,
-            background: '#7FB8D9',
+            position: 'absolute',
+            top: -60,
+            left: -40,
+            width: 340,
+            height: 340,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.22)',
           }}
-        >
-          <svg width="200" height="200" viewBox="0 0 24 24" fill="none">
-            <path d="M5 4v16l11-8z" fill="#121316" />
-          </svg>
-        </div>
+        />
+        <svg width="260" height="260" viewBox="0 0 96 96" fill="none">
+          <path
+            d="M14 22 H82 L82 40 H58 V80 H38 V40 H14 Z"
+            fill="#0A1F2B"
+          />
+          <path d="M44 22 L52 30 L44 38 Z" fill="#7FB8D9" />
+        </svg>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.15)',
+          }}
+        />
       </div>
     ),
     { width: 512, height: 512 },
