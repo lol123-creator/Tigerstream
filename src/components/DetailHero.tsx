@@ -7,6 +7,7 @@ import { tmdbImage } from "@/lib/tmdb-images";
 import type { MediaItem } from "@/types/media";
 import { watchMovieHref, watchTvHref } from "@/lib/routes";
 import { TrailerModal } from "@/components/TrailerModal";
+import { BackButton } from "@/components/BackButton";
 
 interface DetailHeroProps {
   item: MediaItem;
@@ -45,7 +46,15 @@ export function DetailHero({
   );
 
   return (
-    <section className="relative h-[48vh] min-h-[360px] overflow-hidden bg-surface-card sm:h-[58vh] md:h-[68vh]">
+    <section
+      // min-height instead of a fixed height: a fixed h-[…] + overflow-
+      // hidden was clipping the title/poster whenever the content
+      // needed more room than that fixed height allowed (a two-line
+      // title, a short viewport, etc). min-height guarantees a floor
+      // but lets the section grow to fit its content instead of
+      // cutting it off.
+      className="relative min-h-[52vh] overflow-hidden bg-surface-card pt-16 sm:min-h-[60vh] md:min-h-[70vh]"
+    >
       <Image
         src={backdropSrc}
         alt=""
@@ -57,8 +66,20 @@ export function DetailHero({
       />
       <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-surface/30" />
       <div className="absolute inset-0 bg-gradient-to-r from-surface/60 via-transparent to-transparent" />
+      {/* Extra scrim right under the nav so the Back button and top of
+          the title stay legible against busy backdrop art. */}
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/50 to-transparent" />
 
-      <div className="relative mx-auto flex h-full max-w-7xl items-end gap-6 px-4 pb-12 pt-28 sm:px-6 md:gap-10">
+      {/* Back button now overlays the hero directly (full-bleed image
+          starting at the true top of the page, matching how the
+          homepage Hero behaves) instead of sitting in its own block
+          above the hero, which was the dark empty band between the
+          nav and the image. */}
+      <div className="relative px-4 pt-4 sm:px-6">
+        <BackButton />
+      </div>
+
+      <div className="relative mx-auto flex min-h-[calc(52vh-4rem)] max-w-7xl flex-wrap items-end gap-6 px-4 pb-12 pt-10 sm:min-h-[calc(60vh-4rem)] sm:px-6 md:min-h-[calc(70vh-4rem)] md:gap-10">
         <div className="relative hidden h-64 w-44 shrink-0 overflow-hidden rounded-lg bg-surface-card shadow-2xl sm:block md:h-80 md:w-52">
           <Image
             src={posterSrc}
@@ -69,7 +90,7 @@ export function DetailHero({
             onError={() => setPosterSrc(PLACEHOLDER_POSTER)}
           />
         </div>
-        <div className="flex flex-col justify-end">
+        <div className="flex min-w-0 flex-1 flex-col justify-end">
           <h1 className="font-display text-3xl font-bold text-white md:text-5xl">
             {item.title}
           </h1>
@@ -97,7 +118,7 @@ export function DetailHero({
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {isDisabled ? (
-              <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-accent/50 px-8 py-3 font-semibold text-white/50 cursor-not-allowed">
+              <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-accent/50 px-8 py-3 font-semibold text-[#0A1F2B]/70 cursor-not-allowed">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z" />
                 </svg>
@@ -106,7 +127,7 @@ export function DetailHero({
             ) : (
               <Link
                 href={finalHref}
-                className="inline-flex w-fit items-center gap-2 rounded-lg bg-accent px-8 py-3 font-semibold text-white transition hover:bg-accent-hover"
+                className="inline-flex w-fit items-center gap-2 rounded-lg bg-accent px-8 py-3 font-semibold text-[#0A1F2B] transition hover:bg-accent-hover"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z" />
