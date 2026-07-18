@@ -111,6 +111,3 @@ export function SportEventCard({ stream, variant = 'row' }: SportEventCardProps)
     </Link>
   );
 }
-    </Link>
-  );
-}
