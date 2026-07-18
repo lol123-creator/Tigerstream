@@ -620,6 +620,113 @@ export async function getAnimeTvShows(pages = 3): Promise<TvShow[]> {
   return dedupeById(await fetchPaged(pages, fetchAnimeTvPage));
 }
 
+async function fetchTopRatedAnimeMoviePage(page: number): Promise<Movie[]> {
+  const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
+    ...ANIME_MOVIE_PARAMS,
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': '50',
+    page,
+  });
+  return data.results.map((m) => mapMovieSummary(m));
+}
+
+async function fetchTopRatedAnimeTvPage(page: number): Promise<TvShow[]> {
+  const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
+    ...ANIME_TV_PARAMS,
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': '50',
+    page,
+  });
+  return data.results.map((t) => mapTvSummary(t));
+}
+
+/** Combined movies + shows, sorted by rating - a real "best of" list. */
+export async function getTopRatedAnime(pages = 2): Promise<MediaItem[]> {
+  if (!isTmdbEnabled()) return [];
+  const [movies, shows] = await Promise.all([
+    fetchPaged(pages, fetchTopRatedAnimeMoviePage),
+    fetchPaged(pages, fetchTopRatedAnimeTvPage),
+  ]);
+  return dedupeById([...movies, ...shows]).sort(
+    (a, b) => b.vote_average - a.vote_average,
+  );
+}
+
+async function fetchNewAnimeMoviePage(page: number): Promise<Movie[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
+    ...ANIME_MOVIE_PARAMS,
+    sort_by: 'primary_release_date.desc',
+    'primary_release_date.lte': today,
+    'vote_count.gte': '5',
+    page,
+  });
+  return data.results.map((m) => mapMovieSummary(m));
+}
+
+async function fetchNewAnimeTvPage(page: number): Promise<TvShow[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
+    ...ANIME_TV_PARAMS,
+    sort_by: 'first_air_date.desc',
+    'first_air_date.lte': today,
+    'vote_count.gte': '5',
+    page,
+  });
+  return data.results.map((t) => mapTvSummary(t));
+}
+
+/** Combined movies + shows, most recently released first. */
+export async function getNewAnime(pages = 2): Promise<MediaItem[]> {
+  if (!isTmdbEnabled()) return [];
+  const [movies, shows] = await Promise.all([
+    fetchPaged(pages, fetchNewAnimeMoviePage),
+    fetchPaged(pages, fetchNewAnimeTvPage),
+  ]);
+  return dedupeById([...movies, ...shows]).sort((a, b) => {
+    const da = a.type === 'movie' ? a.release_date : a.first_air_date;
+    const db = b.type === 'movie' ? b.release_date : b.first_air_date;
+    return (db || '').localeCompare(da || '');
+  });
+}
+
+/** Studio Ghibli's TMDB production company id. */
+const GHIBLI_COMPANY_ID = '10342';
+
+async function fetchGhibliMoviePage(page: number): Promise<Movie[]> {
+  const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
+    with_companies: GHIBLI_COMPANY_ID,
+    sort_by: 'release_date.desc',
+    page,
+  });
+  return data.results.map((m) => mapMovieSummary(m));
+}
+
+export async function getGhibliFilms(pages = 2): Promise<Movie[]> {
+  if (!isTmdbEnabled()) return [];
+  return dedupeById(await fetchPaged(pages, fetchGhibliMoviePage));
+}
+
+/**
+ * Combined movies + shows for a curated anime category (see
+ * ANIME_CATEGORIES in genres.ts) - reuses the existing generic
+ * getDiscoverMovies/getDiscoverTv rather than duplicating fetch logic.
+ */
+export async function getAnimeCategoryCombined(
+  movieGenres: string,
+  tvGenres: string,
+  pages = 2,
+): Promise<MediaItem[]> {
+  if (!isTmdbEnabled()) return [];
+  const [movies, shows] = await Promise.all([
+    getDiscoverMovies(movieGenres, pages),
+    getDiscoverTv(tvGenres, pages),
+  ]);
+  return dedupeById([...movies, ...shows]).sort(
+    (a, b) => b.vote_average - a.vote_average,
+  );
+}
+
 export async function getAnimeMoviesPage(page = 1): Promise<PagedResult<Movie>> {
   if (!isTmdbEnabled()) {
     return { items: fallbackMovies.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
