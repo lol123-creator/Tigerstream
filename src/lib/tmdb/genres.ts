@@ -121,3 +121,31 @@ export function getTvGenreName(id: number | string): string {
   }
   return TV_CURATED_GENRES.find((g) => g.id === id)?.name ?? 'TV Shows';
 }
+
+/**
+ * Curated anime browsing categories - these are how anime fans actually
+ * browse (shonen/isekai/slice-of-life/mecha), not generic movie genre
+ * names. movieGenres/tvGenres are separate because TMDB's genre id
+ * space differs between movies and TV (e.g. Sci-Fi is 878 for movies,
+ * 10765 for TV) - both already include Animation (16) combined with the
+ * category's other genre(s), so they can be passed straight into
+ * getDiscoverMovies/getDiscoverTv.
+ */
+export interface AnimeCategory {
+  slug: string;
+  name: string;
+  movieGenres: string;
+  tvGenres: string;
+}
+
+export const ANIME_CATEGORIES: AnimeCategory[] = [
+  { slug: 'shonen-action', name: 'Shonen Action', movieGenres: '16,28,12', tvGenres: '16,10759' },
+  { slug: 'isekai-fantasy', name: 'Isekai & Fantasy', movieGenres: '16,14', tvGenres: '16,10765' },
+  { slug: 'slice-of-life', name: 'Slice of Life', movieGenres: '16,35,18', tvGenres: '16,35,18' },
+  { slug: 'mecha-scifi', name: 'Mecha & Sci-Fi', movieGenres: '16,878', tvGenres: '16,10765' },
+  { slug: 'dark-mystery', name: 'Dark & Mystery', movieGenres: '16,9648,53', tvGenres: '16,9648' },
+];
+
+export function getAnimeCategory(slug: string): AnimeCategory | undefined {
+  return ANIME_CATEGORIES.find((c) => c.slug === slug);
+}
