@@ -115,8 +115,9 @@ export function Hero({ slides }: HeroProps) {
               sizes="100vw"
             />
           </div>
-          <div className="absolute inset-0 bg-hero-gradient" />
-          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/70 to-transparent" />
+         <div className="absolute inset-0 bg-hero-gradient" />
+         <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/70 to-transparent" />
+         <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent via-[#0d0e10]/80 to-[#0a0b0d] md:h-72" />
         </div>
       ))}
 
