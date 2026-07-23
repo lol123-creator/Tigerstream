@@ -48,6 +48,14 @@ export default async function HomePage() {
     <>
       <Hero slides={heroSlides} />
       <div className="relative z-10 -mt-8 space-y-2 pb-16">
+        {/* Bridges the hero's bottom fade into the page background so
+            the seam between the backdrop image and the rows below
+            reads as one continuous gradient instead of a hard cut
+            into flat color. Sits behind the rows, not on the cards. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-40 -z-10 h-96 bg-ambient-glow opacity-90"
+        />
         <FavoritesRow />
         <ContinueWatchingRow />
         <div style={{contentVisibility:'auto', containIntrinsicSize:'auto 300px'}}><SportsRow title={sportsRow.title} streams={sportsRow.streams} /></div>
@@ -62,4 +70,3 @@ export default async function HomePage() {
     </>
   );
 }
- 
