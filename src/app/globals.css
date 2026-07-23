@@ -12,7 +12,15 @@ html {
 }
 
 body {
-  @apply bg-surface text-white antialiased;
+  @apply text-white antialiased;
+  background-color: #0a0b0d;
+  background-image:
+    radial-gradient(ellipse 90% 55% at 15% -8%, rgba(127, 184, 217, 0.14), transparent 60%),
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(127, 184, 217, 0.08), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(127, 184, 217, 0.06), transparent 60%),
+    linear-gradient(180deg, #121316 0%, #0d0e10 45%, #0a0b0d 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 .scrollbar-hide {
@@ -99,10 +107,32 @@ body {
   to { opacity: 1; transform: scaleX(1); }
 }
 
+/* Scroll-reveal: used on the genres page (and reusable elsewhere).
+   A parent gets `.reveal-grid`, direct children fade + rise into
+   place once `.is-visible` is toggled on by IntersectionObserver.
+   Each child can set `--i` inline for a staggered delay. */
+.reveal-grid > * {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--i, 0) * 45ms);
+}
+
+.reveal-grid.is-visible > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .reveal-grid > * {
+    opacity: 1;
+    transform: none;
   }
 }
