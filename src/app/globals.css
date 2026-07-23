@@ -11,15 +11,23 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Ambient background gradient. NOT `background-attachment: fixed` on
+   purpose - fixed pins the glow spots to the viewport, so once you
+   scroll past the hero they're gone and everything below reads as
+   flat gray. Scrolling with the page (default) + several spots at
+   different vertical percentages means the glow is spread across the
+   whole page height, however long it is, so the area behind the
+   media rows actually shows gradient instead of solid color. */
 body {
   @apply text-white antialiased;
   background-color: #0a0b0d;
   background-image:
-    radial-gradient(ellipse 90% 55% at 15% -8%, rgba(127, 184, 217, 0.14), transparent 60%),
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(127, 184, 217, 0.08), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(127, 184, 217, 0.06), transparent 60%),
-    linear-gradient(180deg, #121316 0%, #0d0e10 45%, #0a0b0d 100%);
-  background-attachment: fixed;
+    radial-gradient(ellipse 70% 40% at 20% 0%, rgba(127, 184, 217, 0.16), transparent 55%),
+    radial-gradient(ellipse 60% 35% at 90% 12%, rgba(127, 184, 217, 0.10), transparent 55%),
+    radial-gradient(ellipse 65% 38% at 8% 42%, rgba(127, 184, 217, 0.09), transparent 55%),
+    radial-gradient(ellipse 70% 38% at 95% 62%, rgba(127, 184, 217, 0.09), transparent 55%),
+    radial-gradient(ellipse 75% 42% at 25% 88%, rgba(127, 184, 217, 0.1), transparent 55%),
+    linear-gradient(180deg, #121316 0%, #101114 30%, #0d0e10 60%, #0a0b0d 100%);
   background-repeat: no-repeat;
 }
 
