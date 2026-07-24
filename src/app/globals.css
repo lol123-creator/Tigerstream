@@ -11,15 +11,38 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Site-wide gradient: Raisin Black -> Midnight Blue. Scrolls WITH the
-   page (no `background-attachment: fixed`) so it's sized to the full
-   page height, not just the viewport - this is what lets the Hero's
-   bottom fade (which ends in the same Raisin Black, #242124) blend
-   into it seamlessly instead of hitting a hard edge. */
 body {
-  @apply text-white antialiased bg-app-gradient;
-  background-color: #242124;
+  @apply text-white antialiased;
+  background-color: #1c1a1e;
+  position: relative;
+}
+
+/* Screen-locked gradient. This is a `position: fixed` pseudo-element,
+   not a body background-image - it always covers the full viewport
+   no matter how far you scroll or how tall the page is, so there's
+   never a flat/gray stretch below the fold. Sized to 120% (inset:
+   -10%) and given a slow drift animation so it moves without ever
+   exposing an edge. Sits at z-index -1, behind all real content. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -10%;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 20% 20%, rgba(0, 51, 102, 0.55), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 80% 25%, rgba(127, 184, 217, 0.20), transparent 60%),
+    radial-gradient(ellipse 60% 55% at 25% 80%, rgba(0, 51, 102, 0.50), transparent 60%),
+    radial-gradient(ellipse 55% 50% at 88% 85%, rgba(36, 33, 36, 0.65), transparent 60%),
+    linear-gradient(135deg, #242124 0%, #1a2436 35%, #123058 65%, #003366 100%);
   background-repeat: no-repeat;
+  animation: gradientDrift 22s ease-in-out infinite alternate;
+}
+
+@keyframes gradientDrift {
+  0% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50% { transform: translate3d(-2.5%, 1.5%, 0) scale(1.08); }
+  100% { transform: translate3d(2%, -1.5%, 0) scale(1.05); }
 }
 
 .scrollbar-hide {
@@ -128,6 +151,15 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .reveal-grid > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  body::before {
+    animation: none;
   }
 
   .reveal-grid > * {
