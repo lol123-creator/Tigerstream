@@ -1,169 +1,245 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+'use client';
 
-:root {
-  --font-display: 'Segoe UI', system-ui, sans-serif;
-  --font-sans: 'Segoe UI', system-ui, sans-serif;
+import { useEffect, useRef, useState, useCallback } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  movieDetailHref,
+  tvDetailHref,
+  watchMovieHref,
+  watchTvHref,
+} from '@/lib/routes';
+import { tmdbImage } from '@/lib/tmdb-images';
+import { storeReturnPath } from '@/components/BackButton';
+import type { MediaItem } from '@/types/media';
+
+export interface HeroSlide {
+  item: MediaItem;
+  badge: string;
 }
 
-html {
-  scroll-behavior: smooth;
+interface HeroProps {
+  slides: HeroSlide[];
 }
 
-body {
-  @apply text-white antialiased;
-  background-color: #1c1a1e;
-  position: relative;
+const AUTO_MS = 6000;
+
+export function Hero({ slides }: HeroProps) {
+  const [current, setCurrent] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const next = useCallback(() => {
+    setCurrent((i) => (i + 1) % slides.length);
+  }, [slides.length]);
+
+  const prev = useCallback(() => {
+    setCurrent((i) => (i - 1 + slides.length) % slides.length);
+  }, [slides.length]);
+
+  const goTo = useCallback((i: number) => {
+    setCurrent(i);
+  }, []);
+
+  /* Auto-rotate */
+  useEffect(() => {
+    if (hovered || slides.length <= 1) return;
+    timerRef.current = setTimeout(next, AUTO_MS);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [current, hovered, next, slides.length]);
+
+  /* Keyboard arrows */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') prev();
+      if (e.key === 'ArrowRight') next();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [next, prev]);
+
+
+  /* Preload adjacent slides after initial paint */
+  useEffect(() => {
+    if (slides.length <= 2) return;
+    const nextIndex = (current + 1) % slides.length;
+    const prevIndex = (current - 1 + slides.length) % slides.length;
+    const preload = (idx: number) => {
+      if (idx === current) return;
+      const img = new window.Image();
+      img.src = tmdbImage(slides[idx].item.backdrop_path, 'w1280');
+    };
+    const t = setTimeout(() => {
+      preload(nextIndex);
+      preload(prevIndex);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [current, slides]);
+
+  if (slides.length === 0) return null;
+
+  const item = slides[current].item;
+  const badge = slides[current].badge;
+  const watchHref =
+    item.type === 'movie' ? watchMovieHref(item.id) : watchTvHref(item.id, 1, 1);
+  const detailHref =
+    item.type === 'movie' ? movieDetailHref(item.id) : tvDetailHref(item.id);
+
+  return (
+    <section
+      className="group/hero relative min-h-[70vh] w-full overflow-hidden md:min-h-[85vh]"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Soft ambient glow - the signature touch for this direction,
+          restraint over a bold motif */}
+      <div className="pointer-events-none absolute inset-0 bg-ambient-glow" />
+
+      {/* Background slides (crossfade + gentle drift) */}
+      {slides.map((s, i) => (
+        <div
+          key={s.item.id}
+          className="absolute inset-0 overflow-hidden transition-opacity duration-700 ease-in-out"
+          style={{ opacity: i === current ? 1 : 0 }}
+        >
+          <div
+            className="absolute inset-0"
+            style={i === current ? { animation: 'kenburns 12s ease-out forwards' } : undefined}
+          >
+            <Image
+              src={tmdbImage(s.item.backdrop_path, 'w1280')}
+              alt=""
+              fill
+              priority={i === 0}
+              className="object-cover object-top"
+              sizes="100vw"
+            />
+          </div>
+          <div className="absolute inset-0 bg-hero-gradient" />
+          <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/70 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent via-[#242124]/85 to-[#242124] md:h-72" />
+        </div>
+      ))}
+
+      {/* Content - staggered entrance */}
+      <div className="relative mx-auto flex max-w-7xl flex-col justify-end px-4 pb-16 pt-32 sm:px-6 md:pb-24">
+        <div key={item.id}>
+          <p
+            className="mb-2 inline-block rounded-full bg-accent/15 px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-accent backdrop-blur-sm"
+            style={{ animation: 'heroRise 0.5s ease-out both' }}
+          >
+            {badge}
+          </p>
+          <h1
+            className="font-display max-w-3xl text-4xl font-medium leading-[1.08] tracking-tight text-white md:text-6xl"
+            style={{ animation: 'heroRise 0.55s ease-out 0.08s both' }}
+          >
+            {item.title}
+          </h1>
+          {'tagline' in item && item.tagline && (
+            <p
+              className="mt-3 text-lg text-white/60 italic"
+              style={{ animation: 'heroRise 0.5s ease-out 0.16s both' }}
+            >
+              {item.tagline}
+            </p>
+          )}
+          <p
+            className="mt-4 max-w-xl text-sm leading-relaxed text-white/70 md:text-base"
+            style={{ animation: 'heroRise 0.5s ease-out 0.22s both' }}
+          >
+            {item.overview?.slice(0, 200)}{item.overview && item.overview.length > 200 ? '...' : ''}
+          </p>
+          {item.genres.length > 0 && (
+            <div
+              className="mt-4 flex flex-wrap gap-2"
+              style={{ animation: 'heroRise 0.5s ease-out 0.28s both' }}
+            >
+              {item.genres.slice(0, 3).map((g) => (
+                <span
+                  key={g}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/60"
+                >
+                  {g}
+                </span>
+              ))}
+            </div>
+          )}
+          <div
+            className="mt-8 flex flex-wrap gap-3"
+            style={{ animation: 'heroRise 0.5s ease-out 0.34s both' }}
+          >
+            <Link
+              href={watchHref}
+              className="inline-flex items-center gap-2 rounded-2xl bg-accent px-6 py-3 text-sm font-medium text-[#0A1F2B] shadow-lg shadow-accent/20 transition-all duration-200 hover:bg-accent-hover hover:shadow-glow-lg hover:scale-[1.02] active:scale-95"
+            >
+              <PlayIcon />
+              Watch Now
+            </Link>
+            <Link
+              href={detailHref}
+              onClick={storeReturnPath}
+              className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/85 backdrop-blur-md transition-all duration-200 hover:bg-white/[0.1] hover:text-white hover:scale-[1.02] active:scale-95"
+            >
+              More Info
+            </Link>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Left arrow */}
+      {slides.length > 1 && (
+        <button
+          type="button"
+          onClick={prev}
+          aria-label="Previous slide"
+          className="absolute left-2 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-md transition opacity-0 hover:opacity-100 group-hover/hero:opacity-100 md:left-6"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      )}
+
+      {/* Right arrow */}
+      {slides.length > 1 && (
+        <button
+          type="button"
+          onClick={next}
+          aria-label="Next slide"
+          className="absolute right-2 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white shadow-lg backdrop-blur-md transition opacity-0 hover:opacity-100 group-hover/hero:opacity-100 md:right-6"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      )}
+
+      {/* Dot indicators */}
+      {slides.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-2 md:bottom-8">
+          {slides.map((s, i) => (
+            <button
+              key={s.item.id}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === current ? 'w-8 bg-accent' : 'w-2 bg-white/30 hover:bg-white/50'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
-/* Screen-locked gradient. This is a `position: fixed` pseudo-element,
-   not a body background-image - it always covers the full viewport
-   no matter how far you scroll or how tall the page is, so there's
-   never a flat/gray stretch below the fold. Sized to 120% (inset:
-   -10%) and given a slow drift animation so it moves without ever
-   exposing an edge. Sits at z-index -1, behind all real content. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: -10%;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    radial-gradient(ellipse 60% 50% at 20% 20%, rgba(0, 51, 102, 0.55), transparent 60%),
-    radial-gradient(ellipse 55% 45% at 80% 25%, rgba(127, 184, 217, 0.20), transparent 60%),
-    radial-gradient(ellipse 60% 55% at 25% 80%, rgba(0, 51, 102, 0.50), transparent 60%),
-    radial-gradient(ellipse 55% 50% at 88% 85%, rgba(36, 33, 36, 0.65), transparent 60%),
-    linear-gradient(135deg, #242124 0%, #1a2436 35%, #123058 65%, #003366 100%);
-  background-repeat: no-repeat;
-  animation: gradientDrift 22s ease-in-out infinite alternate;
-}
-
-@keyframes gradientDrift {
-  0% { transform: translate3d(0, 0, 0) scale(1.05); }
-  50% { transform: translate3d(-2.5%, 1.5%, 0) scale(1.08); }
-  100% { transform: translate3d(2%, -1.5%, 0) scale(1.05); }
-}
-
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-@keyframes dropdown-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-dropdown-in {
-  animation: dropdown-in 0.15s ease-out forwards;
-}
-
-@keyframes season-dropdown-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scaleY(0.95);
-    filter: blur(4px);
-  }
-  60% {
-    opacity: 1;
-    filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scaleY(1);
-    filter: blur(0px);
-  }
-}
-
-.animate-season-dropdown {
-  animation: season-dropdown-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-
-@keyframes fadeSlide {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out both;
-}
-
-/* Hero: slow background drift so the backdrop feels alive */
-@keyframes kenburns {
-  from { transform: scale(1) translate(0, 0); }
-  to { transform: scale(1.05) translate(-1%, -1%); }
-}
-
-/* Hero: staggered text entrance, each element passes its own delay
-   via inline style */
-@keyframes heroRise {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Intro splash: wordmark reveal + underline draw-in */
-@keyframes introReveal {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes introLine {
-  from { opacity: 0; transform: scaleX(0); }
-  to { opacity: 1; transform: scaleX(1); }
-}
-
-/* Scroll-reveal: used on the genres page (and reusable elsewhere).
-   A parent gets `.reveal-grid`, direct children fade + rise into
-   place once `.is-visible` is toggled on by IntersectionObserver.
-   Each child can set `--i` inline for a staggered delay. */
-.reveal-grid > * {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: calc(var(--i, 0) * 45ms);
-}
-
-.reveal-grid.is-visible > * {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  .reveal-grid > * {
-    opacity: 1;
-    transform: none;
-  }
-
-  body::before {
-    animation: none;
-  }
-
-  .reveal-grid > * {
-    opacity: 1;
-    transform: none;
-  }
+function PlayIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
 }
