@@ -41,7 +41,7 @@ export default async function MoviesPage({
           translucent than before (was bg-surface/95) to actually read
           as frosted glass matching the nav, instead of a solid opaque
           bar. */}
-      <div className="sticky top-16 z-40 -mx-4 mb-8 border-b border-white/5 bg-surface/70 px-4 py-3 backdrop-blur-lg sm:-mx-6 sm:px-6">
+      <div className="sticky top-16 z-40 -mx-4 mb-8 border-b border-white/5 bg-surface/35 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/35">
           Browse by genre
         </p>
