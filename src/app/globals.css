@@ -11,38 +11,23 @@ html {
   scroll-behavior: smooth;
 }
 
+/*
+  Site-wide gradient backdrop (Raisin Black -> Midnight Blue), fixed to
+  the viewport so it reads as one continuous background behind every
+  page rather than restarting per-section. Applied on html (not just
+  body) so it's there even before content paints, and background-
+  attachment: fixed keeps it anchored on scroll instead of tiling.
+*/
+html {
+  background: linear-gradient(135deg, #242124 0%, #003366 100%);
+  background-attachment: fixed;
+  background-size: cover;
+  min-height: 100%;
+}
+
 body {
   @apply text-white antialiased;
-  background-color: #1c1a1e;
-  position: relative;
-}
-
-/* Screen-locked gradient. This is a `position: fixed` pseudo-element,
-   not a body background-image - it always covers the full viewport
-   no matter how far you scroll or how tall the page is, so there's
-   never a flat/gray stretch below the fold. Sized to 120% (inset:
-   -10%) and given a slow drift animation so it moves without ever
-   exposing an edge. Sits at z-index -1, behind all real content. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: -10%;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    radial-gradient(ellipse 60% 50% at 20% 20%, rgba(0, 51, 102, 0.55), transparent 60%),
-    radial-gradient(ellipse 55% 45% at 80% 25%, rgba(127, 184, 217, 0.20), transparent 60%),
-    radial-gradient(ellipse 60% 55% at 25% 80%, rgba(0, 51, 102, 0.50), transparent 60%),
-    radial-gradient(ellipse 55% 50% at 88% 85%, rgba(36, 33, 36, 0.65), transparent 60%),
-    linear-gradient(135deg, #242124 0%, #1a2436 35%, #123058 65%, #003366 100%);
-  background-repeat: no-repeat;
-  animation: gradientDrift 22s ease-in-out infinite alternate;
-}
-
-@keyframes gradientDrift {
-  0% { transform: translate3d(0, 0, 0) scale(1.05); }
-  50% { transform: translate3d(-2.5%, 1.5%, 0) scale(1.08); }
-  100% { transform: translate3d(2%, -1.5%, 0) scale(1.05); }
+  background: transparent;
 }
 
 .scrollbar-hide {
@@ -129,41 +114,35 @@ body::before {
   to { opacity: 1; transform: scaleX(1); }
 }
 
-/* Scroll-reveal: used on the genres page (and reusable elsewhere).
-   A parent gets `.reveal-grid`, direct children fade + rise into
-   place once `.is-visible` is toggled on by IntersectionObserver.
-   Each child can set `--i` inline for a staggered delay. */
-.reveal-grid > * {
+/* Scroll-reveal for grouped sections (e.g. genre tile groups) - the
+   parent gets .reveal-group and toggles data-revealed via
+   IntersectionObserver; children stagger in by nth-child delay. Kept to
+   a handful of observed elements per page, not one per tile. */
+.reveal-group > * {
   opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: calc(var(--i, 0) * 45ms);
+  transform: translateY(14px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
-.reveal-grid.is-visible > * {
+.reveal-group[data-revealed='true'] > * {
   opacity: 1;
   transform: translateY(0);
 }
+
+.reveal-group[data-revealed='true'] > *:nth-child(1) { transition-delay: 0ms; }
+.reveal-group[data-revealed='true'] > *:nth-child(2) { transition-delay: 40ms; }
+.reveal-group[data-revealed='true'] > *:nth-child(3) { transition-delay: 80ms; }
+.reveal-group[data-revealed='true'] > *:nth-child(4) { transition-delay: 120ms; }
+.reveal-group[data-revealed='true'] > *:nth-child(5) { transition-delay: 160ms; }
+.reveal-group[data-revealed='true'] > *:nth-child(6) { transition-delay: 200ms; }
+.reveal-group[data-revealed='true'] > *:nth-child(7) { transition-delay: 240ms; }
+.reveal-group[data-revealed='true'] > *:nth-child(8) { transition-delay: 280ms; }
+.reveal-group[data-revealed='true'] > *:nth-child(n+9) { transition-delay: 320ms; }
 
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .reveal-grid > * {
-    opacity: 1;
-    transform: none;
-  }
-
-  body::before {
-    animation: none;
-  }
-
-  .reveal-grid > * {
-    opacity: 1;
-    transform: none;
   }
 }
