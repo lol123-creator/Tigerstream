@@ -12,16 +12,23 @@ html {
 }
 
 /*
-  Site-wide gradient backdrop (Raisin Black -> Midnight Blue), fixed to
-  the viewport so it reads as one continuous background behind every
-  page rather than restarting per-section. Applied on html (not just
-  body) so it's there even before content paints, and background-
-  attachment: fixed keeps it anchored on scroll instead of tiling.
+  Site-wide gradient backdrop (Raisin Black -> Midnight Blue), sized to
+  the actual full page height so the transition spreads across the
+  whole page rather than resolving within one screen's height.
+
+  Important: NOT background-attachment:fixed + background-size:cover.
+  That combination locks the gradient to exactly one viewport - since
+  Hero is opaque and covers almost that entire first screen, the
+  gradient would never show through until right at Hero's bottom edge,
+  and because it's pinned to the viewport, that boundary would already
+  be deep in the blue end. Everything below would then just be a frozen
+  flat color instead of a gradient. Letting html size normally (its box
+  naturally grows to the full document height once content overflows)
+  and NOT fixing attachment means the gradient spans the real page
+  length and scrolls normally with it.
 */
 html {
   background: linear-gradient(135deg, #242124 0%, #003366 100%);
-  background-attachment: fixed;
-  background-size: cover;
   min-height: 100%;
 }
 
