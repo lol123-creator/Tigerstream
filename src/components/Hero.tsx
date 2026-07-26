@@ -137,14 +137,14 @@ export function Hero({ slides }: HeroProps) {
           </h1>
           {'tagline' in item && item.tagline && (
             <p
-              className="mt-3 text-lg text-white/60 italic"
+              className="mt-3 text-lg text-ink-2 italic"
               style={{ animation: 'heroRise 0.5s ease-out 0.16s both' }}
             >
               {item.tagline}
             </p>
           )}
           <p
-            className="mt-4 max-w-xl text-sm leading-relaxed text-white/70 md:text-base"
+            className="mt-4 max-w-xl text-sm leading-relaxed text-ink-2 md:text-base"
             style={{ animation: 'heroRise 0.5s ease-out 0.22s both' }}
           >
             {item.overview?.slice(0, 200)}{item.overview && item.overview.length > 200 ? '...' : ''}
@@ -157,7 +157,7 @@ export function Hero({ slides }: HeroProps) {
               {item.genres.slice(0, 3).map((g) => (
                 <span
                   key={g}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/60"
+                  className="rounded-full border border-glass-border bg-white/5 px-3 py-0.5 text-xs text-ink-2"
                 >
                   {g}
                 </span>
@@ -178,7 +178,7 @@ export function Hero({ slides }: HeroProps) {
             <Link
               href={detailHref}
               onClick={storeReturnPath}
-              className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/85 backdrop-blur-md transition-all duration-200 hover:bg-white/[0.1] hover:text-white hover:scale-[1.02] active:scale-95"
+              className="inline-flex items-center rounded-2xl border border-glass-border bg-white/[0.06] px-6 py-3 text-sm font-medium text-ink-1 backdrop-blur-xl transition-all duration-200 hover:bg-white/[0.12] hover:text-white hover:scale-[1.02] active:scale-95"
             >
               More Info
             </Link>
