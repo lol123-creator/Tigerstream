@@ -37,7 +37,7 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
       onClick={storeReturnPath}
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      className={`group relative block overflow-hidden rounded-2xl bg-surface-card transition-[transform,box-shadow] duration-300 ease-out hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-glow-lg hover:ring-1 hover:ring-accent/30 ${
+      className={`group relative block overflow-hidden rounded-2xl bg-white/[0.04] backdrop-blur-sm transition-[transform,box-shadow] duration-300 ease-out hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-glow-lg hover:ring-1 hover:ring-accent/30 ${
         variant === 'row'
           ? 'shrink-0 snap-start'
           : 'w-full'
@@ -88,29 +88,29 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           <p className="text-sm font-semibold text-white leading-snug line-clamp-2">
             {item.title}
           </p>
-          <p className="mt-1 truncate text-xs text-white/55">
+          <p className="mt-1 truncate text-xs text-ink-3">
             {year}
-            <span className="mx-1.5 text-white/25">·</span>
+            <span className="mx-1.5 text-ink-4">·</span>
             <span className="text-accent">★ {item.vote_average.toFixed(1)}</span>
             {item.original_language && (
               <>
-                <span className="mx-1.5 text-white/25">·</span>
+                <span className="mx-1.5 text-ink-4">·</span>
                 {item.original_language.toUpperCase()}
               </>
             )}
             {item.genres && item.genres.length > 0 && (
               <>
-                <span className="mx-1.5 text-white/25">·</span>
+                <span className="mx-1.5 text-ink-4">·</span>
                 {item.genres[0]}
               </>
             )}
           </p>
         </div>
       </div>
-      <p className="mt-2 truncate px-1 text-sm font-medium text-white/80 group-hover:text-white transition-colors duration-200">
+      <p className="mt-2 truncate px-1 text-sm font-medium text-ink-1 group-hover:text-white transition-colors duration-200">
         {item.title}
       </p>
-      <p className="truncate px-1 text-xs text-white/40">
+      <p className="truncate px-1 text-xs text-ink-3">
         {item.type === 'movie' ? `Movie · ${year}` : `TV · ${year}`}
       </p>
     </Link>
