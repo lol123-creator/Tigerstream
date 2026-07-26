@@ -23,6 +23,20 @@ const config: Config = {
           DEFAULT: '#242124',
           card: '#2E2B2D',
         },
+        // Blue-tinted text scale replacing white-opacity muted text
+        // (text-white/50 etc reads as neutral gray regardless of what
+        // it's over). These are real hues, not desaturated white, so
+        // "muted" comes from the palette instead of gray creeping in.
+        ink: {
+          1: '#E7EDF6', // primary-ish, just off pure white
+          2: '#A9BAD1', // secondary text
+          3: '#78899F', // tertiary / muted
+          4: '#4F5D72', // faint / disabled
+        },
+        // Blue-tinted border/divider color replacing border-white/10 etc.
+        glass: {
+          border: 'rgba(159,184,214,0.14)',
+        },
       },
       fontFamily: {
         // Clean geometric sans for headings, used with tighter tracking
