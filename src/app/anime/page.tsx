@@ -104,7 +104,7 @@ export default async function AnimePage({
         {/* Sub-tabs: All / Movies / Shows - top-16 matches the navbar's
             fixed h-16 exactly, and the lighter/blurred background reads
             as frosted glass instead of a solid bar. */}
-        <div className="sticky top-16 z-40 -mx-4 mb-6 border-b border-white/5 bg-surface/70 px-4 py-3 backdrop-blur-lg sm:-mx-6 sm:px-6">
+        <div className="sticky top-16 z-40 -mx-4 mb-6 border-b border-white/5 bg-surface/35 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
           <div className="flex flex-wrap gap-2">
             {tabs.map(({ label, value }) => (
               <a
