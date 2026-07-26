@@ -60,6 +60,7 @@ export function DetailHero({
         alt=""
         fill
         className="object-cover object-top"
+        style={{ filter: 'saturate(1.35) contrast(1.12) brightness(1.03)' }}
         priority
         sizes="100vw"
         onError={() => setBackdropSrc(PLACEHOLDER)}
