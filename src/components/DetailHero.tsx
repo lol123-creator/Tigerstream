@@ -80,7 +80,7 @@ export function DetailHero({
       </div>
 
       <div className="relative mx-auto flex min-h-[calc(52vh-4rem)] max-w-7xl flex-wrap items-end gap-6 px-4 pb-12 pt-10 sm:min-h-[calc(60vh-4rem)] sm:px-6 md:min-h-[calc(70vh-4rem)] md:gap-10">
-        <div className="relative hidden h-64 w-44 shrink-0 overflow-hidden rounded-lg bg-surface-card shadow-2xl sm:block md:h-80 md:w-52">
+        <div className="relative hidden h-64 w-44 shrink-0 overflow-hidden rounded-lg bg-white/[0.04] backdrop-blur-sm shadow-2xl sm:block md:h-80 md:w-52">
           <Image
             src={posterSrc}
             alt={item.title}
@@ -95,9 +95,9 @@ export function DetailHero({
             {item.title}
           </h1>
           {"tagline" in item && item.tagline && (
-            <p className="mt-1 text-white/60 italic">{item.tagline}</p>
+            <p className="mt-1 text-ink-2 italic">{item.tagline}</p>
           )}
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-white/55">
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-3">
             <span className="text-accent font-medium">
               ★ {item.vote_average.toFixed(1)}
             </span>
@@ -113,7 +113,7 @@ export function DetailHero({
               </span>
             )}
           </div>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-ink-2 md:text-base">
             {item.overview}
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
