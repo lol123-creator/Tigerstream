@@ -109,7 +109,7 @@ export function Navbar() {
         Keeping this explicit is what keeps that seam from coming back.
       */}
       <header
-        className={`fixed inset-x-0 top-0 z-50 h-16 border-b border-white/[0.06] bg-surface/60 backdrop-blur-md transition-colors ${
+        className={`fixed inset-x-0 top-0 z-50 h-16 border-b border-glass-border bg-surface/60 backdrop-blur-md transition-colors ${
           isWatch
             ? 'bg-surface/80 backdrop-blur-md'
             : 'bg-gradient-to-b from-black/60 to-transparent'
@@ -132,7 +132,7 @@ export function Navbar() {
                 className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                   isActive(href)
                     ? 'bg-accent/15 text-accent'
-                    : 'text-white/70 hover:bg-white/[0.06] hover:text-white'
+                    : 'text-ink-2 hover:bg-white/[0.06] hover:text-white'
                 }`}
               >
                 {label}
@@ -153,7 +153,7 @@ export function Navbar() {
             aria-label="Toggle menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((o) => !o)}
-            className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white md:hidden"
+            className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-2 transition hover:bg-white/[0.08] hover:text-white md:hidden"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`h-5 w-5 transition-transform duration-200 ${menuOpen ? 'rotate-90' : ''}`}>
               {menuOpen ? (
@@ -181,7 +181,7 @@ export function Navbar() {
       )}
 
       {menuOpen && (
-        <div className="fixed inset-x-3 top-[4.5rem] z-[60] overflow-hidden rounded-2xl border border-white/10 bg-surface-card/95 shadow-2xl backdrop-blur-md md:hidden">
+        <div className="fixed inset-x-3 top-[4.5rem] z-[60] overflow-hidden rounded-2xl border border-glass-border bg-surface-card/95 shadow-2xl backdrop-blur-md md:hidden">
           <div className="p-2">
             {NAV_LINKS.map(({ label, href, icon }, i) => (
               <Link
@@ -192,7 +192,7 @@ export function Navbar() {
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
                   isActive(href)
                     ? 'bg-accent/15 text-accent'
-                    : 'text-white/75 hover:bg-white/[0.06] hover:text-white'
+                    : 'text-ink-2 hover:bg-white/[0.06] hover:text-white'
                 }`}
               >
                 <NavIcon name={icon} />
