@@ -112,6 +112,7 @@ export function Hero({ slides }: HeroProps) {
               fill
               priority={i === 0}
               className="object-cover object-top"
+              style={{ filter: 'saturate(1.35) contrast(1.12) brightness(1.03)' }}
               sizes="100vw"
             />
           </div>
