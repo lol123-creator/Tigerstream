@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ScrollRow } from '@/components/ScrollRow';
 import { tmdbImage } from '@/lib/tmdb-images';
 import { personDetailHref } from '@/lib/routes';
+import { storeReturnPath } from '@/components/BackButton';
 import type { Cast } from '@/types/media';
 
 interface CastSectionProps {
@@ -22,6 +23,7 @@ export function CastSection({ cast }: CastSectionProps) {
         <Link
           key={member.id ?? member.name}
           href={member.id ? personDetailHref(member.id) : '#'}
+          onClick={storeReturnPath}
           className={`group w-24 shrink-0 snap-start text-center sm:w-28 ${
             member.id ? '' : 'pointer-events-none'
           }`}
