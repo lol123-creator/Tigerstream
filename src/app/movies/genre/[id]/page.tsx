@@ -42,11 +42,16 @@ export default async function MovieGenrePage({
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
       <h1 className="font-display mb-2 text-3xl font-bold">{name} Movies</h1>
-      <p className="mb-6 text-sm text-white/45">
+      <p className="mb-6 text-sm text-ink-3">
         Page {currentPage} of {totalPages} · scroll down to browse
       </p>
-      <div className="sticky top-[4.25rem] z-40 -mx-4 mb-8 border-b border-white/5 bg-surface/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
-        <p className="mb-2 text-sm font-medium text-white/60">Switch genre</p>
+      {/* top-16 matches the navbar's fixed h-16 exactly, and the
+          lighter/blurred background reads as frosted glass instead of
+          a solid bar - this page had never gotten the same fix applied
+          to the main /movies "All" view, so switching to a specific
+          genre reverted to the old gap + opaque bar. */}
+      <div className="sticky top-16 z-40 -mx-4 mb-8 border-b border-glass-border bg-surface/35 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
+        <p className="mb-2 text-sm font-medium text-ink-2">Switch genre</p>
         <GenreChips type="movie" genres={allGenres} activeId={id} />
       </div>
       <BrowseTitleList heading={`${name} Movie Titles on This Page`} items={movies} />
