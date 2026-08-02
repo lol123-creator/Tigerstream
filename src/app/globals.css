@@ -153,3 +153,20 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Ambient background animation - a soft glow layered on top of the
+   static base gradient (html's own background) rather than animating
+   that gradient directly. The base gradient is deliberately sized to
+   the full document height to fix an earlier seam bug (see the html
+   rule above); animating that same rule's size/position risked
+   reintroducing it. A separate fixed, low-opacity glow gives the
+   "living background" feel without touching that fix. */
+@keyframes gradientDrift1 {
+  0%, 100% { transform: translate(-8%, -6%) scale(1); }
+  50% { transform: translate(10%, 8%) scale(1.2); }
+}
+
+@keyframes gradientDrift2 {
+  0%, 100% { transform: translate(6%, 8%) scale(1.1); }
+  50% { transform: translate(-10%, -6%) scale(1); }
+}
