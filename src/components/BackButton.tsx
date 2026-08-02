@@ -1,13 +1,20 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'tigerstream:returnTo';
 
 /**
  * Read (and clear) the stored return path so the BackButton knows
  * where the user came from.
+ *
+ * Important: this is only ever called from the click handler, not on
+ * mount. It used to run in a useEffect on mount, which meant simply
+ * *visiting* a page silently consumed the stored return path - even if
+ * the user then navigated away via some other link (e.g. a cast
+ * member) instead of clicking Back. By the time Back actually got
+ * clicked, the path was often already gone, so it fell through to a
+ * generic browser-history back instead of the real origin page.
  */
 export function getReturnPath(): string | null {
   if (typeof window === 'undefined') return null;
@@ -34,13 +41,10 @@ interface BackButtonProps {
 
 export function BackButton({ fallbackHref = '/', className = '' }: BackButtonProps) {
   const router = useRouter();
-  const [returnTo, setReturnTo] = useState<string | null>(null);
-
-  useEffect(() => {
-    setReturnTo(getReturnPath());
-  }, []);
 
   const onClick = () => {
+    // Consumed here, at the moment of the actual click - not on mount.
+    const returnTo = getReturnPath();
     if (returnTo) {
       router.push(returnTo);
     } else if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -57,7 +61,7 @@ export function BackButton({ fallbackHref = '/', className = '' }: BackButtonPro
       aria-label="Go back"
       className={
         'inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 ' +
-        'text-sm text-white/80 backdrop-blur transition hover:bg-black/60 hover:text-white ' +
+        'text-sm text-ink-1 backdrop-blur transition hover:bg-black/60 hover:text-white ' +
         className
       }
     >
