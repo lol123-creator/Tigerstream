@@ -37,7 +37,7 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
       onClick={storeReturnPath}
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      className={`group relative block overflow-hidden rounded-2xl bg-white/[0.04] backdrop-blur-sm transition-[transform,box-shadow] duration-300 ease-out hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-glow-lg hover:ring-1 hover:ring-accent/30 ${
+      className={`group relative block overflow-hidden rounded-2xl border border-glass-border bg-white/[0.05] p-1.5 backdrop-blur-md transition-[transform,box-shadow] duration-300 ease-out hover:z-10 hover:-translate-y-1.5 hover:scale-[1.04] hover:shadow-glow-lg hover:border-accent/30 hover:bg-white/[0.08] ${
         variant === 'row'
           ? 'shrink-0 snap-start'
           : 'w-full'
@@ -48,7 +48,11 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           : undefined
       }
     >
-      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl">
+      {/* Subtle top highlight - the "glass reflection" edge that reads
+          as a frosted pane rather than a flat panel */}
+      <div className="pointer-events-none absolute inset-x-1.5 top-1.5 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+
+      <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
         <Image
           src={imgSrc}
           alt={item.title}
