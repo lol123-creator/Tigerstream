@@ -95,12 +95,22 @@ export function Hero({ slides }: HeroProps) {
           restraint over a bold motif */}
       <div className="pointer-events-none absolute inset-0 bg-ambient-glow" />
 
-      {/* Background slides (crossfade + gentle drift) */}
+      {/* Background slides (crossfade + gentle drift). Each slide's
+          mask-image fades the bottom ~18% to transparent - since this
+          section has no opaque background of its own, that reveals the
+          real page gradient underneath directly, which is what makes
+          the transition to the content below actually feel like a
+          blend instead of a hard-edged rectangle sitting on top of the
+          gradient. */}
       {slides.map((s, i) => (
         <div
           key={s.item.id}
           className="absolute inset-0 overflow-hidden transition-opacity duration-700 ease-in-out"
-          style={{ opacity: i === current ? 1 : 0 }}
+          style={{
+            opacity: i === current ? 1 : 0,
+            maskImage: 'linear-gradient(to bottom, black 0%, black 78%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 78%, transparent 100%)',
+          }}
         >
           <div
             className="absolute inset-0"
