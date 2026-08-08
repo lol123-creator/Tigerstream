@@ -21,7 +21,11 @@ export function SportsHero({ stream }: SportsHeroProps) {
         priority
         unoptimized
         className="object-cover object-top"
-        style={{ filter: 'saturate(1.35) contrast(1.12) brightness(1.03)' }}
+        style={{
+          filter: 'saturate(1.35) contrast(1.12) brightness(1.03)',
+          maskImage: 'linear-gradient(to bottom, black 0%, black 72%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 72%, transparent 100%)',
+        }}
         sizes="100vw"
       />
       <div className="absolute inset-0 bg-hero-gradient" />
