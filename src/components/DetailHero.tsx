@@ -60,7 +60,16 @@ export function DetailHero({
         alt=""
         fill
         className="object-cover object-top"
-        style={{ filter: 'saturate(1.35) contrast(1.12) brightness(1.03)' }}
+        style={{
+          filter: 'saturate(1.35) contrast(1.12) brightness(1.03)',
+          // Fades the bottom ~22% to transparent so the image blends
+          // into the section instead of ending in a hard rectangular
+          // edge - the surface-card tone behind it is close enough to
+          // the page gradient's dark end that this reads as a real
+          // blend rather than a visible seam.
+          maskImage: 'linear-gradient(to bottom, black 0%, black 72%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 72%, transparent 100%)',
+        }}
         priority
         sizes="100vw"
         onError={() => setBackdropSrc(PLACEHOLDER)}
