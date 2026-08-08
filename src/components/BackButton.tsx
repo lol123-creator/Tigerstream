@@ -46,11 +46,19 @@ export function BackButton({ fallbackHref = '/', className = '' }: BackButtonPro
     // Consumed here, at the moment of the actual click - not on mount.
     const returnTo = getReturnPath();
     if (returnTo) {
-      router.push(returnTo);
+      // replace, not push: this is a "go back" action. Using push
+      // added a new history entry on top of the stack instead of truly
+      // going back - the browser history ended up with the movie page
+      // duplicated (once from the original visit, once from this
+      // push). Once the stored path was consumed and a later back
+      // press fell through to router.back(), it popped that duplicate
+      // and landed back on the actor page instead of moving past it,
+      // requiring a second press. replace keeps the stack clean.
+      router.replace(returnTo);
     } else if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
     } else {
-      router.push(fallbackHref);
+      router.replace(fallbackHref);
     }
   };
 
