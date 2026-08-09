@@ -22,14 +22,20 @@ export function SportsHero({ stream }: SportsHeroProps) {
         unoptimized
         className="object-cover object-top"
         style={{
-          filter: 'saturate(1.35) contrast(1.12) brightness(1.03)',
+          filter: 'saturate(1.7) contrast(1.2) brightness(1.08)',
           maskImage: 'linear-gradient(to bottom, black 0%, black 72%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 72%, transparent 100%)',
         }}
         sizes="100vw"
       />
       <div className="absolute inset-0 bg-hero-gradient" />
-      <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/70 to-transparent" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(to right, #242124 0%, rgba(36,33,36,0.6) 22%, rgba(36,33,36,0.15) 42%, transparent 58%)',
+        }}
+      />
 
       <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-10 sm:px-6">
         {live ? (
