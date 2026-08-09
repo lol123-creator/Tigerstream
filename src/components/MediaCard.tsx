@@ -20,9 +20,15 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
   const href =
     item.type === 'movie' ? movieDetailHref(item.id) : tvDetailHref(item.id);
 
-  const year = item.type === 'movie'
+  // Guards against missing/empty release dates (e.g. favorites saved
+  // via a path that didn't pass this data along) producing a raw NaN
+  // in the UI - shows nothing for the year instead of "NaN".
+  const rawYear = item.type === 'movie'
     ? new Date(item.release_date).getFullYear()
     : new Date(item.first_air_date).getFullYear();
+  const year = Number.isFinite(rawYear) ? rawYear : null;
+
+  const hasRating = typeof item.vote_average === 'number' && item.vote_average > 0;
 
   // Falls back to a placeholder if the poster fails to load for any
   // reason - a stale/expired TMDB path, a CDN hiccup, or the image
@@ -72,9 +78,11 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           entry={{ id: item.id, type: item.type, title: item.title, poster_path: item.poster_path, vote_average: item.vote_average, release_date: item.type === "movie" ? item.release_date : undefined, first_air_date: item.type === "tv" ? item.first_air_date : undefined }}
           variant="card"
         />
-        <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-accent backdrop-blur-sm">
-          {item.vote_average.toFixed(1)}
-        </span>
+        {hasRating && (
+          <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-accent backdrop-blur-sm">
+            {item.vote_average.toFixed(1)}
+          </span>
+        )}
 
         {/* Play affordance - center-stage on hover */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100">
@@ -94,8 +102,10 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           </p>
           <p className="mt-1 truncate text-xs text-ink-3">
             {year}
-            <span className="mx-1.5 text-ink-4">·</span>
-            <span className="text-accent">★ {item.vote_average.toFixed(1)}</span>
+            {year && hasRating && <span className="mx-1.5 text-ink-4">·</span>}
+            {hasRating && (
+              <span className="text-accent">★ {item.vote_average.toFixed(1)}</span>
+            )}
             {item.original_language && (
               <>
                 <span className="mx-1.5 text-ink-4">·</span>
@@ -115,7 +125,7 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
         {item.title}
       </p>
       <p className="truncate px-1 text-xs text-ink-3">
-        {item.type === 'movie' ? `Movie · ${year}` : `TV · ${year}`}
+        {item.type === 'movie' ? 'Movie' : 'TV'}{year ? ` · ${year}` : ''}
       </p>
     </Link>
   );
