@@ -154,6 +154,40 @@ body {
   }
 }
 
+/*
+  Lite Mode - a manual kill-switch for weak devices/old browsers (e.g.
+  game console browsers like the PS4's, which have poor GPU compositing
+  and a slow JS engine). Toggled via LiteModeToggle.tsx, which sets
+  data-lite on <html> (also set synchronously in a blocking script in
+  layout.tsx's <head> so it applies before first paint, no flash).
+
+  This is a CSS-level override, not a rewrite of every component - it
+  strips the expensive stuff (backdrop-filter/blur, animations,
+  transitions, box-shadow, the color-grade filter on hero images)
+  globally with !important, which also overrides plain (non-important)
+  inline styles like Hero's Ken Burns animation.
+*/
+html[data-lite='true'] * {
+  animation: none !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+  scroll-behavior: auto !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* The animated ambient glow blobs and the film-grain-style ambient
+   glow behind heroes are purely decorative - hide them outright rather
+   than just freezing their animation, since the blur+opacity blending
+   itself is real compositing cost even when static. */
+html[data-lite='true'] .bg-ambient-glow,
+html[data-lite='true'] [data-lite-hide='true'] {
+  display: none !important;
+}
+
 /* Ambient background animation - a soft glow layered on top of the
    static base gradient (html's own background) rather than animating
    that gradient directly. The base gradient is deliberately sized to
