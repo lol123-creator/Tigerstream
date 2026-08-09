@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMemo, useCallback, useState, lazy, Suspense } from 'react';
 import { SITE_NAME } from '@/lib/brand';
+import { LiteModeToggle } from '@/components/LiteModeToggle';
 
 const SearchDropdown = lazy(() =>
   import('@/components/SearchDropdown').then((m) => ({ default: m.SearchDropdown }))
@@ -147,6 +148,8 @@ export function Navbar() {
           >
             <SearchDropdown />
           </Suspense>
+
+          <LiteModeToggle />
 
           <button
             type="button"
