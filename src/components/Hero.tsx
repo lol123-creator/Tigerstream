@@ -122,12 +122,18 @@ export function Hero({ slides }: HeroProps) {
               fill
               priority={i === 0}
               className="object-cover object-top"
-              style={{ filter: 'saturate(1.35) contrast(1.12) brightness(1.03)' }}
+              style={{ filter: 'saturate(1.7) contrast(1.2) brightness(1.08)' }}
               sizes="100vw"
             />
           </div>
           <div className="absolute inset-0 bg-hero-gradient" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#242124] via-[#242124]/70 to-transparent" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(to right, #242124 0%, rgba(36,33,36,0.6) 22%, rgba(36,33,36,0.15) 42%, transparent 58%)',
+            }}
+          />
         </div>
       ))}
 
