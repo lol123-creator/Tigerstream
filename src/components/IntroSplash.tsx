@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 
 const SESSION_KEY = 'tigerstream:intro-shown';
+const LITE_KEY = 'tigerstream:lite-mode';
 
 /**
  * One-time full-screen intro that plays when someone first lands on the
  * site in a given browser session (not on every internal navigation -
- * gated by sessionStorage). Skipped entirely for prefers-reduced-motion.
+ * gated by sessionStorage). Skipped entirely for prefers-reduced-motion
+ * and for Lite Mode (weak devices don't need an extra animated overlay
+ * delaying real content).
  *
  * Timeline: reveal (0-0.5s) -> hold (0.5-0.9s) -> fade out (0.9-1.2s) ->
  * unmount. Shortened from an original ~1.9s total - that was adding a
@@ -25,8 +28,14 @@ export function IntroSplash() {
     const prefersReduced = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
+    let liteMode = false;
+    try {
+      liteMode = localStorage.getItem(LITE_KEY) === '1';
+    } catch {
+      // storage unavailable - treat as not lite mode
+    }
 
-    if (alreadyShown || prefersReduced) {
+    if (alreadyShown || prefersReduced || liteMode) {
       sessionStorage.setItem(SESSION_KEY, '1');
       return;
     }
