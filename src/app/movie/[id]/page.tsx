@@ -84,28 +84,37 @@ export default async function MovieDetailPage({
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <StatusBadge media={movie} />
-          <FavoriteButton entry={{ id: movie.id, type: 'movie', title: movie.title, poster_path: movie.poster_path }} />
+          <FavoriteButton
+            entry={{
+              id: movie.id,
+              type: 'movie',
+              title: movie.title,
+              poster_path: movie.poster_path,
+              vote_average: movie.vote_average,
+              release_date: movie.release_date,
+            }}
+          />
         </div>
 
         <h2 className="mb-3 text-lg font-semibold">About</h2>
-        <p className="leading-relaxed text-white/70">
+        <p className="leading-relaxed text-ink-2">
           {movie.overview || 'No overview available.'}
         </p>
         <dl className="mt-8 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <div>
-            <dt className="text-white/40">Released</dt>
+            <dt className="text-ink-3">Released</dt>
             <dd>{releaseDate}</dd>
           </div>
           <div>
-            <dt className="text-white/40">Runtime</dt>
+            <dt className="text-ink-3">Runtime</dt>
             <dd>{runtime}</dd>
           </div>
           <div>
-            <dt className="text-white/40">Rating</dt>
+            <dt className="text-ink-3">Rating</dt>
             <dd>{rating} / 10</dd>
           </div>
           <div>
-            <dt className="text-white/40">Genres</dt>
+            <dt className="text-ink-3">Genres</dt>
             <dd>{genresText}</dd>
           </div>
         </dl>
