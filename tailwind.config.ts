@@ -45,7 +45,7 @@ const config: Config = {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
-        'hero-gradient': 'linear-gradient(to top, rgb(36,33,36) 0%, transparent 60%)',
+        'hero-gradient': 'linear-gradient(to top, rgb(36,33,36) 0%, transparent 42%)',
         'card-shine': 'linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.03) 50%, transparent 60%)',
         // Signature element for this direction: a soft ambient glow,
         // not a bold motif - the "frosted" feeling comes from blur and
