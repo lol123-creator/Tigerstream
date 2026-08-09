@@ -78,14 +78,23 @@ export default async function TvDetailPage({
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <StatusBadge media={show} />
-          <FavoriteButton entry={{ id: show.id, type: 'tv', title: show.title, poster_path: show.poster_path }} />
+          <FavoriteButton
+            entry={{
+              id: show.id,
+              type: 'tv',
+              title: show.title,
+              poster_path: show.poster_path,
+              vote_average: show.vote_average,
+              first_air_date: show.first_air_date,
+            }}
+          />
         </div>
 
         <h2 className="mb-6 text-lg font-semibold">Episodes</h2>
         {show.seasons.length > 0 ? (
           <EpisodeList show={show} />
         ) : (
-          <p className="text-white/50">
+          <p className="text-ink-3">
             Episode list loading failed - use Watch from the hero.
           </p>
         )}
