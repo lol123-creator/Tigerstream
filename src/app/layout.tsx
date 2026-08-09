@@ -61,14 +61,23 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link rel="dns-prefetch" href="https://image.tmdb.org" />
         <link rel="dns-prefetch" href="https://api.themoviedb.org" />
+        {/* Sets data-lite on <html> synchronously, before first paint,
+            so returning visitors who've enabled Lite Mode never see a
+            flash of the full heavy UI before it switches off. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{document.documentElement.dataset.lite=localStorage.getItem('tigerstream:lite-mode')==='1'?'true':'false';}catch(e){}`,
+          }}
+        />
       </head>
       <body className={`min-h-screen font-sans ${inter.variable} ${jakarta.variable}`}>
         {/* Ambient animated glow - sits behind everything (-z-10, fixed
             to viewport) and drifts slowly. Layered on top of the static
             base gradient defined in globals.css rather than animating
             that gradient itself, since that one is deliberately sized
-            to the full document height to avoid an earlier seam bug. */}
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+            to the full document height to avoid an earlier seam bug.
+            data-lite-hide - removed entirely in Lite Mode. */}
+        <div aria-hidden="true" data-lite-hide="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
           <div
             className="absolute left-[10%] top-[-10%] h-[55vh] w-[55vh] rounded-full bg-accent/10 blur-3xl"
             style={{ animation: 'gradientDrift1 22s ease-in-out infinite' }}
