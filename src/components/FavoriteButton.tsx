@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { isFavorited, toggleFavorite, type FavoriteEntry } from '@/lib/favorites-client';
+import { useToast } from '@/components/ToastProvider';
 
 interface FavoriteButtonProps {
   /** Data needed to save the favorite. */
@@ -17,6 +18,7 @@ export function FavoriteButton({
   className = '',
 }: FavoriteButtonProps) {
   const [active, setActive] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     // Was previously a require() call re-resolved on every mount - a
@@ -30,6 +32,10 @@ export function FavoriteButton({
     e.stopPropagation();
     const nowActive = toggleFavorite(entry);
     setActive(nowActive);
+    showToast(
+      nowActive ? `Saved "${entry.title}" to My List` : `Removed "${entry.title}" from My List`,
+      nowActive ? 'success' : 'info',
+    );
   };
 
   if (variant === 'card') {
@@ -64,7 +70,7 @@ export function FavoriteButton({
       className={`inline-flex items-center gap-2 rounded-lg border px-5 py-3 text-sm font-semibold transition ${
         active
           ? 'border-accent/50 bg-accent/15 text-accent'
-          : 'border-white/15 bg-white/5 text-white/80 hover:bg-white/10'
+          : 'border-glass-border bg-white/5 text-ink-1 hover:bg-white/10'
       } ${className}`}
     >
       <svg
