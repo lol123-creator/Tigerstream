@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { ContinueWatchingRow } from '@/components/ContinueWatchingRow';
 import { FavoritesRow } from '@/components/FavoritesRow';
+import { BecauseYouWatched } from '@/components/BecauseYouWatched';
 import { Hero, type HeroSlide } from '@/components/Hero';
 import { MediaRow } from '@/components/MediaRow';
 import { SportsRow } from '@/components/sports/SportsRow';
@@ -58,6 +59,7 @@ export default async function HomePage() {
         />
         <FavoritesRow />
         <ContinueWatchingRow />
+        <BecauseYouWatched />
         <div style={{contentVisibility:'auto', containIntrinsicSize:'auto 300px'}}><SportsRow title={sportsRow.title} streams={sportsRow.streams} /></div>
         <div style={{contentVisibility:'auto', containIntrinsicSize:'auto 300px'}}><MediaRow title="Hot Right Now" items={row(trendingToday)} /></div>
         <MediaRow title="New Movies" items={row(newMovies)} />
