@@ -8,6 +8,7 @@ import type { MediaItem } from '@/types/media';
 import { storeReturnPath } from '@/components/BackButton';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { movieDetailHref, tvDetailHref } from '@/lib/routes';
+import { isRecentRelease } from '@/lib/date-utils';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -29,6 +30,7 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
   const year = Number.isFinite(rawYear) ? rawYear : null;
 
   const hasRating = typeof item.vote_average === 'number' && item.vote_average > 0;
+  const isNew = isRecentRelease(item.type === 'movie' ? item.release_date : item.first_air_date);
 
   // Falls back to a placeholder if the poster fails to load for any
   // reason - a stale/expired TMDB path, a CDN hiccup, or the image
@@ -78,6 +80,11 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           entry={{ id: item.id, type: item.type, title: item.title, poster_path: item.poster_path, vote_average: item.vote_average, release_date: item.type === "movie" ? item.release_date : undefined, first_air_date: item.type === "tv" ? item.first_air_date : undefined }}
           variant="card"
         />
+        {isNew && (
+          <span className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0A1F2B] shadow-glow">
+            New
+          </span>
+        )}
         {hasRating && (
           <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-accent backdrop-blur-sm">
             {item.vote_average.toFixed(1)}
