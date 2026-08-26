@@ -1,175 +1,131 @@
-'use client';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
+import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Navbar } from '@/components/Navbar';
+import { IntroSplash } from '@/components/IntroSplash';
+import { ProfileGate } from '@/components/ProfileGate';
+import { ToastProvider } from '@/components/ToastProvider';
+import dynamic from 'next/dynamic';
+import { SITE_NAME } from '@/lib/brand';
+import { getSiteUrl } from '@/lib/site';
+import './globals.css';
 
-/**
- * Local-first cloud sync for favorites and watch progress.
- *
- * Design: every existing read/write (FavoriteButton, MediaCard,
- * ContinueWatchingRow, the players' progress handlers, etc.) keeps
- * working exactly as before, synchronously, against localStorage -
- * nothing about those call sites changes, no loading states, no
- * rewrite. This module is an *additional* best-effort layer: when
- * someone is signed in, local writes also get pushed to Supabase in
- * the background (fire-and-forget, never blocks or throws into the
- * caller), and right after sign-in, local + cloud data get merged once
- * so a Guest's existing data isn't lost when they create an account.
- *
- * AUTH_FLAG_KEY is a lightweight, synchronously-readable marker (set
- * by AuthButton's auth-state listener) so the hot paths below can
- * cheaply check "is anyone signed in?" without importing/initializing
- * a Supabase client on every single favorite toggle or progress tick.
- */
+const ScrollToTop = dynamic(
+  () => import('@/components/ScrollToTop').then((m) => ({ default: m.ScrollToTop }))
+);
 
-const AUTH_FLAG_KEY = 'tigerstream:auth-uid';
-const FAVORITES_KEY = 'tigerstream:favorites';
-const PROGRESS_KEY = 'peachifyProgress';
+export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: `${SITE_NAME} — Movies & TV`,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description:
+    'Stream movies, TV shows, and live sports. Pick up where you left off with Continue Watching.',
+  openGraph: {
+    title: `${SITE_NAME} — Movies & TV`,
+    description:
+      'Stream movies, TV shows, and live sports. Pick up where you left off with Continue Watching.',
+    siteName: SITE_NAME,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${SITE_NAME} — Movies & TV`,
+    description:
+      'Stream movies, TV shows, and live sports. Pick up where you left off with Continue Watching.',
+  },
+};
 
-export function getSignedInUserId(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(AUTH_FLAG_KEY);
-  } catch {
-    return null;
-  }
-}
+const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
 
-export function setSignedInUserId(uid: string | null) {
-  if (typeof window === 'undefined') return;
-  try {
-    if (uid) localStorage.setItem(AUTH_FLAG_KEY, uid);
-    else localStorage.removeItem(AUTH_FLAG_KEY);
-  } catch {
-    // storage unavailable - sign-in state just won't persist across reloads
-  }
-}
+// Display face for headings (Frosted Minimal direction) - clean and
+// geometric, used with tight tracking rather than a loud personality.
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['500', '600'],
+  variable: '--font-jakarta',
+});
 
-/** Push the current full local favorites snapshot to Supabase. Best-effort, never throws. */
-export async function pushFavoritesSnapshot(): Promise<void> {
-  const uid = getSignedInUserId();
-  if (!uid) return;
-  try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
-    const data = raw ? JSON.parse(raw) : {};
-    const rows = Object.values(data as Record<string, any>).map((f: any) => ({
-      user_id: uid,
-      media_id: f.id,
-      media_type: f.type,
-      title: f.title,
-      poster_path: f.poster_path,
-      vote_average: f.vote_average ?? null,
-      release_date: f.release_date ?? null,
-      first_air_date: f.first_air_date ?? null,
-      added_at: new Date(f.addedAt).toISOString(),
-    }));
-    if (rows.length === 0) return;
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://image.tmdb.org" />
+        <link rel="preconnect" href="https://api.themoviedb.org" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="dns-prefetch" href="https://image.tmdb.org" />
+        <link rel="dns-prefetch" href="https://api.themoviedb.org" />
+        {/* Sets data-lite on <html> synchronously, before first paint,
+            so returning visitors who've enabled Lite Mode never see a
+            flash of the full heavy UI before it switches off. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{document.documentElement.dataset.lite=localStorage.getItem('tigerstream:lite-mode')==='1'?'true':'false';}catch(e){}`,
+          }}
+        />
+      </head>
+      <body className={`min-h-screen font-sans ${inter.variable} ${jakarta.variable}`}>
+        {/* Ambient animated glow - sits behind everything (-z-10, fixed
+            to viewport) and drifts slowly. Layered on top of the static
+            base gradient defined in globals.css rather than animating
+            that gradient itself, since that one is deliberately sized
+            to the full document height to avoid an earlier seam bug.
+            data-lite-hide - removed entirely in Lite Mode. */}
+        <div aria-hidden="true" data-lite-hide="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div
+            className="absolute left-[10%] top-[-10%] h-[55vh] w-[55vh] rounded-full bg-accent/10 blur-3xl"
+            style={{ animation: 'gradientDrift1 22s ease-in-out infinite' }}
+          />
+          <div
+            className="absolute bottom-[-10%] right-[10%] h-[50vh] w-[50vh] rounded-full bg-[#003366]/50 blur-3xl"
+            style={{ animation: 'gradientDrift2 26s ease-in-out infinite' }}
+          />
+        </div>
 
-    const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
-    await supabase.from('favorites').upsert(rows, { onConflict: 'user_id,media_type,media_id' });
-  } catch {
-    // Best-effort - local storage remains the source of truth for this session either way
-  }
-}
-
-/** Push the current full local watch-progress snapshot to Supabase. Best-effort, never throws. */
-export async function pushProgressSnapshot(): Promise<void> {
-  const uid = getSignedInUserId();
-  if (!uid) return;
-  try {
-    const raw = localStorage.getItem(PROGRESS_KEY);
-    const data = raw ? JSON.parse(raw) : {};
-    const rows = Object.values(data as Record<string, any>)
-      .filter((e: any) => e?.progress)
-      .map((e: any) => ({
-        user_id: uid,
-        media_id: e.id,
-        media_type: e.type,
-        title: e.title ?? '',
-        poster_path: e.poster_path ?? null,
-        watched_seconds: e.progress?.watched ?? 0,
-        duration_seconds: e.progress?.duration ?? 0,
-        season: e.last_season_watched ? Number(e.last_season_watched) : null,
-        episode: e.last_episode_watched ? Number(e.last_episode_watched) : null,
-        updated_at: new Date(e.last_updated ?? Date.now()).toISOString(),
-      }));
-    if (rows.length === 0) return;
-
-    const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
-    await supabase.from('watch_progress').upsert(rows, { onConflict: 'user_id,media_type,media_id' });
-  } catch {
-    // Best-effort
-  }
-}
-
-/**
- * Called once right after a sign-in is detected. Pulls whatever's
- * already in Supabase for this account, merges it with whatever's
- * currently sitting in this browser's localStorage (union - nothing
- * gets deleted, most-recent timestamp wins on an actual conflict),
- * writes the merged result back to localStorage, then pushes the
- * merged snapshot back up. This is what carries a Guest's existing
- * favorites/progress into their new account instead of losing them.
- */
-export async function mergeCloudDataOnSignIn(uid: string): Promise<void> {
-  try {
-    const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
-
-    const [{ data: cloudFavorites }, { data: cloudProgress }] = await Promise.all([
-      supabase.from('favorites').select('*').eq('user_id', uid),
-      supabase.from('watch_progress').select('*').eq('user_id', uid),
-    ]);
-
-    // --- Favorites merge ---
-    const localFavRaw = localStorage.getItem(FAVORITES_KEY);
-    const localFav: Record<string, any> = localFavRaw ? JSON.parse(localFavRaw) : {};
-
-    for (const row of cloudFavorites ?? []) {
-      const key = `${row.media_type}-${row.media_id}`;
-      const existing = localFav[key];
-      const cloudAddedAt = new Date(row.added_at).getTime();
-      if (!existing || cloudAddedAt > existing.addedAt) {
-        localFav[key] = {
-          id: row.media_id,
-          type: row.media_type,
-          title: row.title,
-          poster_path: row.poster_path,
-          vote_average: row.vote_average ?? undefined,
-          release_date: row.release_date ?? undefined,
-          first_air_date: row.first_air_date ?? undefined,
-          addedAt: cloudAddedAt,
-        };
-      }
-    }
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(localFav));
-
-    // --- Progress merge ---
-    const localProgRaw = localStorage.getItem(PROGRESS_KEY);
-    const localProg: Record<string, any> = localProgRaw ? JSON.parse(localProgRaw) : {};
-
-    for (const row of cloudProgress ?? []) {
-      const key = `${row.media_type === 'movie' ? 'm' : 't'}${row.media_id}`;
-      const existing = localProg[key];
-      const cloudUpdatedAt = new Date(row.updated_at).getTime();
-      if (!existing || cloudUpdatedAt > (existing.last_updated ?? 0)) {
-        localProg[key] = {
-          id: row.media_id,
-          type: row.media_type,
-          title: row.title,
-          poster_path: row.poster_path,
-          progress: { watched: row.watched_seconds, duration: row.duration_seconds },
-          last_season_watched: row.season ?? undefined,
-          last_episode_watched: row.episode ?? undefined,
-          last_updated: cloudUpdatedAt,
-        };
-      }
-    }
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(localProg));
-
-    // Push the merged result back up so both sides agree
-    await Promise.all([pushFavoritesSnapshot(), pushProgressSnapshot()]);
-  } catch {
-    // Best-effort - if this fails, the account still works, it just
-    // stays on whatever was already local until the next successful sync
-  }
+        <ToastProvider>
+          <IntroSplash />
+          <ProfileGate />
+          <Navbar />
+          <main>{children}</main>
+          <ScrollToTop />
+          <footer className="border-t border-glass-border py-10 text-sm text-ink-4">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6">
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                <a href="/" className="hover:text-ink-2 transition">Home</a>
+                <a href="/movies" className="hover:text-ink-2 transition">Movies</a>
+                <a href="/tv" className="hover:text-ink-2 transition">TV Shows</a>
+                <a href="/anime" className="hover:text-ink-2 transition">Anime</a>
+                <a href="/sports" className="hover:text-ink-2 transition">Sports</a>
+                <a href="/genres" className="hover:text-ink-2 transition">Genres</a>
+                <a href="/history" className="hover:text-ink-2 transition">History</a>
+                <a href="/favorites" className="hover:text-ink-2 transition">My List</a>
+              </div>
+              <p className="mt-4 text-center">{SITE_NAME}</p>
+            </div>
+            <div className="mt-8 mx-auto max-w-2xl rounded-xl border border-glass-border bg-white/[0.02] px-6 py-5 text-center backdrop-blur-sm">
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <span className="text-lg">🛡️</span>
+                <p className="text-sm font-semibold text-ink-3">Important Disclaimer</p>
+              </div>
+              <p className="text-xs leading-relaxed text-ink-4">
+                TigerStream operates as a content aggregator and does not host any media files on our servers. 
+                All content is sourced from third-party providers and embedded services. For any copyright concerns 
+                or DMCA takedown requests, please contact the respective content providers directly.
+              </p>
+            </div>
+          </footer>
+        </ToastProvider>
+        <Analytics />
+        <SpeedInsights />
+      </body>
+    </html>
+  );
 }
