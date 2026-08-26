@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Navbar } from '@/components/Navbar';
 import { IntroSplash } from '@/components/IntroSplash';
+import { ProfileGate } from '@/components/ProfileGate';
 import { ToastProvider } from '@/components/ToastProvider';
 import dynamic from 'next/dynamic';
 import { SITE_NAME } from '@/lib/brand';
@@ -91,6 +92,7 @@ export default function RootLayout({
 
         <ToastProvider>
           <IntroSplash />
+          <ProfileGate />
           <Navbar />
           <main>{children}</main>
           <ScrollToTop />
