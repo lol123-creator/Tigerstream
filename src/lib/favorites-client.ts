@@ -46,6 +46,10 @@ function saveFavorites(data: Record<string, FavoriteEntry>) {
     // Storage full or unavailable - the in-memory cache still reflects
     // the change for this session even if it can't persist.
   }
+  // Fire-and-forget: only actually does anything (and only imports
+  // Supabase) if someone is signed in. Guest browsing never touches
+  // this at all.
+  import('@/lib/cloud-sync').then((m) => m.pushFavoritesSnapshot()).catch(() => {});
 }
 
 function key(type: MediaType, id: number) {
