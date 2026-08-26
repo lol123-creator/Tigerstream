@@ -1,134 +1,66 @@
+import { PEACHIFY_ORIGIN } from './types';
 import { mergePeachifyProgress } from './progressStorage';
-import {
-  PEACHIFY_ORIGIN,
-  type PeachifyCommand,
-  type PeachifyControllerOptions,
-  type PeachifyInboundMessage,
-  type PeachifyOutboundMessage,
-  type PeachifyPlayerEventData,
-  type PeachifyProgressStore,
+import type {
+  PeachifyControllerOptions,
+  PeachifyInboundMessage,
+  PeachifyOutboundMessage,
 } from './types';
 
-function isPeachifyInboundMessage(data: unknown): data is PeachifyInboundMessage {
-  if (!data || typeof data !== 'object') return false;
-  const type = (data as { type?: unknown }).type;
-  return type === 'PLAYER_EVENT' || type === 'MEDIA_DATA';
-}
-
 /**
- * postMessage bridge for a Peachify iframe: playback control + progress sync.
+ * Wires up postMessage listening/sending for a single Peachify iframe.
+ * One instance per <PeachifyPlayer>.
  */
 export class PeachifyController {
   private iframe: HTMLIFrameElement | null = null;
-  private boundListener: ((event: MessageEvent) => void) | null = null;
-  private destroyed = false;
-  private lastTimeupdateAt = 0;
-
-  readonly origin: string;
-  readonly persistProgress: boolean;
-  readonly storageKey: string;
-  readonly timeupdateThrottleMs: number;
-  readonly onMediaData?: (store: PeachifyProgressStore) => void;
-  readonly onPlayerEvent?: (data: PeachifyPlayerEventData) => void;
-
-  constructor(options: PeachifyControllerOptions = {}) {
-    this.origin = options.origin ?? PEACHIFY_ORIGIN;
-    this.persistProgress = options.persistProgress !== false;
-    this.storageKey = options.storageKey ?? 'peachifyProgress';
-    this.timeupdateThrottleMs = options.timeupdateThrottleMs ?? 1000;
-    this.onMediaData = options.onMediaData;
-    this.onPlayerEvent = options.onPlayerEvent;
-  }
-
-  /** Attach to an iframe and start listening for player messages. */
-  attach(iframe: HTMLIFrameElement): void {
-    this.detach();
-    this.iframe = iframe;
-    this.destroyed = false;
-
-    this.boundListener = (event: MessageEvent) => this.handleMessage(event);
-    window.addEventListener('message', this.boundListener);
-  }
-
-  detach(): void {
-    if (this.boundListener) {
-      window.removeEventListener('message', this.boundListener);
-      this.boundListener = null;
-    }
-    this.iframe = null;
-  }
-
-  destroy(): void {
-    this.destroyed = true;
-    this.detach();
-  }
-
-  private handleMessage(event: MessageEvent): void {
-    if (this.destroyed) return;
+  private origin: string;
+  private storageKey?: string;
+  private persistProgress: boolean;
+  private onPlayerEvent?: PeachifyControllerOptions['onPlayerEvent'];
+  private onMediaData?: PeachifyControllerOptions['onMediaData'];
+  private handleMessage = (event: MessageEvent<PeachifyInboundMessage>) => {
     if (event.origin !== this.origin) return;
     if (this.iframe && event.source !== this.iframe.contentWindow) return;
-    if (!isPeachifyInboundMessage(event.data)) return;
 
-    if (event.data.type === 'MEDIA_DATA') {
-      const store = event.data.data;
-      if (this.persistProgress && typeof localStorage !== 'undefined') {
+    const data = event.data;
+    if (!data || typeof data !== 'object') return;
+
+    if (data.type === 'PLAYER_EVENT') {
+      this.onPlayerEvent?.(data.data);
+      return;
+    }
+
+    if (data.type === 'MEDIA_DATA') {
+      const store = data.data;
+      if (this.persistProgress) {
         mergePeachifyProgress(store, this.storageKey);
+        // Fire-and-forget cloud push - only does anything if signed in.
+        import('@/lib/cloud-sync').then((m) => m.pushProgressSnapshot()).catch(() => {});
       }
       this.onMediaData?.(store);
       return;
     }
+  };
 
-    const payload = event.data.data;
-    if (payload.event === 'timeupdate') {
-      const now = Date.now();
-      if (now - this.lastTimeupdateAt < this.timeupdateThrottleMs) {
-        return;
-      }
-      this.lastTimeupdateAt = now;
-    }
-
-    this.onPlayerEvent?.(payload);
+  constructor(options: PeachifyControllerOptions = {}) {
+    this.origin = options.origin ?? PEACHIFY_ORIGIN;
+    this.storageKey = options.storageKey;
+    this.persistProgress = options.persistProgress ?? true;
+    this.onPlayerEvent = options.onPlayerEvent;
+    this.onMediaData = options.onMediaData;
   }
 
-  /** Send a command to the embedded player. */
-  post(command: PeachifyCommand, value?: number): void {
-    const win = this.iframe?.contentWindow;
-    if (!win) {
-      console.warn('[PeachifyController] No iframe attached');
-      return;
-    }
-    const message: PeachifyOutboundMessage = { command };
-    if (value !== undefined) {
-      message.value = value;
-    }
-    win.postMessage(message, this.origin);
+  attach(iframe: HTMLIFrameElement) {
+    this.iframe = iframe;
+    window.addEventListener('message', this.handleMessage);
   }
 
-  play(): void {
-    this.post('play');
+  detach() {
+    window.removeEventListener('message', this.handleMessage);
+    this.iframe = null;
   }
 
-  pause(): void {
-    this.post('pause');
-  }
-
-  seek(seconds: number): void {
-    this.post('seek', seconds);
-  }
-
-  setVolume(level: number): void {
-    this.post('setVolume', Math.min(1, Math.max(0, level)));
-  }
-
-  toggleMute(): void {
-    this.post('toggleMute');
-  }
-
-  toggleFullscreen(): void {
-    this.post('toggleFullscreen');
-  }
-
-  getStatus(): void {
-    this.post('getStatus');
+  send(command: PeachifyOutboundMessage) {
+    if (!this.iframe?.contentWindow) return;
+    this.iframe.contentWindow.postMessage(command, this.origin);
   }
 }
