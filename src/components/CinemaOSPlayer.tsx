@@ -72,10 +72,6 @@ export function CinemaOSPlayer({
 }: CinemaOSPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Built once per title/episode - looks up the saved position from the
-  // shared progress store (same one Peachify reads/writes) and passes it
-  // as CinemaOS's documented `startTime` param, the same way
-  // PeachifyPlayer already does for its own embed URL.
   const embedUrl = useMemo(() => {
     const path =
       type === 'movie'
@@ -111,6 +107,8 @@ export function CinemaOSPlayer({
           event.data.data as Record<string, CinemaOSMediaEntry>,
         );
         const merged = mergePeachifyProgress(store);
+        // Fire-and-forget cloud push - only does anything if signed in.
+        import('@/lib/cloud-sync').then((m) => m.pushProgressSnapshot()).catch(() => {});
         onMediaData?.(merged);
       } catch {
         // Corrupt payload — ignore rather than risk clobbering storage.
