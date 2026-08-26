@@ -1,114 +1,149 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import type { MediaType } from '@/types/media';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { setSignedInUserId, mergeCloudDataOnSignIn } from '@/lib/cloud-sync';
+import { useToast } from '@/components/ToastProvider';
 
-const STORAGE_KEY = 'tigerstream:favorites';
-
-export interface FavoriteEntry {
-  id: number;
-  type: MediaType;
-  title: string;
-  poster_path: string;
-  vote_average?: number;
-  release_date?: string;
-  first_air_date?: string;
-  addedAt: number;
+interface AuthButtonProps {
+  /** 'nav' - compact avatar with a popup dropdown, for the desktop top bar.
+   *  'inline' - full-width rows with no popup, for use inside the mobile menu panel. */
+  variant?: 'nav' | 'inline';
+  onNavigate?: () => void;
 }
 
-// In-memory cache of the favorites map. Without this, every single
-// FavoriteButton on the page (there can be hundreds on the homepage)
-// independently calls localStorage.getItem + JSON.parse on mount -
-// hundreds of redundant synchronous reads of the exact same data,
-// firing right after hydration. That was a real, measurable contributor
-// to poor INP/FID, especially on mobile. Cached here and kept in sync
-// on every write instead.
-let cache: Record<string, FavoriteEntry> | null = null;
-
-function loadFavorites(): Record<string, FavoriteEntry> {
-  if (typeof window === 'undefined') return {};
-  if (cache) return cache;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    cache = raw ? JSON.parse(raw) : {};
-  } catch {
-    cache = {};
-  }
-  return cache;
-}
-
-function saveFavorites(data: Record<string, FavoriteEntry>) {
-  if (typeof window === 'undefined') return;
-  cache = data;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    // Storage full or unavailable - the in-memory cache still reflects
-    // the change for this session even if it can't persist.
-  }
-  // Fire-and-forget: only actually does anything (and only imports
-  // Supabase) if someone is signed in. Guest browsing never touches
-  // this at all.
-  import('@/lib/cloud-sync').then((m) => m.pushFavoritesSnapshot()).catch(() => {});
-}
-
-function key(type: MediaType, id: number) {
-  return `${type}-${id}`;
-}
-
-export function isFavorited(type: MediaType, id: number): boolean {
-  const data = loadFavorites();
-  return !!data[key(type, id)];
-}
-
-export function getFavorites(): FavoriteEntry[] {
-  const data = loadFavorites();
-  return Object.values(data).sort((a, b) => b.addedAt - a.addedAt);
-}
-
-/** React hook for managing favorites. */
-export function useFavorites(type: MediaType, id: number) {
-  const k = key(type, id);
-  const [fav, setFav] = useState(false);
+export function AuthButton({ variant = 'nav', onNavigate }: AuthButtonProps) {
+  const [email, setEmail] = useState<string | null | undefined>(undefined); // undefined = not checked yet
+  const [open, setOpen] = useState(false);
+  const { showToast } = useToast();
+  const mergedFor = useRef<string | null>(null);
 
   useEffect(() => {
-    const data = loadFavorites();
-    setFav(!!data[k]);
-  }, [k]);
+    const supabase = createClient();
 
-  const toggle = useCallback(() => {
-    const data = loadFavorites();
-    if (data[k]) {
-      delete data[k];
-      setFav(false);
-    } else {
-      data[k] = { id, type, title: '', poster_path: '', addedAt: Date.now() };
-      setFav(true);
+    supabase.auth.getUser().then(({ data }) => {
+      const uid = data.user?.id ?? null;
+      setEmail(data.user?.email ?? null);
+      setSignedInUserId(uid);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const uid = session?.user?.id ?? null;
+      setEmail(session?.user?.email ?? null);
+      setSignedInUserId(uid);
+
+      // Merge local (possibly Guest-accumulated) data into the account
+      // exactly once per sign-in, not on every auth-state tick.
+      if (event === 'SIGNED_IN' && uid && mergedFor.current !== uid) {
+        mergedFor.current = uid;
+        mergeCloudDataOnSignIn(uid).then(() => {
+          showToast('Synced your list and progress to this account', 'success');
+        });
+      }
+      if (event === 'SIGNED_OUT') {
+        mergedFor.current = null;
+      }
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, [showToast]);
+
+  if (variant === 'inline') {
+    if (email === undefined) {
+      return <div className="mx-4 h-10 animate-pulse rounded-xl bg-white/5" />;
     }
-    saveFavorites(data);
-  }, [k, id, type]);
-
-  return { isFavorited: fav, toggle };
-}
-
-export function toggleFavorite(
-  entry: Omit<FavoriteEntry, 'addedAt'>,
-): boolean {
-  const data = loadFavorites();
-  const k = key(entry.type, entry.id);
-  if (data[k]) {
-    delete data[k];
-    saveFavorites(data);
-    return false;
-  } else {
-    data[k] = { ...entry, addedAt: Date.now() };
-    saveFavorites(data);
-    return true;
+    if (!email) {
+      return (
+        <Link
+          href="/auth"
+          onClick={onNavigate}
+          className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-ink-2 transition hover:bg-white/[0.06] hover:text-white"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <path d="M10 17l5-5-5-5M15 12H3" />
+          </svg>
+          Sign In
+        </Link>
+      );
+    }
+    return (
+      <div className="border-t border-glass-border px-4 pt-3">
+        <p className="truncate text-xs text-ink-3">Signed in as</p>
+        <p className="truncate text-sm font-medium text-white">{email}</p>
+        <form action="/auth/sign-out" method="POST" className="mt-2">
+          <button
+            type="submit"
+            className="flex w-full items-center gap-2 rounded-xl px-0 py-2 text-left text-sm text-ink-2 transition hover:text-white"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5M21 12H9" />
+            </svg>
+            Sign out
+          </button>
+        </form>
+      </div>
+    );
   }
-}
 
-export function removeFavorite(type: MediaType, id: number) {
-  const data = loadFavorites();
-  delete data[key(type, id)];
-  saveFavorites(data);
+  if (email === undefined) {
+    return <div className="h-9 w-9 shrink-0 rounded-full bg-white/5" />;
+  }
+
+  if (!email) {
+    return (
+      <Link
+        href="/auth"
+        className="flex h-9 shrink-0 items-center rounded-full border border-glass-border bg-white/[0.04] px-3.5 text-xs font-medium text-ink-2 transition-colors hover:bg-accent/15 hover:text-accent"
+      >
+        Sign In
+      </Link>
+    );
+  }
+
+  const initial = email.charAt(0).toUpperCase();
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Account menu"
+        aria-expanded={open}
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/20 text-sm font-semibold text-accent transition hover:bg-accent/30"
+      >
+        {initial}
+      </button>
+
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="animate-dropdown-in absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-glass-border bg-surface/95 shadow-2xl backdrop-blur-xl">
+            <div className="border-b border-glass-border px-4 py-3">
+              <p className="truncate text-xs text-ink-3">Signed in as</p>
+              <p className="truncate text-sm font-medium text-white">{email}</p>
+            </div>
+            <form action="/auth/sign-out" method="POST">
+              <button
+                type="submit"
+                className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-ink-2 transition hover:bg-white/[0.06] hover:text-white"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <path d="M16 17l5-5-5-5M21 12H9" />
+                </svg>
+                Sign out
+              </button>
+            </form>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
