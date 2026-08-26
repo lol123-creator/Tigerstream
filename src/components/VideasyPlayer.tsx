@@ -112,6 +112,8 @@ export function VideasyPlayer({
         const merged = mergePeachifyProgress(
           event.data.data as PeachifyProgressStore,
         )
+        // Fire-and-forget cloud push - only does anything if signed in.
+        import('@/lib/cloud-sync').then((m) => m.pushProgressSnapshot()).catch(() => {})
         onMediaData?.(merged)
       } catch {
         // Corrupt payload — ignore rather than risk clobbering storage.
