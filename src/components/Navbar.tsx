@@ -150,25 +150,31 @@ export function Navbar() {
             <SearchDropdown />
           </Suspense>
 
-          <a
-            href="/surprise"
-            title="Jump to a random trending pick"
-            className="flex h-9 items-center gap-1.5 rounded-full border border-glass-border bg-white/[0.04] px-3 text-xs font-medium text-ink-2 transition-colors hover:bg-accent/15 hover:text-accent"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="3" y="3" width="18" height="18" rx="4" />
-              <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none" />
-              <circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none" />
-              <circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none" />
-              <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none" />
-              <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
-            </svg>
-            <span className="hidden sm:inline">Surprise Me</span>
-          </a>
+          {/* Desktop-only: on mobile these were unconditionally rendered
+              alongside the hamburger button, and with search also in
+              the row there wasn't enough space - the hamburger was
+              getting pushed off-screen. All three now live inside the
+              mobile menu panel instead (below) on small screens. */}
+          <div className="hidden items-center gap-2 md:flex">
+            <a
+              href="/surprise"
+              title="Jump to a random trending pick"
+              className="flex h-9 items-center gap-1.5 rounded-full border border-glass-border bg-white/[0.04] px-3 text-xs font-medium text-ink-2 transition-colors hover:bg-accent/15 hover:text-accent"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="4" />
+                <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+              </svg>
+              <span className="hidden lg:inline">Surprise Me</span>
+            </a>
 
-          <LiteModeToggle />
-
-          <AuthButton />
+            <LiteModeToggle />
+            <AuthButton />
+          </div>
 
           <button
             type="button"
@@ -221,7 +227,26 @@ export function Navbar() {
                 {label}
               </Link>
             ))}
+            <a
+              href="/surprise"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-ink-2 transition hover:bg-white/[0.06] hover:text-white"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="4" />
+                <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+              </svg>
+              Surprise Me
+            </a>
           </div>
+          <div className="border-t border-glass-border p-2">
+            <LiteModeToggle variant="inline" />
+          </div>
+          <AuthButton variant="inline" onNavigate={() => setMenuOpen(false)} />
         </div>
       )}
     </>
