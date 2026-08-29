@@ -1,6 +1,11 @@
 import type { PpvCategory, PpvStream, PpvStreamsResponse } from '@/types/sports';
 
-const PPV_API = 'https://api.ppv.is/api/streams';
+// Switched from api.ppv.is (down) to ppv.st. This whole family of PPV
+// aggregator mirrors (ppv.st, ppv.land, ppv.wtf, old.ppv.to, etc.)
+// shares an identical /api/streams response shape - confirmed via
+// their public docs - so this is a domain swap only, no shape changes
+// needed anywhere else in this file.
+const PPV_API = 'https://ppv.st/api/streams';
 
 /** ppv.to recommends polling about every minute */
 const PPV_REVALIDATE = 60;
