@@ -1,3 +1,6 @@
+/* Safer PPV fetcher: defensive parsing, content-type checks, optional retry,
+   and do NOT cache invalid/HTML responses. Drop this in place of your original file. */
+
 import type { PpvCategory, PpvStream, PpvStreamsResponse } from '@/types/sports';
 
 // Switched from api.ppv.is (down) to ppv.st. This whole family of PPV
@@ -18,35 +21,107 @@ const EMPTY_RESPONSE: PpvStreamsResponse = {
 let cachedPayload: PpvStreamsResponse | null = null;
 let cachedAt = 0;
 
+// Small retry settings for transient network/server errors
+const MAX_RETRIES = 2;
+const RETRY_BASE_MS = 250;
+
+function isValidPpvResponse(obj: any): obj is PpvStreamsResponse {
+  return obj && typeof obj === 'object' && typeof obj.success === 'boolean' && Array.isArray(obj.streams);
+}
+
+async function attemptFetchOnce(): Promise<{ ok: boolean; status: number; contentType: string | null; text: string }> {
+  const res = await fetch(PPV_API, {
+    headers: { Accept: 'application/json' },
+    next: { revalidate: PPV_REVALIDATE },
+    // keep default redirect behaviour (follow)
+  });
+
+  const contentType = res.headers.get('content-type');
+  const text = await res.text();
+  return { ok: res.ok, status: res.status, contentType, text };
+}
+
 async function fetchStreamsPayload(): Promise<PpvStreamsResponse> {
   const now = Date.now();
   if (cachedPayload && now - cachedAt < PPV_REVALIDATE * 1000) {
     return cachedPayload;
   }
 
-  try {
-    const res = await fetch(PPV_API, {
-      next: { revalidate: PPV_REVALIDATE },
-    });
+  // Try up to MAX_RETRIES+1 times for transient errors
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const { ok, status, contentType, text } = await attemptFetchOnce();
 
-    if (!res.ok) {
-      console.warn('PPV API returned ' + res.status + ' - using empty response');
+      // If not ok, log and decide whether to retry
+      if (!ok) {
+        console.warn(`PPV API returned non-2xx (status=${status}), attempt ${attempt + 1}/${MAX_RETRIES + 1}. Body preview:`, text.slice(0, 500));
+        // Retry for 5xx statuses (server transient), otherwise break and return EMPTY
+        if (status >= 500 && attempt < MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+          continue;
+        }
+        return EMPTY_RESPONSE;
+      }
+
+      // If content-type doesn't look like JSON, it's likely HTML (redirect/login/error page)
+      if (!contentType || !contentType.includes('application/json')) {
+        // Some servers return JSON but omit content-type; still attempt JSON parse below.
+        // But if it clearly looks like HTML (starts with "<"), bail out early.
+        const trimmed = text.trimStart();
+        if (trimmed.startsWith('<') || !contentType) {
+          console.warn('PPV API returned non-JSON response - using empty response', { status, contentType, preview: text.slice(0, 500) });
+          return EMPTY_RESPONSE;
+        }
+      }
+
+      // Defensive JSON parse
+      let parsed: any;
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        // Some mirrors might return a top-level array instead of object; handle that if parse succeeded
+        console.warn('PPV API JSON parse failed - using empty response:', err, 'body-preview:', text.slice(0, 500));
+        // Do not cache; this may be transient malformed response. Retry on attempt if available.
+        if (attempt < MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+          continue;
+        }
+        return EMPTY_RESPONSE;
+      }
+
+      // Accept either the documented object shape or a top-level array (convert array to shape)
+      let data: PpvStreamsResponse;
+      if (Array.isArray(parsed)) {
+        data = { success: true, streams: parsed as unknown as PpvCategory[] };
+      } else {
+        data = parsed as PpvStreamsResponse;
+      }
+
+      if (!isValidPpvResponse(data)) {
+        console.warn('PPV API returned unexpected shape - using empty response', { preview: text.slice(0, 500) });
+        return EMPTY_RESPONSE;
+      }
+
+      if (!data.success) {
+        console.warn('PPV API returned success=false - using empty response');
+        return EMPTY_RESPONSE;
+      }
+
+      // All good — cache and return
+      cachedPayload = data;
+      cachedAt = now;
+      return data;
+    } catch (err) {
+      console.warn('PPV API fetch failed - using empty response:', err, `attempt ${attempt + 1}/${MAX_RETRIES + 1}`);
+      if (attempt < MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+        continue;
+      }
       return EMPTY_RESPONSE;
     }
-
-    const data = (await res.json()) as PpvStreamsResponse;
-    if (!data.success) {
-      console.warn('PPV API returned unsuccessful response - using empty');
-      return EMPTY_RESPONSE;
-    }
-
-    cachedPayload = data;
-    cachedAt = now;
-    return data;
-  } catch (err) {
-    console.warn('PPV API fetch failed - using empty response:', err);
-    return EMPTY_RESPONSE;
   }
+
+  return EMPTY_RESPONSE;
 }
 
 function flattenStreams(categories: PpvCategory[]): PpvStream[] {
