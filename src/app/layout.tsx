@@ -23,6 +23,14 @@ export const metadata: Metadata = {
   },
   description:
     'Stream movies, TV shows, and live sports. Pick up where you left off with Continue Watching.',
+  // Google Search Console site-ownership verification, needed to clear
+  // the OAuth consent screen's "branding verification" issue for a
+  // vercel.app URL (shared hosts can't be verified at the domain level,
+  // only per-URL via this meta tag). Paste the `content` value Search
+  // Console gives you under Add Property -> URL prefix -> HTML tag.
+  verification: {
+    google: 'PASTE_THE_CONTENT_VALUE_FROM_SEARCH_CONSOLE_HERE',
+  },
   openGraph: {
     title: `${SITE_NAME} — Movies & TV`,
     description:
