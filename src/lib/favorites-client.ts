@@ -2,8 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { MediaType } from '@/types/media';
+import { getSignedInUserId } from './cloud-sync';
+import { scopedStorageKey } from './profiles';
 
-const STORAGE_KEY = 'tigerstream:favorites';
+const BASE_KEY = 'tigerstream:favorites';
+
+function storageKey(): string {
+  return scopedStorageKey(BASE_KEY, !!getSignedInUserId());
+}
 
 export interface FavoriteEntry {
   id: number;
@@ -16,32 +22,35 @@ export interface FavoriteEntry {
   addedAt: number;
 }
 
-// In-memory cache of the favorites map. Without this, every single
-// FavoriteButton on the page (there can be hundreds on the homepage)
-// independently calls localStorage.getItem + JSON.parse on mount -
-// hundreds of redundant synchronous reads of the exact same data,
-// firing right after hydration. That was a real, measurable contributor
-// to poor INP/FID, especially on mobile. Cached here and kept in sync
-// on every write instead.
-let cache: Record<string, FavoriteEntry> | null = null;
+// In-memory cache of the favorites map, keyed alongside the storage key
+// it was loaded from so switching profiles mid-session busts it
+// correctly. Without this, every single FavoriteButton on the page
+// (there can be hundreds on the homepage) independently calls
+// localStorage.getItem + JSON.parse on mount - hundreds of redundant
+// synchronous reads of the exact same data, firing right after
+// hydration. That was a real, measurable contributor to poor INP/FID,
+// especially on mobile. Cached here and kept in sync on every write.
+let cache: { key: string; data: Record<string, FavoriteEntry> } | null = null;
 
 function loadFavorites(): Record<string, FavoriteEntry> {
   if (typeof window === 'undefined') return {};
-  if (cache) return cache;
+  const key = storageKey();
+  if (cache && cache.key === key) return cache.data;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    cache = raw ? JSON.parse(raw) : {};
+    const raw = localStorage.getItem(key);
+    cache = { key, data: raw ? JSON.parse(raw) : {} };
   } catch {
-    cache = {};
+    cache = { key, data: {} };
   }
-  return cache;
+  return cache.data;
 }
 
 function saveFavorites(data: Record<string, FavoriteEntry>) {
   if (typeof window === 'undefined') return;
-  cache = data;
+  const key = storageKey();
+  cache = { key, data };
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(key, JSON.stringify(data));
   } catch {
     // Storage full or unavailable - the in-memory cache still reflects
     // the change for this session even if it can't persist.
