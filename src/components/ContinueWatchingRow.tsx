@@ -52,7 +52,10 @@ export function ContinueWatchingRow() {
     if (tvChecks.length === 0) return;
 
     let cancelled = false;
-    fetch('/api/new-episodes', {
+    // NOTE: this route lives at /api-new-episodes (a flat, hyphenated
+    // top-level folder), NOT the nested /api/new-episodes it looks like
+    // it should be - matches src/app/api-new-episodes/route.ts exactly.
+    fetch('/api-new-episodes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ shows: tvChecks }),
