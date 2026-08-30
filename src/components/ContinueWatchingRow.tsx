@@ -23,7 +23,9 @@ export function ContinueWatchingRow() {
   useEffect(() => {
     setItems(buildContinueWatching());
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'peachifyProgress' || e.key == null) {
+      // Storage key is now profile-scoped when signed in ("peachifyProgress:<id>"),
+      // so match on the base key rather than an exact string.
+      if (e.key == null || e.key.startsWith('peachifyProgress')) {
         setItems(buildContinueWatching());
       }
     };
@@ -74,7 +76,7 @@ export function ContinueWatchingRow() {
   }, [items.length]);
 
   const handleRemove = (item: ContinueWatchingItem) => {
-    removeContinueWatchingItem(item.id);
+    removeContinueWatchingItem(item.type, item.id);
     setItems((prev) => prev.filter((x) => !(x.id === item.id && x.type === item.type)));
   };
 
