@@ -1,12 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  mergePeachifyProgress,
-  loadPeachifyProgress,
-  getResumeSeconds,
-  type PeachifyProgressStore,
-} from '@/peachify'
+import type { PeachifyProgressStore } from '@/peachify'
+import { getResumeSeconds, recordFromMediaData } from '@/lib/watch-progress'
 
 /**
  * VideasyPlayer embeds a Videasy player inside an iframe.
@@ -85,11 +81,10 @@ export function VideasyPlayer({
     if (autoPlay === false) params.set('autoplay', 'false')
 
     if (autoResume && typeof window !== 'undefined') {
-      const store = loadPeachifyProgress()
       const resume =
         type === 'tv'
-          ? getResumeSeconds(store, mediaId, season, episode)
-          : getResumeSeconds(store, mediaId)
+          ? getResumeSeconds(type, mediaId, season, episode)
+          : getResumeSeconds(type, mediaId)
       if (resume != null) {
         params.set('progress', String(Math.floor(resume)))
       }
@@ -103,17 +98,17 @@ export function VideasyPlayer({
   // same MEDIA_DATA convention every other embed in this family uses
   // (Peachify, VidLink, CinemaOS) — the payload is the full progress
   // store keyed by media id, merged rather than overwritten.
+  //
+  // recordFromMediaData re-keys off each entry's own id/type fields
+  // rather than the payload's own object keys, and also does the cloud
+  // push, so nothing else is needed in this handler.
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       if (event.origin !== ORIGIN) return
       if (event.data?.type !== 'MEDIA_DATA') return
 
       try {
-        const merged = mergePeachifyProgress(
-          event.data.data as PeachifyProgressStore,
-        )
-        // Fire-and-forget cloud push - only does anything if signed in.
-        import('@/lib/cloud-sync').then((m) => m.pushProgressSnapshot()).catch(() => {})
+        const merged = recordFromMediaData(event.data.data)
         onMediaData?.(merged)
       } catch {
         // Corrupt payload — ignore rather than risk clobbering storage.
