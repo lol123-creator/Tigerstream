@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PLAYER_ACCENT } from '@/lib/brand';
 import { buildContinueWatching } from '@/lib/progress-client';
 import { PeachifyPlayer } from '@/components/PeachifyPlayer';
@@ -13,12 +13,23 @@ import type { PeachifyEmbedTarget } from '@/peachify';
 type PlayerSource = 'peachify' | 'cinemaos' | 'videasy';
 
 const STORAGE_KEY = 'tigerstream:player';
+// How long to wait for ANY signal from a newly-mounted player (a
+// MEDIA_DATA payload or a player event - proof the embed is actually
+// alive and talking, not just that the iframe tag loaded) before
+// offering to switch. A dead/blocked source still loads its iframe
+// shell fine; it just never sends anything after that.
+const STALL_TIMEOUT_MS = 12000;
 
 const PLAYERS: { id: PlayerSource; label: string }[] = [
   { id: 'peachify', label: 'Peachify' },
   { id: 'cinemaos', label: 'CinemaOS' },
   { id: 'videasy', label: 'Videasy' },
 ];
+
+function nextPlayer(current: PlayerSource): PlayerSource {
+  const i = PLAYERS.findIndex((p) => p.id === current);
+  return PLAYERS[(i + 1) % PLAYERS.length].id;
+}
 
 function loadPlayerPref(): PlayerSource {
   if (typeof window === 'undefined') return 'peachify';
@@ -82,9 +93,31 @@ export function WatchLayout({
   const [progressSynced, setProgressSynced] = useState(false);
   const [playerSource, setPlayerSource] = useState<PlayerSource>('peachify');
   const [errorKey, setErrorKey] = useState(0);
+  const [stalled, setStalled] = useState(false);
+  const stallTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setPlayerSource(loadPlayerPref());
+  }, []);
+
+  // Arms a fresh stall timer every time the player (or the title/
+  // episode) changes. Any sign of life - a MEDIA_DATA payload or a
+  // player event - clears it via markAlive below.
+  useEffect(() => {
+    setStalled(false);
+    if (stallTimer.current) clearTimeout(stallTimer.current);
+    stallTimer.current = setTimeout(() => setStalled(true), STALL_TIMEOUT_MS);
+    return () => {
+      if (stallTimer.current) clearTimeout(stallTimer.current);
+    };
+  }, [playerSource, errorKey, target.mediaId, target.type === 'tv' ? target.season : null, target.type === 'tv' ? target.episode : null]);
+
+  const markAlive = useCallback(() => {
+    if (stallTimer.current) {
+      clearTimeout(stallTimer.current);
+      stallTimer.current = null;
+    }
+    setStalled(false);
   }, []);
 
   const switchPlayer = (source: PlayerSource) => {
@@ -96,9 +129,12 @@ export function WatchLayout({
 
   const onMediaData = useCallback(() => {
     setProgressSynced(true);
-  }, []);
+    markAlive();
+  }, [markAlive]);
 
   const continueCount = progressSynced ? buildContinueWatching().length : 0;
+  const suggested = nextPlayer(playerSource);
+  const suggestedLabel = PLAYERS.find((p) => p.id === suggested)?.label ?? suggested;
 
   return (
     <div className="min-h-screen bg-black pt-16">
@@ -146,6 +182,21 @@ export function WatchLayout({
           ))}
         </div>
 
+        {stalled && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3">
+            <p className="text-sm text-amber-200/90">
+              Still nothing after a while? This source might be down for this title.
+            </p>
+            <button
+              type="button"
+              onClick={() => switchPlayer(suggested)}
+              className="shrink-0 rounded-full bg-amber-400/90 px-4 py-1.5 text-xs font-semibold text-[#2B1B00] transition hover:bg-amber-300"
+            >
+              Try {suggestedLabel} instead
+            </button>
+          </div>
+        )}
+
         <PlayerErrorBoundary key={`${playerSource}-${errorKey}`}>
           {playerSource === 'peachify' ? (
             <PeachifyPlayer
@@ -162,6 +213,7 @@ export function WatchLayout({
               autoResume
               onMediaData={onMediaData}
               onPlayerEvent={(e) => {
+                markAlive();
                 if (e.event === 'ended' && nextHref) {
                   router.push(nextHref);
                 }
