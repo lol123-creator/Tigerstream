@@ -47,7 +47,11 @@ export function BecauseYouWatched() {
       const seed = candidates[0];
 
       try {
-        const res = await fetch(`/api/because-you-watched?id=${seed.id}&type=${seed.type}`);
+        // NOTE: this route lives at /api-because-you-watched (a flat,
+        // hyphenated top-level folder), NOT the nested
+        // /api/because-you-watched it looks like it should be -
+        // matches src/app/api-because-you-watched/route.ts exactly.
+        const res = await fetch(`/api-because-you-watched?id=${seed.id}&type=${seed.type}`);
         if (!res.ok) throw new Error('bad response');
         const data = await res.json();
         if (!cancelled) {
