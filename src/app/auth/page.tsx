@@ -15,6 +15,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmSent, setConfirmSent] = useState(false);
 
@@ -47,6 +48,22 @@ export default function AuthPage() {
     }
   };
 
+  const signInWithGoogle = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    // On success the browser navigates away to Google, so this only
+    // runs if something went wrong before that redirect happened.
+    if (error) {
+      setError(error.message);
+      setGoogleLoading(false);
+    }
+  };
+
   if (confirmSent) {
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-4 text-center">
@@ -75,7 +92,28 @@ export default function AuthPage() {
           : 'Your favorites and watch history will follow you anywhere.'}
       </p>
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-3">
+      <button
+        type="button"
+        onClick={signInWithGoogle}
+        disabled={googleLoading}
+        className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl border border-glass-border bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
+      >
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z" />
+          <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4c-7.5 0-14 4.1-17.7 10.2z" />
+          <path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14.2-5l-6.6-5.4c-2 1.4-4.6 2.3-7.6 2.3-5.3 0-9.7-3.4-11.3-8l-6.6 5C9.9 39.8 16.4 44 24 44z" />
+          <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.6 5.4C41.5 35.6 44 30.2 44 24c0-1.2-.1-2.4-.4-3.5z" />
+        </svg>
+        {googleLoading ? 'Redirecting...' : 'Continue with Google'}
+      </button>
+
+      <div className="my-5 flex items-center gap-3 text-xs text-ink-4">
+        <div className="h-px flex-1 bg-glass-border" />
+        or
+        <div className="h-px flex-1 bg-glass-border" />
+      </div>
+
+      <form onSubmit={onSubmit} className="space-y-3">
         <div>
           <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-ink-2">Email</label>
           <input
