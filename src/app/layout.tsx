@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   // only per-URL via this meta tag). Paste the `content` value Search
   // Console gives you under Add Property -> URL prefix -> HTML tag.
   verification: {
-    google: 'PASTE_THE_CONTENT_VALUE_FROM_SEARCH_CONSOLE_HERE',
+    google: 'google-site-verification: googlece7f594820bdf5e8.html',
   },
   openGraph: {
     title: `${SITE_NAME} — Movies & TV`,
