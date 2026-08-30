@@ -1,4 +1,4 @@
-import { mergePeachifyProgress } from './progressStorage';
+import { recordFromMediaData } from '@/lib/watch-progress';
 import {
   PEACHIFY_ORIGIN,
   type PeachifyCommand,
@@ -26,7 +26,6 @@ export class PeachifyController {
 
   readonly origin: string;
   readonly persistProgress: boolean;
-  readonly storageKey: string;
   readonly timeupdateThrottleMs: number;
   readonly onMediaData?: (store: PeachifyProgressStore) => void;
   readonly onPlayerEvent?: (data: PeachifyPlayerEventData) => void;
@@ -34,7 +33,6 @@ export class PeachifyController {
   constructor(options: PeachifyControllerOptions = {}) {
     this.origin = options.origin ?? PEACHIFY_ORIGIN;
     this.persistProgress = options.persistProgress !== false;
-    this.storageKey = options.storageKey ?? 'peachifyProgress';
     this.timeupdateThrottleMs = options.timeupdateThrottleMs ?? 1000;
     this.onMediaData = options.onMediaData;
     this.onPlayerEvent = options.onPlayerEvent;
@@ -71,8 +69,11 @@ export class PeachifyController {
 
     if (event.data.type === 'MEDIA_DATA') {
       const store = event.data.data;
-      if (this.persistProgress && typeof localStorage !== 'undefined') {
-        mergePeachifyProgress(store, this.storageKey);
+      if (this.persistProgress && typeof window !== 'undefined') {
+        // recordFromMediaData does the local merge (composite movie/tv
+        // keys, dedup) AND the cloud push, in one place shared by all
+        // three players - nothing else needed here.
+        recordFromMediaData(store);
       }
       this.onMediaData?.(store);
       return;
