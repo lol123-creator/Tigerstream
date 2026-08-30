@@ -1,12 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
-import {
-  mergePeachifyProgress,
-  loadPeachifyProgress,
-  getResumeSeconds,
-  type PeachifyProgressStore,
-} from '@/peachify';
+import type { PeachifyProgressStore } from '@/peachify';
+import { getResumeSeconds, recordFromMediaData } from '@/lib/watch-progress';
 
 // Per CinemaOS's official integration guide:
 //   Movie:   https://cinemaos.tech/player/{tmdb_id}
@@ -27,36 +23,6 @@ interface CinemaOSPlayerProps {
   autoResume?: boolean;
   /** Called after a MEDIA_DATA payload has been merged into storage. */
   onMediaData?: (store: PeachifyProgressStore) => void;
-}
-
-interface CinemaOSMediaEntry {
-  id: number;
-  type: 'movie' | 'tv';
-  title: string;
-  poster_path?: string;
-  progress: { watched: number; duration: number };
-  last_updated?: number;
-  last_season_watched?: string | number;
-  last_episode_watched?: string | number;
-  show_progress?: Record<string, unknown>;
-}
-
-/**
- * CinemaOS keys its MEDIA_DATA store entries like "m550" (per its own
- * docs example), but Peachify's PeachifyProgressStore is keyed by the
- * bare id string ("550"). Re-keying by each entry's own `id` field
- * (rather than trusting the object's key) makes this robust to that
- * difference so continue-watching lookups actually find these entries.
- */
-function toPeachifyStore(
-  raw: Record<string, CinemaOSMediaEntry>,
-): PeachifyProgressStore {
-  const out: PeachifyProgressStore = {};
-  for (const entry of Object.values(raw ?? {})) {
-    if (!entry || entry.id == null) continue;
-    out[String(entry.id)] = entry as PeachifyProgressStore[string];
-  }
-  return out;
 }
 
 export function CinemaOSPlayer({
@@ -84,11 +50,10 @@ export function CinemaOSPlayer({
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
 
     if (autoResume && typeof window !== 'undefined') {
-      const store = loadPeachifyProgress();
       const resume =
         type === 'tv'
-          ? getResumeSeconds(store, mediaId, season, episode)
-          : getResumeSeconds(store, mediaId);
+          ? getResumeSeconds(type, mediaId, season, episode)
+          : getResumeSeconds(type, mediaId);
       if (resume != null) {
         params.set('startTime', String(Math.floor(resume)));
       }
@@ -103,12 +68,13 @@ export function CinemaOSPlayer({
       if (event.data?.type !== 'MEDIA_DATA') return;
 
       try {
-        const store = toPeachifyStore(
-          event.data.data as Record<string, CinemaOSMediaEntry>,
-        );
-        const merged = mergePeachifyProgress(store);
-        // Fire-and-forget cloud push - only does anything if signed in.
-        import('@/lib/cloud-sync').then((m) => m.pushProgressSnapshot()).catch(() => {});
+        // recordFromMediaData re-keys off each entry's own id/type
+        // fields rather than the payload's own object keys, so
+        // CinemaOS keying its store like "m550" (per its docs) doesn't
+        // matter here - it's handled centrally, the same way for all
+        // three players. It also does the cloud push, so nothing else
+        // is needed in this handler.
+        const merged = recordFromMediaData(event.data.data);
         onMediaData?.(merged);
       } catch {
         // Corrupt payload — ignore rather than risk clobbering storage.
