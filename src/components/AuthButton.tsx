@@ -13,6 +13,15 @@ interface AuthButtonProps {
   onNavigate?: () => void;
 }
 
+function switchProfile() {
+  try {
+    sessionStorage.removeItem('tigerstream:profile-selected');
+  } catch {
+    // storage unavailable
+  }
+  window.location.reload();
+}
+
 export function AuthButton({ variant = 'nav', onNavigate }: AuthButtonProps) {
   const [email, setEmail] = useState<string | null | undefined>(undefined); // undefined = not checked yet
   const [open, setOpen] = useState(false);
@@ -26,6 +35,18 @@ export function AuthButton({ variant = 'nav', onNavigate }: AuthButtonProps) {
       const uid = data.user?.id ?? null;
       setEmail(data.user?.email ?? null);
       setSignedInUserId(uid);
+
+      // Handles the "already signed in" case: e.g. opening the site on a
+      // second device with a persisted session. Supabase does NOT fire a
+      // SIGNED_IN event for that - only for an explicit sign-in action -
+      // so without this, cloud progress/favorites/profiles from other
+      // devices would never get pulled down until the user manually
+      // signed out and back in. Silent (no toast) since this can run on
+      // every page load.
+      if (uid && mergedFor.current !== uid) {
+        mergedFor.current = uid;
+        mergeCloudDataOnSignIn(uid).catch(() => {});
+      }
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
@@ -72,7 +93,22 @@ export function AuthButton({ variant = 'nav', onNavigate }: AuthButtonProps) {
       <div className="border-t border-glass-border px-4 pt-3">
         <p className="truncate text-xs text-ink-3">Signed in as</p>
         <p className="truncate text-sm font-medium text-white">{email}</p>
-        <form action="/auth/sign-out" method="POST" className="mt-2">
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate?.();
+            switchProfile();
+          }}
+          className="mt-2 flex w-full items-center gap-2 rounded-xl px-0 py-2 text-left text-sm text-ink-2 transition hover:text-white"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          Switch profile
+        </button>
+        <form action="/auth/sign-out" method="POST" className="mt-1">
           <button
             type="submit"
             className="flex w-full items-center gap-2 rounded-xl px-0 py-2 text-left text-sm text-ink-2 transition hover:text-white"
@@ -129,6 +165,18 @@ export function AuthButton({ variant = 'nav', onNavigate }: AuthButtonProps) {
               <p className="truncate text-xs text-ink-3">Signed in as</p>
               <p className="truncate text-sm font-medium text-white">{email}</p>
             </div>
+            <button
+              type="button"
+              onClick={switchProfile}
+              className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-ink-2 transition hover:bg-white/[0.06] hover:text-white"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              Switch profile
+            </button>
             <form action="/auth/sign-out" method="POST">
               <button
                 type="submit"
