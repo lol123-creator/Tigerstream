@@ -1,67 +1,51 @@
-import type { PeachifyProgressStore } from './types';
+/**
+ * Thin compatibility layer over the canonical implementation in
+ * `@/lib/watch-progress`. New code should import `@/lib/watch-progress`
+ * directly - it's the one real source of truth now (profile-scoped
+ * storage, composite movie/tv keys so a movie and a show sharing a
+ * TMDB id can't collide, and a single merge+push path shared by all
+ * three players). This file exists purely so anything still importing
+ * from `@/peachify` keeps working unchanged.
+ */
+import type { PeachifyProgressStore, MediaId } from './types';
+import * as WP from '@/lib/watch-progress';
 
-const DEFAULT_STORAGE_KEY = 'peachifyProgress';
-
-export function loadPeachifyProgress(
-  storageKey = DEFAULT_STORAGE_KEY,
-  storage: Storage = localStorage,
-): PeachifyProgressStore {
-  try {
-    const raw = storage.getItem(storageKey);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as PeachifyProgressStore;
-    }
-  } catch {
-    // Corrupt storage — start fresh
-  }
-  return {};
+export function loadPeachifyProgress(): PeachifyProgressStore {
+  return WP.loadProgressStore();
 }
 
-export function savePeachifyProgress(
-  store: PeachifyProgressStore,
-  storageKey = DEFAULT_STORAGE_KEY,
-  storage: Storage = localStorage,
-): void {
-  storage.setItem(storageKey, JSON.stringify(store));
+export function savePeachifyProgress(store: PeachifyProgressStore): void {
+  WP.recordFromMediaData(store);
 }
 
 export function mergePeachifyProgress(
   incoming: PeachifyProgressStore,
-  storageKey = DEFAULT_STORAGE_KEY,
-  storage: Storage = localStorage,
 ): PeachifyProgressStore {
-  const existing = loadPeachifyProgress(storageKey, storage);
-  const merged: PeachifyProgressStore = { ...existing, ...incoming };
-  savePeachifyProgress(merged, storageKey, storage);
-  return merged;
+  return WP.recordFromMediaData(incoming);
 }
 
+export { getCompletionRatio } from '@/lib/watch-progress';
+
+/** @deprecated a bare-id lookup can't tell a movie and a TV show with
+ *  the same id apart. Prefer `WP.getEntry(type, id)` from `@/lib/watch-progress`. */
 export function getMediaProgress(
   store: PeachifyProgressStore,
-  mediaId: string | number,
+  mediaId: MediaId,
 ): PeachifyProgressStore[string] | undefined {
   return store[String(mediaId)];
 }
 
-
+/** Removes a title from Continue Watching. Pass `type` when you have it
+ *  (every current call site does) - without it, both the movie and tv
+ *  composite keys for this id are removed, to stay safe. */
 export function removeContinueWatchingItem(
-  mediaId: string | number,
-  storageKey = DEFAULT_STORAGE_KEY,
-  storage: Storage = localStorage,
+  mediaId: MediaId,
+  type?: 'movie' | 'tv',
 ): void {
-  const store = loadPeachifyProgress(storageKey, storage);
-  delete store[String(mediaId)];
-  savePeachifyProgress(store, storageKey, storage);
-}
-
-
-
-export function getCompletionRatio(entry: {
-  progress?: { watched?: number; duration?: number };
-}): number {
-  const { watched = 0, duration = 0 } = entry.progress ?? {};
-  if (!duration || duration <= 0) return 0;
-  return Math.min(1, Math.max(0, watched / duration));
+  if (type) {
+    WP.removeItem(type, mediaId);
+    return;
+  }
+  WP.removeItem('movie', mediaId);
+  WP.removeItem('tv', mediaId);
 }
