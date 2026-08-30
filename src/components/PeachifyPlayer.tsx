@@ -11,14 +11,13 @@ import {
 } from 'react';
 import {
   buildPeachifyEmbedUrl,
-  getResumeSeconds,
-  loadPeachifyProgress,
   PeachifyController,
   type PeachifyControllerOptions,
   type PeachifyEmbedTarget,
   type PeachifyPlayerEventData,
   type PeachifyProgressStore,
 } from '@/peachify';
+import { getResumeSeconds } from '@/lib/watch-progress';
 
 export interface PeachifyPlayerHandle {
   controller: PeachifyController;
@@ -81,16 +80,10 @@ export const PeachifyPlayer = forwardRef<
       options.t == null &&
       typeof window !== 'undefined'
     ) {
-      const store = loadPeachifyProgress(controllerOptions?.storageKey);
       const resume =
         target.type === 'tv'
-          ? getResumeSeconds(
-              store,
-              target.mediaId,
-              target.season,
-              target.episode,
-            )
-          : getResumeSeconds(store, target.mediaId);
+          ? getResumeSeconds(target.type, target.mediaId, target.season, target.episode)
+          : getResumeSeconds(target.type, target.mediaId);
 
       if (resume != null) {
         options.startAt = resume;
@@ -98,7 +91,7 @@ export const PeachifyPlayer = forwardRef<
     }
 
     return buildPeachifyEmbedUrl({ ...target, options });
-  }, [target, autoResume, controllerOptions?.storageKey]);
+  }, [target, autoResume]);
 
   const getController = useCallback(() => {
     if (!controllerRef.current) {
