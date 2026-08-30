@@ -43,6 +43,31 @@ function progressKey(): string {
   return scopedStorageKey(PROGRESS_BASE_KEY, !!getSignedInUserId());
 }
 
+/**
+ * Collapses rows to one-per-conflict-key before an upsert. Postgres
+ * rejects an `INSERT ... ON CONFLICT DO UPDATE` batch outright (the
+ * whole batch, not just the extra row) if two rows in it target the
+ * same unique constraint - which could happen here for a moment
+ * during the legacy bare-id -> composite-key migration, when both an
+ * old and new local entry briefly point at the same title. Keeping
+ * only the most-recently-updated row per key avoids that failure
+ * mode entirely rather than hoping it never collides.
+ */
+function dedupeByConflictKey<T extends { profile_id: string; media_type: string; media_id: number | string }>(
+  rows: T[],
+  updatedAtField: 'added_at' | 'updated_at',
+): T[] {
+  const byKey = new Map<string, T>();
+  for (const row of rows) {
+    const key = `${row.profile_id}:${row.media_type}:${row.media_id}`;
+    const existing = byKey.get(key);
+    if (!existing || (row as any)[updatedAtField] >= (existing as any)[updatedAtField]) {
+      byKey.set(key, row);
+    }
+  }
+  return [...byKey.values()];
+}
+
 /** Push the active profile's full local favorites snapshot to Supabase. Best-effort, never throws. */
 export async function pushFavoritesSnapshot(): Promise<void> {
   const uid = getSignedInUserId();
@@ -54,18 +79,21 @@ export async function pushFavoritesSnapshot(): Promise<void> {
 
     const raw = localStorage.getItem(favoritesKey());
     const data = raw ? JSON.parse(raw) : {};
-    const rows = Object.values(data as Record<string, any>).map((f: any) => ({
-      user_id: uid,
-      profile_id: profileId,
-      media_id: f.id,
-      media_type: f.type,
-      title: f.title,
-      poster_path: f.poster_path,
-      vote_average: f.vote_average ?? null,
-      release_date: f.release_date ?? null,
-      first_air_date: f.first_air_date ?? null,
-      added_at: new Date(f.addedAt).toISOString(),
-    }));
+    const rows = dedupeByConflictKey(
+      Object.values(data as Record<string, any>).map((f: any) => ({
+        user_id: uid,
+        profile_id: profileId,
+        media_id: f.id,
+        media_type: f.type,
+        title: f.title,
+        poster_path: f.poster_path,
+        vote_average: f.vote_average ?? null,
+        release_date: f.release_date ?? null,
+        first_air_date: f.first_air_date ?? null,
+        added_at: new Date(f.addedAt).toISOString(),
+      })),
+      'added_at',
+    );
     if (rows.length === 0) return;
 
     const { createClient } = await import('@/lib/supabase/client');
@@ -87,21 +115,24 @@ export async function pushProgressSnapshot(): Promise<void> {
 
     const raw = localStorage.getItem(progressKey());
     const data = raw ? JSON.parse(raw) : {};
-    const rows = Object.values(data as Record<string, any>)
-      .filter((e: any) => e?.progress)
-      .map((e: any) => ({
-        user_id: uid,
-        profile_id: profileId,
-        media_id: e.id,
-        media_type: e.type,
-        title: e.title ?? '',
-        poster_path: e.poster_path ?? null,
-        watched_seconds: e.progress?.watched ?? 0,
-        duration_seconds: e.progress?.duration ?? 0,
-        season: e.last_season_watched ? Number(e.last_season_watched) : null,
-        episode: e.last_episode_watched ? Number(e.last_episode_watched) : null,
-        updated_at: new Date(e.last_updated ?? Date.now()).toISOString(),
-      }));
+    const rows = dedupeByConflictKey(
+      Object.values(data as Record<string, any>)
+        .filter((e: any) => e?.progress)
+        .map((e: any) => ({
+          user_id: uid,
+          profile_id: profileId,
+          media_id: e.id,
+          media_type: e.type,
+          title: e.title ?? '',
+          poster_path: e.poster_path ?? null,
+          watched_seconds: e.progress?.watched ?? 0,
+          duration_seconds: e.progress?.duration ?? 0,
+          season: e.last_season_watched ? Number(e.last_season_watched) : null,
+          episode: e.last_episode_watched ? Number(e.last_episode_watched) : null,
+          updated_at: new Date(e.last_updated ?? Date.now()).toISOString(),
+        })),
+      'updated_at',
+    );
     if (rows.length === 0) return;
 
     const { createClient } = await import('@/lib/supabase/client');
