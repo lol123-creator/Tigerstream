@@ -2,11 +2,11 @@
 
 import {
   getCompletionRatio,
-  getMediaProgress,
-  loadPeachifyProgress,
-  removeContinueWatchingItem,
-} from '@/peachify';
+  loadProgressStore,
+  removeItem as removeProgressItem,
+} from '@/lib/watch-progress';
 import type { PeachifyProgressStore } from '@/peachify';
+import { getMediaProgress } from '@/peachify';
 import { watchMovieHref, watchTvHref } from '@/lib/routes';
 import { movieDetailHref, tvDetailHref } from '@/lib/routes';
 import type { ContinueWatchingItem } from '@/types/media';
@@ -14,7 +14,7 @@ import type { ContinueWatchingItem } from '@/types/media';
 export function buildContinueWatching(
   store?: PeachifyProgressStore,
 ): ContinueWatchingItem[] {
-  const progress = store ?? loadPeachifyProgress();
+  const progress = store ?? loadProgressStore();
   const items: ContinueWatchingItem[] = [];
 
   for (const key of Object.keys(progress)) {
@@ -77,7 +77,7 @@ export interface WatchHistoryItem extends ContinueWatchingItem {
  * /history page.
  */
 export function buildWatchHistory(store?: PeachifyProgressStore): WatchHistoryItem[] {
-  const progress = store ?? loadPeachifyProgress();
+  const progress = store ?? loadProgressStore();
   const items: WatchHistoryItem[] = [];
 
   for (const key of Object.keys(progress)) {
@@ -131,4 +131,10 @@ export function buildWatchHistory(store?: PeachifyProgressStore): WatchHistoryIt
   return items.sort((a, b) => b.lastWatchedAt - a.lastWatchedAt);
 }
 
-export { getMediaProgress, loadPeachifyProgress, removeContinueWatchingItem };
+/** Removes a title from Continue Watching / history. `type` is required
+ *  now - a bare id can't tell a movie and a same-id TV show apart. */
+export function removeContinueWatchingItem(type: 'movie' | 'tv', id: string | number): void {
+  removeProgressItem(type, id);
+}
+
+export { getMediaProgress, loadProgressStore as loadPeachifyProgress };
