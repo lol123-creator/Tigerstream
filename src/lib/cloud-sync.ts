@@ -1,17 +1,9 @@
 'use client';
 
 /**
- * Local-first cloud sync for favorites and watch progress.
- *
- * Design: every existing read/write (FavoriteButton, MediaCard,
- * ContinueWatchingRow, the players' progress handlers, etc.) keeps
- * working exactly as before, synchronously, against localStorage -
- * nothing about those call sites changes, no loading states, no
- * rewrite. This module is an *additional* best-effort layer: when
- * someone is signed in, local writes also get pushed to Supabase in
- * the background (fire-and-forget, never blocks or throws into the
- * caller), and right after sign-in, local + cloud data get merged once
- * so a Guest's existing data isn't lost when they create an account.
+ * Local-first cloud sync for favorites and watch progress, scoped per
+ * profile once someone is signed in. Guest browsing is untouched -
+ * still a single local bucket, nothing pushed anywhere.
  *
  * AUTH_FLAG_KEY is a lightweight, synchronously-readable marker (set
  * by AuthButton's auth-state listener) so the hot paths below can
@@ -19,9 +11,11 @@
  * a Supabase client on every single favorite toggle or progress tick.
  */
 
+import { scopedStorageKey } from './profiles';
+
 const AUTH_FLAG_KEY = 'tigerstream:auth-uid';
-const FAVORITES_KEY = 'tigerstream:favorites';
-const PROGRESS_KEY = 'peachifyProgress';
+const FAVORITES_BASE_KEY = 'tigerstream:favorites';
+const PROGRESS_BASE_KEY = 'peachifyProgress';
 
 export function getSignedInUserId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -42,15 +36,27 @@ export function setSignedInUserId(uid: string | null) {
   }
 }
 
-/** Push the current full local favorites snapshot to Supabase. Best-effort, never throws. */
+function favoritesKey(): string {
+  return scopedStorageKey(FAVORITES_BASE_KEY, !!getSignedInUserId());
+}
+function progressKey(): string {
+  return scopedStorageKey(PROGRESS_BASE_KEY, !!getSignedInUserId());
+}
+
+/** Push the active profile's full local favorites snapshot to Supabase. Best-effort, never throws. */
 export async function pushFavoritesSnapshot(): Promise<void> {
   const uid = getSignedInUserId();
   if (!uid) return;
   try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
+    const { getActiveProfileId } = await import('./profiles');
+    const profileId = getActiveProfileId();
+    if (!profileId) return;
+
+    const raw = localStorage.getItem(favoritesKey());
     const data = raw ? JSON.parse(raw) : {};
     const rows = Object.values(data as Record<string, any>).map((f: any) => ({
       user_id: uid,
+      profile_id: profileId,
       media_id: f.id,
       media_type: f.type,
       title: f.title,
@@ -64,23 +70,28 @@ export async function pushFavoritesSnapshot(): Promise<void> {
 
     const { createClient } = await import('@/lib/supabase/client');
     const supabase = createClient();
-    await supabase.from('favorites').upsert(rows, { onConflict: 'user_id,media_type,media_id' });
+    await supabase.from('favorites').upsert(rows, { onConflict: 'profile_id,media_type,media_id' });
   } catch {
     // Best-effort - local storage remains the source of truth for this session either way
   }
 }
 
-/** Push the current full local watch-progress snapshot to Supabase. Best-effort, never throws. */
+/** Push the active profile's full local watch-progress snapshot to Supabase. Best-effort, never throws. */
 export async function pushProgressSnapshot(): Promise<void> {
   const uid = getSignedInUserId();
   if (!uid) return;
   try {
-    const raw = localStorage.getItem(PROGRESS_KEY);
+    const { getActiveProfileId } = await import('./profiles');
+    const profileId = getActiveProfileId();
+    if (!profileId) return;
+
+    const raw = localStorage.getItem(progressKey());
     const data = raw ? JSON.parse(raw) : {};
     const rows = Object.values(data as Record<string, any>)
       .filter((e: any) => e?.progress)
       .map((e: any) => ({
         user_id: uid,
+        profile_id: profileId,
         media_id: e.id,
         media_type: e.type,
         title: e.title ?? '',
@@ -95,33 +106,44 @@ export async function pushProgressSnapshot(): Promise<void> {
 
     const { createClient } = await import('@/lib/supabase/client');
     const supabase = createClient();
-    await supabase.from('watch_progress').upsert(rows, { onConflict: 'user_id,media_type,media_id' });
+    await supabase.from('watch_progress').upsert(rows, { onConflict: 'profile_id,media_type,media_id' });
   } catch {
     // Best-effort
   }
 }
 
 /**
- * Called once right after a sign-in is detected. Pulls whatever's
- * already in Supabase for this account, merges it with whatever's
- * currently sitting in this browser's localStorage (union - nothing
- * gets deleted, most-recent timestamp wins on an actual conflict),
- * writes the merged result back to localStorage, then pushes the
- * merged snapshot back up. This is what carries a Guest's existing
- * favorites/progress into their new account instead of losing them.
+ * Runs once right after a sign-in is detected (including an
+ * "already signed in" page load - see AuthButton). Makes sure the
+ * account has at least one profile (auto-creating a default "Me" the
+ * very first time it's seen), then merges that profile's cloud
+ * favorites/progress with whatever's sitting in this browser's local
+ * storage - union, most-recent wins on an actual conflict - so a
+ * Guest's existing data isn't lost on sign-up, and progress made on
+ * other devices shows up here.
  */
 export async function mergeCloudDataOnSignIn(uid: string): Promise<void> {
   try {
+    const { fetchProfiles, getActiveProfileId, setActiveProfileId } = await import('./profiles');
+    const profiles = await fetchProfiles(uid);
+    let profileId = getActiveProfileId();
+    if (!profileId || !profiles.some((p) => p.id === profileId)) {
+      profileId = profiles[0]?.id ?? null;
+      if (profileId) setActiveProfileId(profileId);
+    }
+    if (!profileId) return;
+
     const { createClient } = await import('@/lib/supabase/client');
     const supabase = createClient();
 
     const [{ data: cloudFavorites }, { data: cloudProgress }] = await Promise.all([
-      supabase.from('favorites').select('*').eq('user_id', uid),
-      supabase.from('watch_progress').select('*').eq('user_id', uid),
+      supabase.from('favorites').select('*').eq('profile_id', profileId),
+      supabase.from('watch_progress').select('*').eq('profile_id', profileId),
     ]);
 
     // --- Favorites merge ---
-    const localFavRaw = localStorage.getItem(FAVORITES_KEY);
+    const favKey = favoritesKey();
+    const localFavRaw = localStorage.getItem(favKey);
     const localFav: Record<string, any> = localFavRaw ? JSON.parse(localFavRaw) : {};
 
     for (const row of cloudFavorites ?? []) {
@@ -141,14 +163,17 @@ export async function mergeCloudDataOnSignIn(uid: string): Promise<void> {
         };
       }
     }
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(localFav));
+    localStorage.setItem(favKey, JSON.stringify(localFav));
 
     // --- Progress merge ---
-    const localProgRaw = localStorage.getItem(PROGRESS_KEY);
+    const progKey = progressKey();
+    const localProgRaw = localStorage.getItem(progKey);
     const localProg: Record<string, any> = localProgRaw ? JSON.parse(localProgRaw) : {};
 
     for (const row of cloudProgress ?? []) {
-      const key = `${row.media_type === 'movie' ? 'm' : 't'}${row.media_id}`;
+      // Composite key - "movie-550" / "tv-550" - so a movie and a TV
+      // show sharing a TMDB id never collide.
+      const key = `${row.media_type}-${row.media_id}`;
       const existing = localProg[key];
       const cloudUpdatedAt = new Date(row.updated_at).getTime();
       if (!existing || cloudUpdatedAt > (existing.last_updated ?? 0)) {
@@ -164,7 +189,7 @@ export async function mergeCloudDataOnSignIn(uid: string): Promise<void> {
         };
       }
     }
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(localProg));
+    localStorage.setItem(progKey, JSON.stringify(localProg));
 
     // Push the merged result back up so both sides agree
     await Promise.all([pushFavoritesSnapshot(), pushProgressSnapshot()]);
