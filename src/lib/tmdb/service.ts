@@ -10,6 +10,7 @@ import { isTmdbEnabled, tmdbFetch } from './client';
 import { dedupeById, fetchPaged } from './fetch-pages';
 import { MOVIE_GENRES, TV_GENRES, type Genre } from './genres';
 import { featured as fallbackFeatured } from '@/lib/catalog';
+import { filterKidSafe, isDetailBlockedForKid, kidDiscoverParams } from '@/lib/kid-mode';
 import {
   mapMovieDetail,
   mapMovieSummary,
@@ -67,19 +68,23 @@ async function fetchDiscoverMoviePage(
   page: number,
   genreIds: string,
 ): Promise<Movie[]> {
+  const kidParams = await kidDiscoverParams('movie');
   const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
     with_genres: genreIds,
     sort_by: 'popularity.desc',
     page,
+    ...kidParams,
   });
   return data.results.map((m) => mapMovieSummary(m));
 }
 
 async function fetchDiscoverTvPage(page: number, genreIds: string): Promise<TvShow[]> {
+  const kidParams = await kidDiscoverParams('tv');
   const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
     with_genres: genreIds,
     sort_by: 'popularity.desc',
     page,
+    ...kidParams,
   });
   return data.results.map((t) => mapTvSummary(t));
 }
@@ -118,7 +123,7 @@ export async function getTrendingToday(): Promise<MediaItem[]> {
   const items = data.results
     .map(mapTrendingItem)
     .filter((x): x is MediaItem => x != null);
-  return dedupeById(items);
+  return filterKidSafe(dedupeById(items));
 }
 
 export async function getTrendingThisWeek(): Promise<MediaItem[]> {
@@ -127,11 +132,12 @@ export async function getTrendingThisWeek(): Promise<MediaItem[]> {
   const items = data.results
     .map(mapTrendingItem)
     .filter((x): x is MediaItem => x != null);
-  return dedupeById(items);
+  return filterKidSafe(dedupeById(items));
 }
 
 async function fetchNewMoviesPage(page: number): Promise<Movie[]> {
   const today = new Date().toISOString().slice(0, 10);
+  const kidParams = await kidDiscoverParams('movie');
   const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(
     '/discover/movie',
     {
@@ -140,6 +146,7 @@ async function fetchNewMoviesPage(page: number): Promise<Movie[]> {
       'vote_count.gte': '25',
       region: 'US',
       page,
+      ...kidParams,
     },
     HOT_REVALIDATE,
   );
@@ -148,6 +155,7 @@ async function fetchNewMoviesPage(page: number): Promise<Movie[]> {
 
 async function fetchNewTvPage(page: number): Promise<TvShow[]> {
   const today = new Date().toISOString().slice(0, 10);
+  const kidParams = await kidDiscoverParams('tv');
   const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(
     '/discover/tv',
     {
@@ -155,6 +163,7 @@ async function fetchNewTvPage(page: number): Promise<TvShow[]> {
       'first_air_date.lte': today,
       'vote_count.gte': '25',
       page,
+      ...kidParams,
     },
     HOT_REVALIDATE,
   );
@@ -163,12 +172,12 @@ async function fetchNewTvPage(page: number): Promise<TvShow[]> {
 
 export async function getNewMovies(pages = 3): Promise<Movie[]> {
   if (!isTmdbEnabled()) return fallbackMovies;
-  return dedupeById(await fetchPaged(pages, fetchNewMoviesPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchNewMoviesPage)));
 }
 
 export async function getNewTvSeries(pages = 3): Promise<TvShow[]> {
   if (!isTmdbEnabled()) return fallbackTvShows;
-  return dedupeById(await fetchPaged(pages, fetchNewTvPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchNewTvPage)));
 }
 
 function pickHeroCandidate(items: MediaItem[]): MediaItem | undefined {
@@ -183,6 +192,9 @@ export async function getFeaturedHero(): Promise<{
   item: MediaItem;
   badge: string;
 }> {
+  // today/newMovies/newTv are already kid-filtered by the functions
+  // above, so whatever gets picked as the hero here is automatically
+  // safe too - no separate check needed.
   const [today, newMovies, newTv] = await Promise.all([
     getTrendingToday(),
     getNewMovies(1),
@@ -224,37 +236,37 @@ export async function getFeaturedHero(): Promise<{
 
 export async function getPopularMovies(pages = BROWSE_PAGE_COUNT): Promise<Movie[]> {
   if (!isTmdbEnabled()) return fallbackMovies;
-  return dedupeById(await fetchPaged(pages, fetchMoviePopularPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchMoviePopularPage)));
 }
 
 export async function getPopularTv(pages = BROWSE_PAGE_COUNT): Promise<TvShow[]> {
   if (!isTmdbEnabled()) return fallbackTvShows;
-  return dedupeById(await fetchPaged(pages, fetchTvPopularPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchTvPopularPage)));
 }
 
 export async function getTopRatedMovies(pages = 5): Promise<Movie[]> {
   if (!isTmdbEnabled()) return fallbackMovies;
-  return dedupeById(await fetchPaged(pages, fetchMovieTopRatedPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchMovieTopRatedPage)));
 }
 
 export async function getTopRatedTv(pages = 5): Promise<TvShow[]> {
   if (!isTmdbEnabled()) return fallbackTvShows;
-  return dedupeById(await fetchPaged(pages, fetchTvTopRatedPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchTvTopRatedPage)));
 }
 
 export async function getTrendingMovies(pages = 3): Promise<Movie[]> {
   if (!isTmdbEnabled()) return fallbackMovies;
-  return dedupeById(await fetchPaged(pages, fetchTrendingMoviePage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchTrendingMoviePage)));
 }
 
 export async function getTrendingTv(pages = 3): Promise<TvShow[]> {
   if (!isTmdbEnabled()) return fallbackTvShows;
-  return dedupeById(await fetchPaged(pages, fetchTrendingTvPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchTrendingTvPage)));
 }
 
 export async function getNowPlayingMovies(pages = 3): Promise<Movie[]> {
   if (!isTmdbEnabled()) return fallbackMovies;
-  return dedupeById(await fetchPaged(pages, fetchNowPlayingPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchNowPlayingPage)));
 }
 
 export async function getDiscoverMovies(
@@ -263,7 +275,9 @@ export async function getDiscoverMovies(
 ): Promise<Movie[]> {
   const ids = String(genreIds);
   if (!isTmdbEnabled()) return fallbackMovies;
-  return dedupeById(await fetchPaged(pages, (p) => fetchDiscoverMoviePage(p, ids)));
+  return filterKidSafe(
+    dedupeById(await fetchPaged(pages, (p) => fetchDiscoverMoviePage(p, ids))),
+  );
 }
 
 export async function getDiscoverTv(
@@ -272,7 +286,9 @@ export async function getDiscoverTv(
 ): Promise<TvShow[]> {
   const ids = String(genreIds);
   if (!isTmdbEnabled()) return fallbackTvShows;
-  return dedupeById(await fetchPaged(pages, (p) => fetchDiscoverTvPage(p, ids)));
+  return filterKidSafe(
+    dedupeById(await fetchPaged(pages, (p) => fetchDiscoverTvPage(p, ids))),
+  );
 }
 
 export async function getMoviesByGenre(
@@ -325,10 +341,12 @@ export async function searchMedia(query: string): Promise<MediaItem[]> {
     page: 1,
   });
 
-  return data.results
+  const items = data.results
     .map(mapSearchResult)
     .filter((x): x is MediaItem => x != null)
     .slice(0, 40);
+
+  return filterKidSafe(items);
 }
 
 export async function getMovieById(id: number): Promise<Movie | null> {
@@ -338,7 +356,9 @@ export async function getMovieById(id: number): Promise<Movie | null> {
       `/movie/${id}`,
       { append_to_response: "credits,videos,release_dates" },
     );
-    return mapMovieDetail(data, data.credits?.cast);
+    const movie = mapMovieDetail(data, data.credits?.cast);
+    if (await isDetailBlockedForKid(movie.genres)) return null;
+    return movie;
   } catch {
     return fallbackGetMovie(id) ?? null;
   }
@@ -360,7 +380,8 @@ export async function getSimilarMovies(id: number, limit = 14): Promise<Movie[]>
     if (data.results.length === 0) {
       data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(`/movie/${id}/similar`);
     }
-    return dedupeById(data.results.map((m) => mapMovieSummary(m))).slice(0, limit);
+    const items = dedupeById(data.results.map((m) => mapMovieSummary(m))).slice(0, limit);
+    return filterKidSafe(items);
   } catch {
     return [];
   }
@@ -396,7 +417,9 @@ export async function getTvShowById(id: number): Promise<TvShow | null> {
       await Promise.all(seasonNumbers.map((n) => fetchSeason(id, n)))
     ).filter((s): s is TmdbSeasonDetail => s != null);
 
-    return mapTvDetail(show, seasonDetails, show.credits?.cast);
+    const tvShow = mapTvDetail(show, seasonDetails, show.credits?.cast);
+    if (await isDetailBlockedForKid(tvShow.genres)) return null;
+    return tvShow;
   } catch {
     return fallbackGetTvShow(id) ?? null;
   }
@@ -411,7 +434,8 @@ export async function getSimilarTv(id: number, limit = 14): Promise<TvShow[]> {
     if (data.results.length === 0) {
       data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(`/tv/${id}/similar`);
     }
-    return dedupeById(data.results.map((t) => mapTvSummary(t))).slice(0, limit);
+    const items = dedupeById(data.results.map((t) => mapTvSummary(t))).slice(0, limit);
+    return filterKidSafe(items);
   } catch {
     return [];
   }
@@ -595,47 +619,55 @@ const ANIME_TV_PARAMS = {
 } as const;
 
 async function fetchAnimeMoviePage(page: number): Promise<Movie[]> {
+  const kidParams = await kidDiscoverParams('movie');
   const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
     ...ANIME_MOVIE_PARAMS,
     page,
+    ...kidParams,
   });
   return data.results.map(mapMovieSummary);
 }
 
 async function fetchAnimeTvPage(page: number): Promise<TvShow[]> {
+  const kidParams = await kidDiscoverParams('tv');
   const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
     ...ANIME_TV_PARAMS,
     page,
+    ...kidParams,
   });
   return data.results.map(mapTvSummary);
 }
 
 export async function getAnimeMovies(pages = 3): Promise<Movie[]> {
   if (!isTmdbEnabled()) return fallbackMovies;
-  return dedupeById(await fetchPaged(pages, fetchAnimeMoviePage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchAnimeMoviePage)));
 }
 
 export async function getAnimeTvShows(pages = 3): Promise<TvShow[]> {
   if (!isTmdbEnabled()) return fallbackTvShows;
-  return dedupeById(await fetchPaged(pages, fetchAnimeTvPage));
+  return filterKidSafe(dedupeById(await fetchPaged(pages, fetchAnimeTvPage)));
 }
 
 async function fetchTopRatedAnimeMoviePage(page: number): Promise<Movie[]> {
+  const kidParams = await kidDiscoverParams('movie');
   const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
     ...ANIME_MOVIE_PARAMS,
     sort_by: 'vote_average.desc',
     'vote_count.gte': '50',
     page,
+    ...kidParams,
   });
   return data.results.map((m) => mapMovieSummary(m));
 }
 
 async function fetchTopRatedAnimeTvPage(page: number): Promise<TvShow[]> {
+  const kidParams = await kidDiscoverParams('tv');
   const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
     ...ANIME_TV_PARAMS,
     sort_by: 'vote_average.desc',
     'vote_count.gte': '50',
     page,
+    ...kidParams,
   });
   return data.results.map((t) => mapTvSummary(t));
 }
@@ -647,31 +679,36 @@ export async function getTopRatedAnime(pages = 2): Promise<MediaItem[]> {
     fetchPaged(pages, fetchTopRatedAnimeMoviePage),
     fetchPaged(pages, fetchTopRatedAnimeTvPage),
   ]);
-  return dedupeById([...movies, ...shows]).sort(
+  const combined = dedupeById([...movies, ...shows]).sort(
     (a, b) => b.vote_average - a.vote_average,
   );
+  return filterKidSafe(combined);
 }
 
 async function fetchNewAnimeMoviePage(page: number): Promise<Movie[]> {
   const today = new Date().toISOString().slice(0, 10);
+  const kidParams = await kidDiscoverParams('movie');
   const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
     ...ANIME_MOVIE_PARAMS,
     sort_by: 'primary_release_date.desc',
     'primary_release_date.lte': today,
     'vote_count.gte': '5',
     page,
+    ...kidParams,
   });
   return data.results.map((m) => mapMovieSummary(m));
 }
 
 async function fetchNewAnimeTvPage(page: number): Promise<TvShow[]> {
   const today = new Date().toISOString().slice(0, 10);
+  const kidParams = await kidDiscoverParams('tv');
   const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
     ...ANIME_TV_PARAMS,
     sort_by: 'first_air_date.desc',
     'first_air_date.lte': today,
     'vote_count.gte': '5',
     page,
+    ...kidParams,
   });
   return data.results.map((t) => mapTvSummary(t));
 }
@@ -683,11 +720,12 @@ export async function getNewAnime(pages = 2): Promise<MediaItem[]> {
     fetchPaged(pages, fetchNewAnimeMoviePage),
     fetchPaged(pages, fetchNewAnimeTvPage),
   ]);
-  return dedupeById([...movies, ...shows]).sort((a, b) => {
+  const combined = dedupeById([...movies, ...shows]).sort((a, b) => {
     const da = a.type === 'movie' ? a.release_date : a.first_air_date;
     const db = b.type === 'movie' ? b.release_date : b.first_air_date;
     return (db || '').localeCompare(da || '');
   });
+  return filterKidSafe(combined);
 }
 
 /** Studio Ghibli's TMDB production company id. */
@@ -704,6 +742,9 @@ async function fetchGhibliMoviePage(page: number): Promise<Movie[]> {
 
 export async function getGhibliFilms(pages = 2): Promise<Movie[]> {
   if (!isTmdbEnabled()) return [];
+  // Ghibli's catalog is already family-friendly enough that the usual
+  // kid-mode genre exclusions would just be a no-op here - skipped
+  // rather than adding dead weight to the query.
   return dedupeById(await fetchPaged(pages, fetchGhibliMoviePage));
 }
 
@@ -711,6 +752,7 @@ export async function getGhibliFilms(pages = 2): Promise<Movie[]> {
  * Combined movies + shows for a curated anime category (see
  * ANIME_CATEGORIES in genres.ts) - reuses the existing generic
  * getDiscoverMovies/getDiscoverTv rather than duplicating fetch logic.
+ * Both of those are already kid-filtered internally, so this is too.
  */
 export async function getAnimeCategoryCombined(
   movieGenres: string,
@@ -731,12 +773,14 @@ export async function getAnimeMoviesPage(page = 1): Promise<PagedResult<Movie>> 
   if (!isTmdbEnabled()) {
     return { items: fallbackMovies.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
   }
+  const kidParams = await kidDiscoverParams('movie');
   const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
     ...ANIME_MOVIE_PARAMS,
     page,
+    ...kidParams,
   });
   return {
-    items: dedupeById(data.results.map(mapMovieSummary)),
+    items: await filterKidSafe(dedupeById(data.results.map(mapMovieSummary))),
     totalPages: Math.min(data.total_pages ?? 1, 500),
     currentPage: page,
   };
@@ -746,12 +790,14 @@ export async function getAnimeTvPage(page = 1): Promise<PagedResult<TvShow>> {
   if (!isTmdbEnabled()) {
     return { items: fallbackTvShows.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
   }
+  const kidParams = await kidDiscoverParams('tv');
   const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
     ...ANIME_TV_PARAMS,
     page,
+    ...kidParams,
   });
   return {
-    items: dedupeById(data.results.map(mapTvSummary)),
+    items: await filterKidSafe(dedupeById(data.results.map(mapTvSummary))),
     totalPages: Math.min(data.total_pages ?? 1, 500),
     currentPage: page,
   };
@@ -774,7 +820,7 @@ export async function getPopularMoviesPage(page = 1): Promise<PagedResult<Movie>
   }
   const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/movie/popular', { page });
   return {
-    items: dedupeById(data.results.map(mapMovieSummary)),
+    items: await filterKidSafe(dedupeById(data.results.map(mapMovieSummary))),
     totalPages: Math.min(data.total_pages ?? 1, 500),
     currentPage: page,
   };
@@ -786,7 +832,7 @@ export async function getPopularTvPage(page = 1): Promise<PagedResult<TvShow>> {
   }
   const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/tv/popular', { page });
   return {
-    items: dedupeById(data.results.map(mapTvSummary)),
+    items: await filterKidSafe(dedupeById(data.results.map(mapTvSummary))),
     totalPages: Math.min(data.total_pages ?? 1, 500),
     currentPage: page,
   };
@@ -799,13 +845,15 @@ export async function getMoviesByGenrePage(
   if (!isTmdbEnabled()) {
     return { items: fallbackMovies.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
   }
+  const kidParams = await kidDiscoverParams('movie');
   const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>('/discover/movie', {
     with_genres: String(genreId),
     sort_by: 'popularity.desc',
     page,
+    ...kidParams,
   });
   return {
-    items: dedupeById(data.results.map(mapMovieSummary)),
+    items: await filterKidSafe(dedupeById(data.results.map(mapMovieSummary))),
     totalPages: Math.min(data.total_pages ?? 1, 500),
     currentPage: page,
   };
@@ -818,13 +866,15 @@ export async function getTvByGenrePage(
   if (!isTmdbEnabled()) {
     return { items: fallbackTvShows.slice(0, PAGE_SIZE), totalPages: 1, currentPage: 1 };
   }
+  const kidParams = await kidDiscoverParams('tv');
   const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>('/discover/tv', {
     with_genres: String(genreId),
     sort_by: 'popularity.desc',
     page,
+    ...kidParams,
   });
   return {
-    items: dedupeById(data.results.map(mapTvSummary)),
+    items: await filterKidSafe(dedupeById(data.results.map(mapTvSummary))),
     totalPages: Math.min(data.total_pages ?? 1, 500),
     currentPage: page,
   };
