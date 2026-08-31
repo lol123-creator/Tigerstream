@@ -78,6 +78,7 @@ export function mapMovieSummary(m: TmdbMovieSummary, genres: string[] = []): Mov
     runtime: m.runtime ?? 0,
     vote_average: m.vote_average ?? 0,
     genres: genres.length > 0 ? genres : genreNames(m.genres),
+    genre_ids: m.genre_ids,
     original_language: m.original_language,
     trailer_key: trailer || undefined,
   };
@@ -113,6 +114,7 @@ export function mapTvSummary(t: TmdbTvSummary, genres: string[] = []): TvShow {
     first_air_date: t.first_air_date ?? '',
     vote_average: t.vote_average ?? 0,
     genres,
+    genre_ids: t.genre_ids,
     seasons: [],
     original_language: t.original_language,
   };
@@ -134,6 +136,7 @@ export function mapTvHeroDetail(t: TmdbTvDetail): TvShow {
         backdrop_path: t.backdrop_path,
         first_air_date: t.first_air_date,
         vote_average: t.vote_average,
+        genre_ids: t.genre_ids,
       },
       genreNames(t.genres),
     ),
@@ -194,6 +197,7 @@ export function mapTrendingItem(r: TmdbTrendingResult): MediaItem | null {
       release_date: r.release_date ?? '',
       vote_average: r.vote_average ?? 0,
       original_language: r.original_language,
+      genre_ids: r.genre_ids,
     });
   }
   if (r.media_type === 'tv') {
@@ -206,6 +210,7 @@ export function mapTrendingItem(r: TmdbTrendingResult): MediaItem | null {
       first_air_date: r.first_air_date ?? '',
       vote_average: r.vote_average ?? 0,
       original_language: r.original_language,
+      genre_ids: r.genre_ids,
     });
   }
   return null;
@@ -222,6 +227,7 @@ export function mapSearchResult(r: TmdbSearchResult): MediaItem | null {
       release_date: r.release_date ?? '',
       vote_average: r.vote_average ?? 0,
       original_language: r.original_language,
+      genre_ids: r.genre_ids,
     });
   }
   if (r.media_type === 'tv') {
@@ -234,6 +240,7 @@ export function mapSearchResult(r: TmdbSearchResult): MediaItem | null {
       first_air_date: r.first_air_date ?? '',
       vote_average: r.vote_average ?? 0,
       original_language: r.original_language,
+      genre_ids: r.genre_ids,
     });
   }
   return null;
