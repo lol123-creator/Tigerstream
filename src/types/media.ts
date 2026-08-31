@@ -20,6 +20,11 @@ export interface Movie {
   runtime: number;
   vote_average: number;
   genres: string[];
+  /** Raw TMDB genre ids, when the source endpoint provides them
+   *  (most list endpoints do; some detail responses don't bother
+   *  since `genres` already has resolved names). Used for server-side
+   *  kid-mode content filtering - see @/lib/kid-mode. */
+  genre_ids?: number[];
   tagline?: string;
   cast?: Cast[];
   original_language?: string;
@@ -57,6 +62,8 @@ export interface TvShow {
   first_air_date: string;
   vote_average: number;
   genres: string[];
+  /** See Movie.genre_ids - same purpose, kid-mode filtering. */
+  genre_ids?: number[];
   seasons: Season[];
   tagline?: string;
   cast?: Cast[];
