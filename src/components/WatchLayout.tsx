@@ -8,6 +8,7 @@ import { buildContinueWatching } from '@/lib/progress-client';
 import { PeachifyPlayer } from '@/components/PeachifyPlayer';
 import { CinemaOSPlayer } from '@/components/CinemaOSPlayer';
 import { VideasyPlayer } from '@/components/VideasyPlayer';
+import { PostMessageDebugOverlay } from '@/components/PostMessageDebugOverlay';
 import type { PeachifyEmbedTarget } from '@/peachify';
 
 type PlayerSource = 'peachify' | 'cinemaos' | 'videasy';
@@ -138,6 +139,11 @@ export function WatchLayout({
 
   return (
     <div className="min-h-screen bg-black pt-16">
+      {/* TEMPORARY diagnostic - only renders with ?debug=1 in the URL.
+          Remove this line (and delete PostMessageDebugOverlay.tsx) once
+          the CinemaOS/Videasy progress-sync issue is diagnosed. */}
+      <PostMessageDebugOverlay />
+
       <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
