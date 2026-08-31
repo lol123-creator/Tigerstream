@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PeachifyProgressStore } from '@/peachify'
-import { getResumeSeconds, recordFromMediaData } from '@/lib/watch-progress'
+import {
+  getResumeSeconds,
+  loadProgressStore,
+  recordFromMediaData,
+  recordTimeupdate,
+} from '@/lib/watch-progress'
 
 /**
  * VideasyPlayer embeds a Videasy player inside an iframe.
@@ -18,12 +23,20 @@ import { getResumeSeconds, recordFromMediaData } from '@/lib/watch-progress'
  * nextEpisode, autoplayNextEpisode, overlay, and `progress` - sets the
  * start time in seconds (e.g. progress=120 starts at 2 minutes).
  *
+ * postMessage protocol: handles BOTH a MEDIA_DATA-style full payload
+ * AND a CinemaOS-style PLAYER_EVENT timeupdate tick (see
+ * CinemaOSPlayer.tsx - capturing CinemaOS's raw traffic showed its
+ * docs describing MEDIA_DATA didn't match what it actually sends, so
+ * this player no longer assumes Videasy's docs are accurate either;
+ * whichever shape actually arrives gets handled).
+ *
  * Known third-party issue (not fixable client-side): Videasy's player
  * hijacks the first click on play to open an ad tab, and actively
  * detects/blocks the sandbox iframe attribute that would normally
  * prevent that popup.
  */
 const ORIGIN = 'https://player.videasy.to'
+const PUSH_INTERVAL_MS = 8000
 
 export function VideasyPlayer({
   type,
@@ -31,6 +44,7 @@ export function VideasyPlayer({
   season,
   episode,
   title,
+  posterPath,
   autoPlay = true,
   autoResume = true,
   onMediaData,
@@ -40,10 +54,13 @@ export function VideasyPlayer({
   season?: number
   episode?: number
   title?: string
+  /** Optional - used as fallback metadata if Videasy's ticks turn out
+   *  not to include it, same as CinemaOSPlayer. */
+  posterPath?: string
   autoPlay?: boolean
   /** Resume from the saved position for this title, if any. Defaults to true. */
   autoResume?: boolean
-  /** Called after a MEDIA_DATA payload has been merged into storage. */
+  /** Called after a progress update has been merged into storage. */
   onMediaData?: (store: PeachifyProgressStore) => void
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -53,6 +70,7 @@ export function VideasyPlayer({
   const [showControls, setShowControls] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastPushRef = useRef(0)
 
   // Reset hide timer on any user interaction (mouse move or touch)
   const resetHideTimer = () => {
@@ -94,29 +112,56 @@ export function VideasyPlayer({
     return qs ? `${base}?${qs}` : base
   }, [type, mediaId, season, episode, autoPlay, autoResume])
 
-  // Sync progress with the same store/protocol as Peachify. This is the
-  // same MEDIA_DATA convention every other embed in this family uses
-  // (Peachify, VidLink, CinemaOS) — the payload is the full progress
-  // store keyed by media id, merged rather than overwritten.
-  //
-  // recordFromMediaData re-keys off each entry's own id/type fields
-  // rather than the payload's own object keys, and also does the cloud
-  // push, so nothing else is needed in this handler.
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       if (event.origin !== ORIGIN) return
-      if (event.data?.type !== 'MEDIA_DATA') return
 
-      try {
-        const merged = recordFromMediaData(event.data.data)
-        onMediaData?.(merged)
-      } catch {
-        // Corrupt payload — ignore rather than risk clobbering storage.
+      if (event.data?.type === 'MEDIA_DATA') {
+        try {
+          const merged = recordFromMediaData(event.data.data)
+          onMediaData?.(merged)
+        } catch {
+          // Corrupt payload — ignore rather than risk clobbering storage.
+        }
+        return
+      }
+
+      if (event.data?.type === 'PLAYER_EVENT') {
+        const p = event.data.data
+        if (!p) return
+        if (p.event !== 'timeupdate' && p.event !== 'pause' && p.event !== 'ended') return
+        if (p.tmdbId == null) return
+        if (p.mediaType !== 'movie' && p.mediaType !== 'tv') return
+        if (!Number.isFinite(p.currentTime)) return
+
+        recordTimeupdate({
+          type: p.mediaType,
+          id: p.tmdbId,
+          currentTime: p.currentTime,
+          duration: p.duration,
+          season: p.season,
+          episode: p.episode,
+          title,
+          poster_path: posterPath,
+        })
+
+        const now = Date.now()
+        const shouldPushNow =
+          p.event !== 'timeupdate' || now - lastPushRef.current >= PUSH_INTERVAL_MS
+
+        if (shouldPushNow) {
+          lastPushRef.current = now
+          import('@/lib/cloud-sync')
+            .then((m) => m.pushProgressSnapshot())
+            .catch(() => {})
+        }
+
+        onMediaData?.(loadProgressStore())
       }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [onMediaData])
+  }, [onMediaData, title, posterPath])
 
   // Monitor fullscreen changes and page visibility to keep controls visible when needed
   useEffect(() => {
