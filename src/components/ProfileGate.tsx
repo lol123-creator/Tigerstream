@@ -250,30 +250,49 @@ function ProfileEditor({
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATAR_PRESETS[0].key);
   const [isKid, setIsKid] = useState(profile?.isKid ?? false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const save = async () => {
     if (!uid || !name.trim()) return;
     setSaving(true);
+    setError(null);
+
     if (profile) {
-      await Promise.all([
+      const results = await Promise.all([
         name !== profile.name ? renameProfile(profile.id, name.trim()) : Promise.resolve(true),
         avatar !== profile.avatar ? restyleProfile(profile.id, avatar) : Promise.resolve(true),
         isKid !== !!profile.isKid ? setProfileKidMode(profile.id, isKid) : Promise.resolve(true),
       ]);
+      setSaving(false);
+      if (results.some((ok) => !ok)) {
+        setError("Couldn't save that change. Check your connection and try again.");
+        return;
+      }
       onSaved({ ...profile, name: name.trim(), avatar, isKid });
     } else {
       const created = await createProfile(uid, name.trim(), avatar, false, isKid);
-      if (created) onSaved(created);
+      setSaving(false);
+      if (!created) {
+        setError(
+          "Couldn't create the profile. If you just added the Kids Profile feature, make sure you've run the database migration for it in Supabase first.",
+        );
+        return;
+      }
+      onSaved(created);
     }
-    setSaving(false);
   };
 
   const remove = async () => {
     if (!profile) return;
     setSaving(true);
+    setError(null);
     const ok = await deleteProfile(profile.id);
     setSaving(false);
-    if (ok) onDeleted(profile.id);
+    if (!ok) {
+      setError("Couldn't delete that profile. Try again in a moment.");
+      return;
+    }
+    onDeleted(profile.id);
   };
 
   return (
@@ -318,27 +337,39 @@ function ProfileEditor({
           className="mt-6 w-full rounded-xl border border-glass-border bg-white/5 px-4 py-2.5 text-center text-sm text-white outline-none ring-accent/50 transition focus:border-accent/50 focus:ring-2"
         />
 
-        <label className="mt-4 flex items-center justify-between rounded-xl border border-glass-border bg-white/[0.03] px-4 py-3">
+        {/* A plain div, not a <label> wrapping the button - a <label>
+            around a non-form-associated element like a <button> isn't
+            valid HTML, and different browsers render/handle its click
+            forwarding inconsistently, which was throwing the toggle's
+            layout off. The switch itself is now a real checkbox
+            (visually hidden) so all the "is it on" state and click
+            handling is native and reliable, styled via the sibling
+            span rather than manual position math. */}
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-glass-border bg-white/[0.03] px-4 py-3">
           <div>
-            <p className="text-sm font-medium text-white">Kids Profile</p>
+            <label htmlFor="kid-profile-toggle" className="text-sm font-medium text-white">
+              Kids Profile
+            </label>
             <p className="text-xs text-ink-3">Hides mature titles across the whole site</p>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={isKid}
-            onClick={() => setIsKid((v) => !v)}
-            className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-              isKid ? 'bg-accent' : 'bg-white/15'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                isKid ? 'translate-x-5' : 'translate-x-0.5'
-              }`}
+          <label className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center">
+            <input
+              id="kid-profile-toggle"
+              type="checkbox"
+              checked={isKid}
+              onChange={(e) => setIsKid(e.target.checked)}
+              className="peer sr-only"
             />
-          </button>
-        </label>
+            <span className="absolute inset-0 rounded-full bg-white/15 transition-colors peer-checked:bg-accent" />
+            <span className="absolute left-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5" />
+          </label>
+        </div>
+
+        {error && (
+          <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            {error}
+          </p>
+        )}
 
         <div className="mt-6 flex gap-2">
           <button
