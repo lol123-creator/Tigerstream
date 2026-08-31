@@ -13,6 +13,8 @@ import {
   renameProfile,
   restyleProfile,
   setActiveProfileId,
+  setKidModeCookie,
+  setProfileKidMode,
   type Profile,
 } from '@/lib/profiles';
 
@@ -24,10 +26,11 @@ type Status = 'checking' | 'hidden' | 'showing';
 /**
  * A Netflix/Apple TV-style profile picker shown once per browser
  * session, after the intro. Signed-in accounts get real, multiple
- * profiles here (add / rename / change avatar / delete) - continue
- * watching and favorites are scoped to whichever one is active.
- * Guest browsing keeps its original single "Guest" bucket, kept on
- * this device only, same as before profiles existed at all.
+ * profiles here (add / rename / change avatar / delete / mark as a
+ * kids' profile) - continue watching, favorites, and content
+ * filtering are all scoped to whichever one is active. Guest browsing
+ * keeps its original single "Guest" bucket, kept on this device only,
+ * same as before profiles existed at all.
  */
 export function ProfileGate() {
   const router = useRouter();
@@ -75,8 +78,9 @@ export function ProfileGate() {
     });
   }, []);
 
-  const chooseProfile = (id: string) => {
-    setActiveProfileId(id);
+  const chooseProfile = (profile: Profile) => {
+    setActiveProfileId(profile.id);
+    setKidModeCookie(!!profile.isKid);
     dismiss();
   };
 
@@ -134,11 +138,16 @@ export function ProfileGate() {
               <div key={p.id} className="group relative flex flex-col items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => chooseProfile(p.id)}
-                  className="flex h-24 w-24 items-center justify-center rounded-2xl text-3xl ring-2 ring-transparent transition group-hover:ring-white/40 sm:h-28 sm:w-28"
+                  onClick={() => chooseProfile(p)}
+                  className="relative flex h-24 w-24 items-center justify-center rounded-2xl text-3xl ring-2 ring-transparent transition group-hover:ring-white/40 sm:h-28 sm:w-28"
                   style={{ backgroundColor: `${preset.color}33` }}
                 >
                   {preset.emoji}
+                  {p.isKid && (
+                    <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0A1F2B]">
+                      Kids
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -174,7 +183,14 @@ export function ProfileGate() {
         )}
 
         {!uid && (
-          <button type="button" onClick={dismiss} className="group flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setKidModeCookie(false);
+              dismiss();
+            }}
+            className="group flex flex-col items-center gap-3"
+          >
             <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/[0.06] text-ink-2 ring-2 ring-transparent transition group-hover:bg-white/[0.1] group-hover:text-white group-hover:ring-white/30 sm:h-28 sm:w-28">
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21a8 8 0 0 0-16 0" />
@@ -232,6 +248,7 @@ function ProfileEditor({
 }) {
   const [name, setName] = useState(profile?.name ?? '');
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATAR_PRESETS[0].key);
+  const [isKid, setIsKid] = useState(profile?.isKid ?? false);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -241,10 +258,11 @@ function ProfileEditor({
       await Promise.all([
         name !== profile.name ? renameProfile(profile.id, name.trim()) : Promise.resolve(true),
         avatar !== profile.avatar ? restyleProfile(profile.id, avatar) : Promise.resolve(true),
+        isKid !== !!profile.isKid ? setProfileKidMode(profile.id, isKid) : Promise.resolve(true),
       ]);
-      onSaved({ ...profile, name: name.trim(), avatar });
+      onSaved({ ...profile, name: name.trim(), avatar, isKid });
     } else {
-      const created = await createProfile(uid, name.trim(), avatar);
+      const created = await createProfile(uid, name.trim(), avatar, false, isKid);
       if (created) onSaved(created);
     }
     setSaving(false);
@@ -299,6 +317,28 @@ function ProfileEditor({
           maxLength={20}
           className="mt-6 w-full rounded-xl border border-glass-border bg-white/5 px-4 py-2.5 text-center text-sm text-white outline-none ring-accent/50 transition focus:border-accent/50 focus:ring-2"
         />
+
+        <label className="mt-4 flex items-center justify-between rounded-xl border border-glass-border bg-white/[0.03] px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-white">Kids Profile</p>
+            <p className="text-xs text-ink-3">Hides mature titles across the whole site</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isKid}
+            onClick={() => setIsKid((v) => !v)}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+              isKid ? 'bg-accent' : 'bg-white/15'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                isKid ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </label>
 
         <div className="mt-6 flex gap-2">
           <button
