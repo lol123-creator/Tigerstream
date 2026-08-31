@@ -11,6 +11,16 @@
  * Entries are keyed as "movie-<id>" / "tv-<id>" rather than a bare id -
  * a movie and a TV show can share the same TMDB id, and a bare-id key
  * let them silently overwrite each other's progress.
+ *
+ * Two ways progress arrives from a player:
+ *  - recordFromMediaData: a full MEDIA_DATA payload (Peachify's real
+ *    protocol; CinemaOS's docs describe this shape too, but in
+ *    practice - confirmed by capturing its raw traffic - it never
+ *    actually sends one).
+ *  - recordTimeupdate: a single PLAYER_EVENT tick with the live
+ *    playhead position. This is what CinemaOS actually sends, roughly
+ *    once a second while playing - there is no full-store sync
+ *    message from it at all, just this stream of ticks.
  */
 
 import type {
@@ -140,9 +150,7 @@ export function removeItem(type: PeachifyMediaType, id: string | number): void {
  * embeds into the canonical store, then fires a best-effort cloud
  * push. Re-keys off each entry's own `id`/`type` fields rather than
  * trusting the payload's own object keys, so it doesn't matter how a
- * given embed happens to key its store internally (Peachify and
- * Videasy use the bare id, CinemaOS prefixes it) - this is the one
- * place that decides the real key, for all three.
+ * given embed happens to key its store internally.
  */
 export function recordFromMediaData(
   raw: Record<string, PeachifyMediaProgressEntry> | PeachifyProgressStore,
@@ -153,7 +161,6 @@ export function recordFromMediaData(
     if (!entry || entry.id == null || !entry.type) continue;
     const key = entryKey(entry.type, entry.id);
     const existing = store[key];
-    // Guard against an out-of-order/stale message clobbering newer local progress.
     if (!existing || (entry.last_updated ?? 0) >= (existing.last_updated ?? 0)) {
       store[key] = { ...entry, last_updated: entry.last_updated ?? Date.now() };
     }
@@ -166,4 +173,63 @@ export function recordFromMediaData(
     .catch(() => {});
 
   return store;
+}
+
+export interface TimeupdateInput {
+  type: PeachifyMediaType;
+  id: string | number;
+  currentTime: number;
+  duration: number;
+  season?: number;
+  episode?: number;
+  /** Fallback metadata - some embeds' PLAYER_EVENT ticks (confirmed:
+   *  CinemaOS) carry only the playhead position, no title/poster, so
+   *  the caller supplies whatever it already knows (e.g. the page's
+   *  own title prop). Whatever's already stored for this title wins
+   *  if this call doesn't provide it, so a later MEDIA_DATA or a
+   *  richer call never gets overwritten with blanks. */
+  title?: string;
+  poster_path?: string;
+}
+
+/**
+ * Records progress from a single timeupdate-style PLAYER_EVENT rather
+ * than a full MEDIA_DATA payload - this is CinemaOS's actual protocol.
+ * Local-only by design; callers decide when to also push to the
+ * cloud, since this fires roughly once a second while playing and
+ * pushing on every single tick would hammer Supabase unnecessarily
+ * (see the throttling in CinemaOSPlayer/VideasyPlayer).
+ */
+export function recordTimeupdate(input: TimeupdateInput): void {
+  if (input.id == null || !Number.isFinite(input.currentTime)) return;
+
+  const store = loadProgressStore();
+  const key = entryKey(input.type, input.id);
+  const existing = store[key];
+
+  const entry: PeachifyMediaProgressEntry = {
+    ...(existing ?? {}),
+    id: existing?.id ?? (typeof input.id === 'string' ? Number(input.id) || (input.id as any) : input.id),
+    type: input.type,
+    title: input.title || existing?.title || '',
+    poster_path: input.poster_path || existing?.poster_path || '',
+    progress: { watched: input.currentTime, duration: input.duration },
+    last_updated: Date.now(),
+  };
+
+  if (input.type === 'tv') {
+    if (input.season != null) entry.last_season_watched = input.season;
+    if (input.episode != null) entry.last_episode_watched = input.episode;
+    if (input.season != null && input.episode != null) {
+      entry.show_progress = {
+        ...(existing?.show_progress ?? {}),
+        [`s${input.season}e${input.episode}`]: {
+          progress: { watched: input.currentTime, duration: input.duration },
+        },
+      };
+    }
+  }
+
+  store[key] = entry;
+  saveProgressStore(store);
 }
