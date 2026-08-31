@@ -113,6 +113,9 @@ export interface TmdbTrendingResult {
   first_air_date?: string;
   vote_average: number;
   original_language?: string;
+  /** TMDB includes this on trending results even though it wasn't
+   *  previously declared here - see @/lib/kid-mode for why it matters. */
+  genre_ids?: number[];
 }
 
 export interface TmdbSearchResult {
@@ -127,6 +130,8 @@ export interface TmdbSearchResult {
   first_air_date?: string;
   vote_average: number;
   original_language?: string;
+  /** See TmdbTrendingResult.genre_ids. */
+  genre_ids?: number[];
 }
 
 /** /person/{id} - basic bio fields we display on the person page. */
