@@ -13,6 +13,9 @@ export interface Profile {
   name: string;
   avatar: string;
   isDefault?: boolean;
+  /** Content filtering (see @/lib/kid-mode) applies whenever this
+   *  profile is active. */
+  isKid?: boolean;
 }
 
 export const AVATAR_PRESETS: { key: string; emoji: string; color: string }[] = [
@@ -34,6 +37,10 @@ export function avatarPreset(key: string) {
 
 const ACTIVE_KEY = 'tigerstream:active-profile';
 const CLOUD_CACHE_KEY = 'tigerstream:profiles-cache';
+/** Matches KID_MODE_COOKIE in @/lib/kid-mode - kept as a plain string
+ *  here rather than importing that (server-only, uses next/headers)
+ *  into this client module. */
+const KID_MODE_COOKIE = 'tigerstream-kid-mode';
 
 export function getActiveProfileId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -50,6 +57,22 @@ export function setActiveProfileId(id: string) {
     localStorage.setItem(ACTIVE_KEY, id);
   } catch {
     // storage unavailable - the picker just won't remember for next time
+  }
+}
+
+/**
+ * Sets (or clears) the kid-mode cookie that @/lib/kid-mode reads
+ * server-side to decide what content to filter. A plain cookie, not
+ * httpOnly, since it only ever needs to be set from client components
+ * (ProfileGate) and read from Server Components/route handlers - never
+ * from anything that needs it hidden from the browser itself.
+ */
+export function setKidModeCookie(isKid: boolean) {
+  if (typeof document === 'undefined') return;
+  if (isKid) {
+    document.cookie = `${KID_MODE_COOKIE}=1; path=/; max-age=31536000; SameSite=Lax`;
+  } else {
+    document.cookie = `${KID_MODE_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
   }
 }
 
@@ -106,6 +129,7 @@ export async function fetchProfiles(uid: string): Promise<Profile[]> {
     name: r.name,
     avatar: r.avatar,
     isDefault: r.is_default,
+    isKid: r.is_kid ?? false,
   }));
 
   if (list.length === 0) {
@@ -117,6 +141,7 @@ export async function fetchProfiles(uid: string): Promise<Profile[]> {
   const active = getActiveProfileId();
   if (!active || !list.some((p) => p.id === active)) {
     setActiveProfileId(list[0]?.id ?? '');
+    setKidModeCookie(!!list[0]?.isKid);
   }
   return list;
 }
@@ -126,17 +151,24 @@ export async function createProfile(
   name: string,
   avatar: string,
   isDefault = false,
+  isKid = false,
 ): Promise<Profile | null> {
   try {
     const { createClient } = await import('@/lib/supabase/client');
     const supabase = createClient();
     const { data, error } = await supabase
       .from('profiles')
-      .insert({ user_id: uid, name, avatar, is_default: isDefault })
+      .insert({ user_id: uid, name, avatar, is_default: isDefault, is_kid: isKid })
       .select()
       .single();
     if (error || !data) return null;
-    const profile: Profile = { id: data.id, name: data.name, avatar: data.avatar, isDefault: data.is_default };
+    const profile: Profile = {
+      id: data.id,
+      name: data.name,
+      avatar: data.avatar,
+      isDefault: data.is_default,
+      isKid: data.is_kid ?? false,
+    };
     setCachedProfiles([...getCachedProfiles(), profile]);
     return profile;
   } catch {
@@ -144,13 +176,25 @@ export async function createProfile(
   }
 }
 
-async function updateProfile(id: string, patch: { name?: string; avatar?: string }): Promise<boolean> {
+async function updateProfile(
+  id: string,
+  patch: { name?: string; avatar?: string; isKid?: boolean },
+): Promise<boolean> {
   try {
     const { createClient } = await import('@/lib/supabase/client');
     const supabase = createClient();
-    const { error } = await supabase.from('profiles').update(patch).eq('id', id);
+    const dbPatch: Record<string, unknown> = {};
+    if (patch.name !== undefined) dbPatch.name = patch.name;
+    if (patch.avatar !== undefined) dbPatch.avatar = patch.avatar;
+    if (patch.isKid !== undefined) dbPatch.is_kid = patch.isKid;
+    const { error } = await supabase.from('profiles').update(dbPatch).eq('id', id);
     if (error) return false;
     setCachedProfiles(getCachedProfiles().map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    // If this is the currently-active profile, the cookie needs to
+    // reflect the change immediately.
+    if (patch.isKid !== undefined && getActiveProfileId() === id) {
+      setKidModeCookie(patch.isKid);
+    }
     return true;
   } catch {
     return false;
@@ -165,6 +209,10 @@ export function restyleProfile(id: string, avatar: string): Promise<boolean> {
   return updateProfile(id, { avatar });
 }
 
+export function setProfileKidMode(id: string, isKid: boolean): Promise<boolean> {
+  return updateProfile(id, { isKid });
+}
+
 export async function deleteProfile(id: string): Promise<boolean> {
   try {
     const { createClient } = await import('@/lib/supabase/client');
@@ -175,6 +223,7 @@ export async function deleteProfile(id: string): Promise<boolean> {
     if (getActiveProfileId() === id) {
       const remaining = getCachedProfiles();
       setActiveProfileId(remaining[0]?.id ?? '');
+      setKidModeCookie(!!remaining[0]?.isKid);
     }
     return true;
   } catch {
