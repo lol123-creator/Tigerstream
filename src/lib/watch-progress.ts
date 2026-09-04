@@ -192,13 +192,25 @@ export interface TimeupdateInput {
   poster_path?: string;
 }
 
+/** Below this, a reported position is never trusted enough to
+ *  overwrite meaningful existing progress - see the guard in
+ *  recordTimeupdate. No time-based expiry on this one: CinemaOS has
+ *  been observed reporting exactly 0 for well over a minute of real
+ *  playback (its own resume-seek and/or position-reporting appears to
+ *  be broken, not just slow to start), so a short grace window isn't
+ *  enough - trusting a stuck-at-zero tick after some arbitrary delay
+ *  just delays the data loss instead of preventing it. */
+const NEAR_START_SECONDS = 5;
+/** Existing progress has to be at least this far in for the guard
+ *  above to kick in - not worth protecting a few seconds of progress. */
+const MEANINGFUL_PROGRESS_SECONDS = 15;
+
 /**
  * Records progress from a single timeupdate-style PLAYER_EVENT rather
  * than a full MEDIA_DATA payload - this is CinemaOS's actual protocol.
  * Local-only by design; callers decide when to also push to the
  * cloud, since this fires roughly once a second while playing and
- * pushing on every single tick would hammer Supabase unnecessarily
- * (see the throttling in CinemaOSPlayer/VideasyPlayer).
+ * pushing on every single tick would hammer Supabase unnecessarily.
  */
 export function recordTimeupdate(input: TimeupdateInput): void {
   if (input.id == null || !Number.isFinite(input.currentTime)) return;
@@ -206,6 +218,19 @@ export function recordTimeupdate(input: TimeupdateInput): void {
   const store = loadProgressStore();
   const key = entryKey(input.type, input.id);
   const existing = store[key];
+
+  const existingWatched =
+    input.type === 'tv' && input.season != null && input.episode != null
+      ? existing?.show_progress?.[`s${input.season}e${input.episode}`]?.progress?.watched
+      : existing?.progress?.watched;
+
+  if (
+    existingWatched != null &&
+    existingWatched > MEANINGFUL_PROGRESS_SECONDS &&
+    input.currentTime < NEAR_START_SECONDS
+  ) {
+    return;
+  }
 
   const entry: PeachifyMediaProgressEntry = {
     ...(existing ?? {}),
