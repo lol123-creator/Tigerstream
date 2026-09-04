@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { mergeCloudDataForProfile } from '@/lib/cloud-sync';
 import {
   AVATAR_PRESETS,
   avatarPreset,
@@ -21,7 +22,7 @@ import {
 const SESSION_KEY = 'tigerstream:profile-selected';
 const LITE_KEY = 'tigerstream:lite-mode';
 
-type Status = 'checking' | 'hidden' | 'showing';
+type Status = 'checking' | 'hidden' | 'showing' | 'switching';
 
 /**
  * A Netflix/Apple TV-style profile picker shown once per browser
@@ -78,9 +79,35 @@ export function ProfileGate() {
     });
   }, []);
 
-  const chooseProfile = (profile: Profile) => {
+  const chooseProfile = async (profile: Profile) => {
     setActiveProfileId(profile.id);
     setKidModeCookie(!!profile.isKid);
+
+    if (uid) {
+      // Pulls this specific profile's cloud data down BEFORE anything
+      // else on the page reads it, and shows a brief "Switching..."
+      // state while that happens instead of dismissing immediately.
+      // Skipping this was the root cause of two things looking like
+      // data loss: a never-before-used-on-this-device profile showing
+      // an empty Continue Watching row (its cloud data was never
+      // pulled down at all), and an already-rendered page still
+      // showing the PREVIOUS profile's row until some later refresh
+      // silently swapped it out for the new (empty) one.
+      setStatus('switching');
+      await mergeCloudDataForProfile(uid, profile.id);
+      try {
+        sessionStorage.setItem(SESSION_KEY, '1');
+      } catch {
+        // storage unavailable
+      }
+      // Full reload rather than just hiding the overlay - guarantees
+      // every already-mounted component (Continue Watching, favorites,
+      // the players) re-reads fresh state under the new profile,
+      // exactly like AuthButton's "Switch profile" already does.
+      window.location.reload();
+      return;
+    }
+
     dismiss();
   };
 
@@ -96,7 +123,17 @@ export function ProfileGate() {
     }, 250);
   };
 
-  if (status !== 'showing') return null;
+  if (status === 'hidden' || status === 'checking') return null;
+
+  if (status === 'switching') {
+    return (
+      <div className="fixed inset-0 z-[500] flex flex-col items-center justify-center bg-surface px-4">
+        <div className="pointer-events-none absolute inset-0 bg-ambient-glow" />
+        <div className="relative h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-accent" />
+        <p className="relative mt-4 text-sm text-ink-3">Switching profile...</p>
+      </div>
+    );
+  }
 
   if (editing) {
     return (
@@ -337,14 +374,6 @@ function ProfileEditor({
           className="mt-6 w-full rounded-xl border border-glass-border bg-white/5 px-4 py-2.5 text-center text-sm text-white outline-none ring-accent/50 transition focus:border-accent/50 focus:ring-2"
         />
 
-        {/* A plain div, not a <label> wrapping the button - a <label>
-            around a non-form-associated element like a <button> isn't
-            valid HTML, and different browsers render/handle its click
-            forwarding inconsistently, which was throwing the toggle's
-            layout off. The switch itself is now a real checkbox
-            (visually hidden) so all the "is it on" state and click
-            handling is native and reliable, styled via the sibling
-            span rather than manual position math. */}
         <div className="mt-4 flex items-center justify-between rounded-xl border border-glass-border bg-white/[0.03] px-4 py-3">
           <div>
             <label htmlFor="kid-profile-toggle" className="text-sm font-medium text-white">
