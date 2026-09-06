@@ -17,12 +17,17 @@ const ORIGIN = 'https://cinemaos.tech';
 const BASE = `${ORIGIN}/player`;
 
 // Minimum gap between cloud pushes triggered by timeupdate ticks.
-// CinemaOS sends these roughly once a second while playing (confirmed
-// by capturing its raw postMessage traffic) - local storage updates
-// on every tick regardless (cheap), but pushing to Supabase that
-// often would be wasteful and pointless. Progress is always pushed
-// immediately on pause/ended regardless of this timer.
+// CinemaOS sends these roughly once a second while playing - local
+// storage updates on every tick regardless (cheap), but pushing to
+// Supabase that often would be wasteful and pointless. Progress is
+// always pushed immediately on pause/ended regardless of this timer.
 const PUSH_INTERVAL_MS = 8000;
+
+// Caps how much wall-clock time a single tick can add to our own
+// position estimate (see below) - guards against one huge jump if the
+// tab was backgrounded/throttled between ticks, which would otherwise
+// get counted as watched time.
+const MAX_TICK_DELTA_SECONDS = 3;
 
 interface CinemaOSPlayerProps {
   type: 'movie' | 'tv';
@@ -57,6 +62,22 @@ export function CinemaOSPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastPushRef = useRef(0);
 
+  // --- Self-tracked position estimate ---
+  // CinemaOS's own `currentTime` field has been confirmed (by capturing
+  // its raw postMessage traffic) to stay stuck at 0 for at least some
+  // titles/streams, despite sending regular timeupdate ticks and an
+  // accurate `duration`. Rather than trust that broken field, this
+  // tracks real elapsed wall-clock time itself while CinemaOS reports
+  // playing:true, seeded from whatever position was already saved (the
+  // same value used for the `startTime` resume param below). This
+  // can't detect a manual seek inside CinemaOS's own scrub bar (it
+  // doesn't tell us when that happens) - it just keeps counting
+  // forward from wherever it last was - but for normal continuous
+  // playback it tracks correctly, which CinemaOS's own reporting does
+  // not.
+  const estimatedWatchedRef = useRef<number | null>(null);
+  const lastTickAtRef = useRef<number | null>(null);
+
   const embedUrl = useMemo(() => {
     const path =
       type === 'movie'
@@ -68,8 +89,9 @@ export function CinemaOSPlayer({
     if (autoPlay === false) params.set('autoPlay', 'false');
     if (autoNext && type === 'tv') params.set('autoNext', 'true');
 
+    let resume: number | undefined;
     if (autoResume && typeof window !== 'undefined') {
-      const resume =
+      resume =
         type === 'tv'
           ? getResumeSeconds(type, mediaId, season, episode)
           : getResumeSeconds(type, mediaId);
@@ -77,6 +99,13 @@ export function CinemaOSPlayer({
         params.set('startTime', String(Math.floor(resume)));
       }
     }
+
+    // Seed the estimate from the same resume point we're asking
+    // CinemaOS to start at (0 if there's none yet) - reset any prior
+    // estimate since this is effectively a fresh mount (new title,
+    // new episode, or a fresh player switch).
+    estimatedWatchedRef.current = resume ?? 0;
+    lastTickAtRef.current = null;
 
     return `${path}?${params.toString()}`;
   }, [type, mediaId, season, episode, autoPlay, autoNext, autoResume]);
@@ -99,21 +128,40 @@ export function CinemaOSPlayer({
         return;
       }
 
-      // CinemaOS's actual protocol: a steady stream of PLAYER_EVENT
-      // ticks carrying the live playhead position - no separate
-      // full-store sync message at all.
       if (event.data?.type === 'PLAYER_EVENT') {
         const p = event.data.data;
         if (!p) return;
         if (p.event !== 'timeupdate' && p.event !== 'pause' && p.event !== 'ended') return;
         if (p.tmdbId == null) return;
         if (p.mediaType !== 'movie' && p.mediaType !== 'tv') return;
-        if (!Number.isFinite(p.currentTime)) return;
+        if (!Number.isFinite(p.duration)) return;
+
+        // Advance our own estimate by real elapsed time while actually
+        // playing; reset the delta baseline (don't reset the estimate
+        // itself) on pause/ended so a paused stretch never counts, and
+        // resuming afterward starts a clean delta window rather than
+        // one big jump covering the paused time too.
+        const now = Date.now();
+        if (estimatedWatchedRef.current == null) estimatedWatchedRef.current = 0;
+
+        if (p.playing) {
+          if (lastTickAtRef.current != null) {
+            const delta = Math.min((now - lastTickAtRef.current) / 1000, MAX_TICK_DELTA_SECONDS);
+            if (delta > 0) estimatedWatchedRef.current += delta;
+          }
+          lastTickAtRef.current = now;
+        } else {
+          lastTickAtRef.current = null;
+        }
+
+        // Never let floating-point drift push the estimate past the
+        // (trusted) duration.
+        const estimated = Math.min(estimatedWatchedRef.current, Math.max(p.duration - 0.25, 0));
 
         recordTimeupdate({
           type: p.mediaType,
           id: p.tmdbId,
-          currentTime: p.currentTime,
+          currentTime: estimated,
           duration: p.duration,
           season: p.season,
           episode: p.episode,
@@ -121,7 +169,6 @@ export function CinemaOSPlayer({
           poster_path: posterPath,
         });
 
-        const now = Date.now();
         const shouldPushNow =
           p.event !== 'timeupdate' || now - lastPushRef.current >= PUSH_INTERVAL_MS;
 
