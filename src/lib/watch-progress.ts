@@ -14,13 +14,18 @@
  *
  * Two ways progress arrives from a player:
  *  - recordFromMediaData: a full MEDIA_DATA payload (Peachify's real
- *    protocol; CinemaOS's docs describe this shape too, but in
- *    practice - confirmed by capturing its raw traffic - it never
- *    actually sends one).
+ *    protocol).
  *  - recordTimeupdate: a single PLAYER_EVENT tick with the live
- *    playhead position. This is what CinemaOS actually sends, roughly
- *    once a second while playing - there is no full-store sync
- *    message from it at all, just this stream of ticks.
+ *    playhead position (CinemaOS's and Videasy's actual protocol -
+ *    both send this, not MEDIA_DATA, roughly once a second).
+ *
+ * NOTE: an earlier version of recordTimeupdate special-cased "near
+ * zero" readings to protect against one specific CinemaOS quirk. That
+ * guard had no way to tell a genuinely-stuck bad value apart from a
+ * real one, so it ended up permanently locking in whatever was saved
+ * first and refusing all further updates - worse than the problem it
+ * was meant to solve. Removed; every player's reported position is
+ * now trusted directly, same as Peachify always was.
  */
 
 import type {
@@ -182,35 +187,17 @@ export interface TimeupdateInput {
   duration: number;
   season?: number;
   episode?: number;
-  /** Fallback metadata - some embeds' PLAYER_EVENT ticks (confirmed:
-   *  CinemaOS) carry only the playhead position, no title/poster, so
-   *  the caller supplies whatever it already knows (e.g. the page's
-   *  own title prop). Whatever's already stored for this title wins
-   *  if this call doesn't provide it, so a later MEDIA_DATA or a
-   *  richer call never gets overwritten with blanks. */
   title?: string;
   poster_path?: string;
 }
 
-/** Below this, a reported position is never trusted enough to
- *  overwrite meaningful existing progress - see the guard in
- *  recordTimeupdate. No time-based expiry on this one: CinemaOS has
- *  been observed reporting exactly 0 for well over a minute of real
- *  playback (its own resume-seek and/or position-reporting appears to
- *  be broken, not just slow to start), so a short grace window isn't
- *  enough - trusting a stuck-at-zero tick after some arbitrary delay
- *  just delays the data loss instead of preventing it. */
-const NEAR_START_SECONDS = 5;
-/** Existing progress has to be at least this far in for the guard
- *  above to kick in - not worth protecting a few seconds of progress. */
-const MEANINGFUL_PROGRESS_SECONDS = 15;
-
 /**
  * Records progress from a single timeupdate-style PLAYER_EVENT rather
- * than a full MEDIA_DATA payload - this is CinemaOS's actual protocol.
- * Local-only by design; callers decide when to also push to the
- * cloud, since this fires roughly once a second while playing and
- * pushing on every single tick would hammer Supabase unnecessarily.
+ * than a full MEDIA_DATA payload - this is what CinemaOS and Videasy
+ * both actually send. Local-only by design; callers decide when to
+ * also push to the cloud, since this fires roughly once a second
+ * while playing and pushing on every single tick would hammer
+ * Supabase unnecessarily.
  */
 export function recordTimeupdate(input: TimeupdateInput): void {
   if (input.id == null || !Number.isFinite(input.currentTime)) return;
@@ -218,19 +205,6 @@ export function recordTimeupdate(input: TimeupdateInput): void {
   const store = loadProgressStore();
   const key = entryKey(input.type, input.id);
   const existing = store[key];
-
-  const existingWatched =
-    input.type === 'tv' && input.season != null && input.episode != null
-      ? existing?.show_progress?.[`s${input.season}e${input.episode}`]?.progress?.watched
-      : existing?.progress?.watched;
-
-  if (
-    existingWatched != null &&
-    existingWatched > MEANINGFUL_PROGRESS_SECONDS &&
-    input.currentTime < NEAR_START_SECONDS
-  ) {
-    return;
-  }
 
   const entry: PeachifyMediaProgressEntry = {
     ...(existing ?? {}),
