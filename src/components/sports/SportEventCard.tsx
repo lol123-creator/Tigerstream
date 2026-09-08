@@ -3,8 +3,10 @@ import Link from 'next/link';
 import {
   formatStreamTime,
   isStreamLive,
+  isStreamUpcoming,
 } from '@/lib/ppv/service';
 import { sportsWatchHref } from '@/lib/routes';
+import { EventCountdown } from '@/components/sports/EventCountdown';
 import type { PpvStream } from '@/types/sports';
 
 interface SportEventCardProps {
@@ -34,6 +36,28 @@ function ViewerCount({ viewers }: { viewers?: string }) {
       </svg>
       {viewers}
     </span>
+  );
+}
+
+/** Live-ticking countdown for an upcoming event, static text otherwise
+ *  (live now, ended, or 24/7) - matching formatStreamTime's own
+ *  fallback logic exactly so nothing regresses for those cases. */
+function StreamTime({ stream }: { stream: PpvStream }) {
+  const live = isStreamLive(stream);
+  const upcoming = isStreamUpcoming(stream);
+
+  if (upcoming && stream.starts_at && stream.always_live !== 1) {
+    return (
+      <p className="mt-1 text-xs font-medium text-accent">
+        <EventCountdown startsAt={stream.starts_at} />
+      </p>
+    );
+  }
+
+  return (
+    <p className={`mt-1 text-xs font-medium ${live ? 'text-red-400' : 'text-accent'}`}>
+      {formatStreamTime(stream)}
+    </p>
   );
 }
 
@@ -73,9 +97,7 @@ export function SportEventCard({ stream, variant = 'row' }: SportEventCardProps)
             <span className="truncate">{stream.category_name}</span>
             <ViewerCount viewers={stream.viewers} />
           </div>
-          <p className={`mt-1 text-xs font-medium ${live ? 'text-red-400' : 'text-accent'}`}>
-            {formatStreamTime(stream)}
-          </p>
+          <StreamTime stream={stream} />
         </div>
       </Link>
     );
@@ -104,9 +126,7 @@ export function SportEventCard({ stream, variant = 'row' }: SportEventCardProps)
           <span>{stream.tag}</span>
           <ViewerCount viewers={stream.viewers} />
         </div>
-        <p className={`mt-1 text-xs font-medium ${live ? 'text-red-400' : 'text-accent'}`}>
-          {formatStreamTime(stream)}
-        </p>
+        <StreamTime stream={stream} />
       </div>
     </Link>
   );
