@@ -10,15 +10,12 @@ interface LoggedMessage {
 }
 
 /**
- * TEMPORARY diagnostic tool - not meant to stay in the codebase long
- * term. Shows every postMessage the page receives, directly on
- * screen, so we can see what CinemaOS/Videasy actually send without
- * needing DevTools (which CinemaOS appears to block/detect). Only
- * renders when the URL has ?debug=1, so it never shows for normal
- * visitors even if this stays in place a while.
- *
- * Delete this file and its one usage in WatchLayout.tsx once the
- * progress-sync issue is diagnosed.
+ * TEMPORARY diagnostic tool. Shows every postMessage the page
+ * receives, plus our own internal debug steps (dispatched by
+ * CinemaOSPlayer as a 'tigerstream-debug-estimate' CustomEvent,
+ * tagged [ESTIMATE] here) - so we can see both what CinemaOS actually
+ * sends AND what our own code does with it, without needing DevTools.
+ * Only renders with ?debug=1 in the URL.
  */
 export function PostMessageDebugOverlay() {
   const [enabled, setEnabled] = useState(false);
@@ -34,8 +31,12 @@ export function PostMessageDebugOverlay() {
     if (!enabled) return;
 
     let counter = 0;
-    const handler = (event: MessageEvent) => {
+    const push = (origin: string, raw: string) => {
       counter += 1;
+      setMessages((prev) => [{ id: counter, time: new Date().toLocaleTimeString(), origin, raw }, ...prev].slice(0, 40));
+    };
+
+    const messageHandler = (event: MessageEvent) => {
       const raw = (() => {
         try {
           return JSON.stringify(event.data);
@@ -43,22 +44,20 @@ export function PostMessageDebugOverlay() {
           return String(event.data);
         }
       })();
-
-      setMessages((prev) =>
-        [
-          {
-            id: counter,
-            time: new Date().toLocaleTimeString(),
-            origin: event.origin,
-            raw,
-          },
-          ...prev,
-        ].slice(0, 25),
-      );
+      push(event.origin, raw);
     };
 
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
+    const estimateHandler = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      push('[ESTIMATE]', JSON.stringify(detail));
+    };
+
+    window.addEventListener('message', messageHandler);
+    window.addEventListener('tigerstream-debug-estimate', estimateHandler as EventListener);
+    return () => {
+      window.removeEventListener('message', messageHandler);
+      window.removeEventListener('tigerstream-debug-estimate', estimateHandler as EventListener);
+    };
   }, [enabled]);
 
   if (!enabled) return null;
@@ -70,8 +69,8 @@ export function PostMessageDebugOverlay() {
         bottom: 12,
         right: 12,
         zIndex: 9999,
-        width: minimized ? 180 : 420,
-        maxHeight: minimized ? 44 : '60vh',
+        width: minimized ? 180 : 440,
+        maxHeight: minimized ? 44 : '65vh',
         overflow: 'hidden',
         background: 'rgba(10, 12, 16, 0.95)',
         border: '1px solid rgba(255,255,255,0.15)',
@@ -94,11 +93,11 @@ export function PostMessageDebugOverlay() {
           fontWeight: 700,
         }}
       >
-        <span>postMessage log ({messages.length})</span>
+        <span>debug log ({messages.length})</span>
         <span>{minimized ? '▲' : '▼'}</span>
       </div>
       {!minimized && (
-        <div style={{ overflowY: 'auto', maxHeight: 'calc(60vh - 40px)', padding: 8 }}>
+        <div style={{ overflowY: 'auto', maxHeight: 'calc(65vh - 40px)', padding: 8 }}>
           {messages.length === 0 && (
             <p style={{ opacity: 0.5, padding: 8 }}>
               No messages received yet. Press play and wait a few seconds.
@@ -110,12 +109,12 @@ export function PostMessageDebugOverlay() {
               style={{
                 marginBottom: 6,
                 padding: 6,
-                background: 'rgba(255,255,255,0.05)',
+                background: m.origin === '[ESTIMATE]' ? 'rgba(127,184,217,0.15)' : 'rgba(255,255,255,0.05)',
                 borderRadius: 6,
                 wordBreak: 'break-all',
               }}
             >
-              <div style={{ opacity: 0.6, marginBottom: 2 }}>
+              <div style={{ opacity: 0.6, marginBottom: 2, color: m.origin === '[ESTIMATE]' ? '#7FB8D9' : undefined }}>
                 {m.time} · {m.origin}
               </div>
               <div>{m.raw}</div>
