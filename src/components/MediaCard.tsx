@@ -31,16 +31,26 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
   const href =
     item.type === 'movie' ? movieDetailHref(item.id) : tvDetailHref(item.id);
 
+  const releaseDateStr = item.type === 'movie' ? item.release_date : item.first_air_date;
+
   // Guards against missing/empty release dates (e.g. favorites saved
   // via a path that didn't pass this data along) producing a raw NaN
   // in the UI - shows nothing for the year instead of "NaN".
-  const rawYear = item.type === 'movie'
-    ? new Date(item.release_date).getFullYear()
-    : new Date(item.first_air_date).getFullYear();
+  const rawYear = releaseDateStr ? new Date(releaseDateStr).getFullYear() : NaN;
   const year = Number.isFinite(rawYear) ? rawYear : null;
 
   const hasRating = typeof item.vote_average === 'number' && item.vote_average > 0;
-  const isNew = isRecentRelease(item.type === 'movie' ? item.release_date : item.first_air_date);
+
+  // A title is "upcoming" purely based on its own release date being
+  // in the future - independent of isRecentRelease, which only looks
+  // backward. The two badges are mutually exclusive by construction:
+  // isNew is forced off while isUpcoming is true, so the moment a
+  // release date passes, "Coming Soon" simply stops being true and
+  // "New" picks up automatically on the very next render (no separate
+  // transition logic needed - it falls out of the two date checks).
+  const releaseTime = releaseDateStr ? new Date(releaseDateStr).getTime() : NaN;
+  const isUpcoming = Number.isFinite(releaseTime) && releaseTime > Date.now();
+  const isNew = !isUpcoming && isRecentRelease(releaseDateStr);
 
   // Falls back to a placeholder if the poster fails to load for any
   // reason - a stale/expired TMDB path, a CDN hiccup, or the image
@@ -68,6 +78,8 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
     if (typeof document !== 'undefined' && document.documentElement.dataset.lite === 'true') {
       return;
     }
+    // Nothing to preview yet - don't even start the timer.
+    if (isUpcoming) return;
     clearHoverTimer();
     hoverTimer.current = setTimeout(async () => {
       const cached = trailerCache.get(cacheKey);
@@ -132,13 +144,9 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           }}
           className={`object-cover transition-all duration-300 group-hover:scale-110 ${
             showTrailer ? 'opacity-0' : 'group-hover:opacity-70'
-          }`}
+          } ${isUpcoming ? 'grayscale-[0.3] brightness-75' : ''}`}
         />
 
-        {/* Only mounted once actually triggered - never preloaded for
-            cards nobody's hovering. autoplay+mute+loop, no controls,
-            purely decorative preview - clicking anywhere still
-            navigates to the detail page via the outer Link. */}
         {showTrailer && trailerKey && (
           <iframe
             src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&loop=1&playlist=${trailerKey}&playsinline=1`}
@@ -154,20 +162,32 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           entry={{ id: item.id, type: item.type, title: item.title, poster_path: item.poster_path, vote_average: item.vote_average, release_date: item.type === "movie" ? item.release_date : undefined, first_air_date: item.type === "tv" ? item.first_air_date : undefined }}
           variant="card"
         />
-        {isNew && (
-          <span className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0A1F2B] shadow-glow">
-            New
+
+        {/* Coming Soon / New are mutually exclusive - a title can only
+            ever be one or the other, driven purely by whether its
+            release date has passed yet, so this just falls out of the
+            two boolean checks above with no extra state to manage. */}
+        {isUpcoming ? (
+          <span className="absolute top-2 right-2 z-10 rounded-full border border-white/25 bg-black/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/90 backdrop-blur-sm">
+            Coming Soon
           </span>
+        ) : (
+          isNew && (
+            <span className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0A1F2B] shadow-glow">
+              New
+            </span>
+          )
         )}
-        {hasRating && !showTrailer && (
+
+        {hasRating && !showTrailer && !isUpcoming && (
           <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-accent backdrop-blur-sm">
             {item.vote_average.toFixed(1)}
           </span>
         )}
 
-        {/* Play affordance - center-stage on hover, hidden once the
-            trailer preview takes over (it's already playing). */}
-        {!showTrailer && (
+        {/* Play affordance - hidden for unreleased titles (nothing to
+            play yet) and once the trailer preview takes over. */}
+        {!showTrailer && !isUpcoming && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100">
             <div className="flex h-12 w-12 scale-75 items-center justify-center rounded-full bg-accent/90 shadow-glow backdrop-blur-sm transition-transform duration-300 group-hover:scale-100">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A1F2B" className="translate-x-0.5">
@@ -177,10 +197,6 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           </div>
         )}
 
-        {/* Hover overlay - title + one compact metadata line (year,
-            rating, language, top genre) instead of stacking each as its
-            own separate line, which read as cluttered. Fades out once
-            the trailer takes over so it doesn't sit on top of the video. */}
         <div
           className={`absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/45 to-transparent p-3 transition-opacity duration-300 ${
             showTrailer ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
@@ -190,28 +206,30 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
             {item.title}
           </p>
           <p className="mt-1 truncate text-xs text-ink-3">
-            {year}
-            {year && hasRating && <span className="mx-1.5 text-ink-4">·</span>}
-            {hasRating && (
-              <span className="text-accent">★ {item.vote_average.toFixed(1)}</span>
-            )}
-            {item.original_language && (
-              <>
-                <span className="mx-1.5 text-ink-4">·</span>
-                {item.original_language.toUpperCase()}
-              </>
-            )}
-            {item.genres && item.genres.length > 0 && (
-              <>
-                <span className="mx-1.5 text-ink-4">·</span>
-                {item.genres[0]}
-              </>
-            )}
+            {isUpcoming && releaseDateStr
+              ? `Releases ${new Date(releaseDateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+              : (
+                <>
+                  {year}
+                  {year && hasRating && <span className="mx-1.5 text-ink-4">·</span>}
+                  {hasRating && <span className="text-accent">★ {item.vote_average.toFixed(1)}</span>}
+                  {item.original_language && (
+                    <>
+                      <span className="mx-1.5 text-ink-4">·</span>
+                      {item.original_language.toUpperCase()}
+                    </>
+                  )}
+                  {item.genres && item.genres.length > 0 && (
+                    <>
+                      <span className="mx-1.5 text-ink-4">·</span>
+                      {item.genres[0]}
+                    </>
+                  )}
+                </>
+              )}
           </p>
         </div>
 
-        {/* Small "muted" indicator while the trailer is playing, since
-            there's no visible controls to make that obvious otherwise. */}
         {showTrailer && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white/80 backdrop-blur-sm">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
