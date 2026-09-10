@@ -523,6 +523,7 @@ export async function getPersonCredits(id: number): Promise<PersonCredits> {
 export interface WatchTvContext {
   showTitle: string;
   episodeTitle: string;
+  posterPath?: string;
   next?: { season: number; episode: number; title: string };
 }
 
@@ -542,9 +543,11 @@ export async function getWatchTvContext(
     const nextSeason = !nextEp
       ? show.seasons[show.seasons.findIndex((x) => x.season_number === season) + 1]
       : null;
+    // ---- RETURN #1 (the fallback/no-TMDB branch) ----
     return {
       showTitle: show.title,
       episodeTitle: ep.title,
+      posterPath: show.poster_path,
       next: nextEp
         ? { season, episode: nextEp.episode, title: nextEp.title }
         : nextSeason?.episodes[0]
@@ -596,9 +599,11 @@ export async function getWatchTvContext(
       }
     }
 
+    // ---- RETURN #2 (the main TMDB-backed branch) ----
     return {
       showTitle: showDetail.name,
       episodeTitle: current.name,
+      posterPath: showDetail.poster_path || undefined,
       next,
     };
   } catch {
