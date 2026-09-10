@@ -18,14 +18,6 @@
  *  - recordTimeupdate: a single PLAYER_EVENT tick with the live
  *    playhead position (CinemaOS's and Videasy's actual protocol -
  *    both send this, not MEDIA_DATA, roughly once a second).
- *
- * NOTE: an earlier version of recordTimeupdate special-cased "near
- * zero" readings to protect against one specific CinemaOS quirk. That
- * guard had no way to tell a genuinely-stuck bad value apart from a
- * real one, so it ended up permanently locking in whatever was saved
- * first and refusing all further updates - worse than the problem it
- * was meant to solve. Removed; every player's reported position is
- * now trusted directly, same as Peachify always was.
  */
 
 import type {
@@ -230,5 +222,40 @@ export function recordTimeupdate(input: TimeupdateInput): void {
   }
 
   store[key] = entry;
+  saveProgressStore(store);
+}
+
+/**
+ * Backfills title/poster_path onto an EXISTING entry if either is
+ * currently blank - never touches progress numbers. Exists because
+ * none of the three embeds can be trusted to reliably report this
+ * themselves (confirmed: even Peachify's own MEDIA_DATA payload
+ * sometimes omits poster_path, and CinemaOS/Videasy's PLAYER_EVENT
+ * ticks never include it at all). WatchLayout calls this after every
+ * player update using the poster/title the watch PAGE already fetched
+ * from TMDB directly - a source that's actually reliable, unlike any
+ * of the embeds - so Continue Watching never shows "No Image" for a
+ * title that has perfectly good poster art available.
+ */
+export function ensureEntryMetadata(
+  type: PeachifyMediaType,
+  id: string | number,
+  meta: { title?: string; poster_path?: string },
+): void {
+  if (!meta.title && !meta.poster_path) return;
+  const store = loadProgressStore();
+  const key = entryKey(type, id);
+  const existing = store[key];
+  if (!existing) return; // nothing to patch until a player has created an entry
+
+  const needsTitle = !existing.title && meta.title;
+  const needsPoster = !existing.poster_path && meta.poster_path;
+  if (!needsTitle && !needsPoster) return;
+
+  store[key] = {
+    ...existing,
+    title: existing.title || meta.title || '',
+    poster_path: existing.poster_path || meta.poster_path || '',
+  };
   saveProgressStore(store);
 }
