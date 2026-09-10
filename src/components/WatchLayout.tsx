@@ -5,29 +5,17 @@ import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PLAYER_ACCENT } from '@/lib/brand';
 import { buildContinueWatching } from '@/lib/progress-client';
-import { getEntry } from '@/lib/watch-progress';
+import { ensureEntryMetadata, getEntry } from '@/lib/watch-progress';
 import { PeachifyPlayer } from '@/components/PeachifyPlayer';
 import { CinemaOSPlayer } from '@/components/CinemaOSPlayer';
 import { VideasyPlayer } from '@/components/VideasyPlayer';
-import { PostMessageDebugOverlay } from '@/components/PostMessageDebugOverlay';
 import type { PeachifyEmbedTarget } from '@/peachify';
 
 type PlayerSource = 'peachify' | 'cinemaos' | 'videasy';
 
 const STORAGE_KEY = 'tigerstream:player';
-// How long to wait for ANY signal from a newly-mounted player before
-// offering to switch (total silence case - a dead/blocked source
-// still loads its iframe shell fine, it just never sends anything).
 const SILENCE_TIMEOUT_MS = 12000;
-// How long to wait, once ticks ARE arriving, before deciding the
-// reported playhead position is stuck rather than just starting out
-// near zero (a source can be chatty - sending regular timeupdate
-// events - while still never reporting real progress; that's a
-// different failure mode than silence, and needs its own timer since
-// the silence one never fires for it).
 const STUCK_TIMEOUT_MS = 20000;
-// Below this many seconds of movement, successive readings count as
-// "the same" rather than genuine (if tiny) forward progress.
 const STUCK_EPSILON_SECONDS = 2;
 
 const PLAYERS: { id: PlayerSource; label: string }[] = [
@@ -60,6 +48,11 @@ interface WatchLayoutProps {
   title: string;
   backHref: string;
   target: PeachifyEmbedTarget;
+  /** Poster path fetched directly from TMDB by the watch page itself -
+   *  used to backfill Continue Watching's poster art regardless of
+   *  whether the active player's own protocol reports one (none of
+   *  the three reliably do - see ensureEntryMetadata). */
+  posterPath?: string;
   nextHref?: string;
   nextLabel?: string;
 }
@@ -96,6 +89,7 @@ export function WatchLayout({
   title,
   backHref,
   target,
+  posterPath,
   nextHref,
   nextLabel = 'Next episode',
 }: WatchLayoutProps) {
@@ -124,8 +118,6 @@ export function WatchLayout({
     }
   };
 
-  // Arms fresh silence + stuck-position timers every time the player
-  // (or the title/episode) changes.
   useEffect(() => {
     setStalled(false);
     firstSeenWatched.current = null;
@@ -145,12 +137,6 @@ export function WatchLayout({
     setStalled(false);
   }, []);
 
-  // Called after every progress update lands in storage. Compares the
-  // stored playhead position against what it was ~20s ago (per this
-  // mount) - if it hasn't moved at all despite ticks actively arriving,
-  // that's the "chatty but stuck" failure mode (confirmed: CinemaOS,
-  // for at least some titles) rather than the "gone silent" one, which
-  // the timer above already covers separately.
   const checkStuckPosition = useCallback(() => {
     const entry = getEntry(target.type, target.mediaId);
     const watched =
@@ -191,7 +177,11 @@ export function WatchLayout({
     setProgressSynced(true);
     markAlive();
     checkStuckPosition();
-  }, [markAlive, checkStuckPosition]);
+    // Backfills poster/title from what the watch page itself already
+    // fetched from TMDB, in case the active player's own report was
+    // missing either - see ensureEntryMetadata's doc comment.
+    ensureEntryMetadata(target.type, target.mediaId, { title, poster_path: posterPath });
+  }, [markAlive, checkStuckPosition, target.type, target.mediaId, title, posterPath]);
 
   const continueCount = progressSynced ? buildContinueWatching().length : 0;
   const suggested = nextPlayer(playerSource);
@@ -199,11 +189,6 @@ export function WatchLayout({
 
   return (
     <div className="min-h-screen bg-black pt-16">
-      {/* TEMPORARY diagnostic - only renders with ?debug=1 in the URL.
-          Remove this line (and delete PostMessageDebugOverlay.tsx) once
-          the CinemaOS/Videasy progress-sync issue is fully closed out. */}
-      <PostMessageDebugOverlay />
-
       <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -229,8 +214,6 @@ export function WatchLayout({
           </div>
         </div>
 
-        {/* Player switcher - a proper segmented control instead of loose
-            pill buttons, so it reads as one grouped choice. */}
         <div className="mb-4 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
           {PLAYERS.map(({ id, label }) => (
             <button
@@ -295,6 +278,7 @@ export function WatchLayout({
               season={target.type === 'tv' ? target.season : undefined}
               episode={target.type === 'tv' ? target.episode : undefined}
               title={title}
+              posterPath={posterPath}
               autoPlay
               autoNext={target.type === 'tv'}
               autoResume
@@ -307,6 +291,7 @@ export function WatchLayout({
               season={target.type === 'tv' ? target.season : undefined}
               episode={target.type === 'tv' ? target.episode : undefined}
               title={title}
+              posterPath={posterPath}
               autoPlay
               autoResume
               onMediaData={onMediaData}
