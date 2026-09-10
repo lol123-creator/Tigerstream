@@ -40,6 +40,7 @@ export default async function WatchTvPage({
     <WatchLayout
       title={title}
       backHref={tvDetailHref(showId)}
+      posterPath={ctx.posterPath}
       target={{
         type: 'tv',
         mediaId: showId,
