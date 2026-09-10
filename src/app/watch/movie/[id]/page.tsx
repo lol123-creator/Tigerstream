@@ -27,6 +27,7 @@ export default async function WatchMoviePage({
     <WatchLayout
       title={movie.title}
       backHref={movieDetailHref(movie.id)}
+      posterPath={movie.poster_path}
       target={{
         type: 'movie',
         mediaId: movie.id,
