@@ -180,6 +180,68 @@ export async function getNewTvSeries(pages = 3): Promise<TvShow[]> {
   return filterKidSafe(dedupeById(await fetchPaged(pages, fetchNewTvPage)));
 }
 
+// ADD this block anywhere in src/lib/tmdb/service.ts - right after
+// getNewTvSeries is a natural spot. Doesn't replace anything existing,
+// just adds three new pieces: two page-fetchers and one exported
+// function, following the exact same pattern as getNewMovies/getNewTv
+// right above it.
+
+async function fetchComingSoonMoviePage(page: number): Promise<Movie[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const kidParams = await kidDiscoverParams('movie');
+  const data = await tmdbFetch<TmdbPaginated<TmdbMovieSummary>>(
+    '/discover/movie',
+    {
+      sort_by: 'primary_release_date.asc',
+      'primary_release_date.gte': today,
+      region: 'US',
+      page,
+      ...kidParams,
+    },
+    HOT_REVALIDATE,
+  );
+  return data.results.map((m) => mapMovieSummary(m));
+}
+
+async function fetchComingSoonTvPage(page: number): Promise<TvShow[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const kidParams = await kidDiscoverParams('tv');
+  const data = await tmdbFetch<TmdbPaginated<TmdbTvSummary>>(
+    '/discover/tv',
+    {
+      sort_by: 'first_air_date.asc',
+      'first_air_date.gte': today,
+      page,
+      ...kidParams,
+    },
+    HOT_REVALIDATE,
+  );
+  return data.results.map((t) => mapTvSummary(t));
+}
+
+/**
+ * Movies + TV combined, nearest release date first - powers the
+ * homepage's "Coming Soon" row and is what actually puts unreleased
+ * titles (with a future release date) in front of users at all, so
+ * MediaCard's "Coming Soon" badge has something to attach to. None of
+ * the other homepage rows (trending/popular/top-rated/now-playing)
+ * ever surface unreleased titles - they're all driven by real
+ * engagement data unreleased content doesn't have yet.
+ */
+export async function getComingSoon(pages = 2): Promise<MediaItem[]> {
+  if (!isTmdbEnabled()) return [];
+  const [movies, shows] = await Promise.all([
+    fetchPaged(pages, fetchComingSoonMoviePage),
+    fetchPaged(pages, fetchComingSoonTvPage),
+  ]);
+  const combined = dedupeById([...movies, ...shows]).sort((a, b) => {
+    const da = a.type === 'movie' ? a.release_date : a.first_air_date;
+    const db = b.type === 'movie' ? b.release_date : b.first_air_date;
+    return (da || '').localeCompare(db || '');
+  });
+  return filterKidSafe(combined);
+}
+
 function pickHeroCandidate(items: MediaItem[]): MediaItem | undefined {
   return (
     items.find((i) => i.backdrop_path && i.overview.length > 40) ??
