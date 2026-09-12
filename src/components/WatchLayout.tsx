@@ -48,10 +48,6 @@ interface WatchLayoutProps {
   title: string;
   backHref: string;
   target: PeachifyEmbedTarget;
-  /** Poster path fetched directly from TMDB by the watch page itself -
-   *  used to backfill Continue Watching's poster art regardless of
-   *  whether the active player's own protocol reports one (none of
-   *  the three reliably do - see ensureEntryMetadata). */
   posterPath?: string;
   nextHref?: string;
   nextLabel?: string;
@@ -83,6 +79,92 @@ class PlayerErrorBoundary extends React.Component<
     }
     return this.props.children;
   }
+}
+
+function ReportBrokenButton({
+  target,
+  title,
+  player,
+}: {
+  target: PeachifyEmbedTarget;
+  title: string;
+  player: PlayerSource;
+}) {
+  const [open, setOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const send = async () => {
+    setSending(true);
+    try {
+      await fetch('/api/report-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mediaId: target.mediaId,
+          mediaType: target.type,
+          season: target.type === 'tv' ? target.season : undefined,
+          episode: target.type === 'tv' ? target.episode : undefined,
+          player,
+          title,
+        }),
+      });
+      setSent(true);
+    } catch {
+      // best-effort - the button still confirms visually either way
+      setSent(true);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-ink-3">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+        Thanks, reported
+      </span>
+    );
+  }
+
+  if (open) {
+    return (
+      <div className="flex items-center gap-2 text-xs">
+        <span className="text-ink-3">Report {player} as broken for this title?</span>
+        <button
+          type="button"
+          disabled={sending}
+          onClick={send}
+          className="rounded-full bg-amber-400/90 px-3 py-1 font-semibold text-[#2B1B00] transition hover:bg-amber-300 disabled:opacity-50"
+        >
+          {sending ? 'Sending...' : 'Yes, report it'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-ink-4 hover:text-ink-2"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      className="flex items-center gap-1.5 text-xs text-ink-4 transition hover:text-ink-2"
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 9v4M12 17h.01" />
+        <circle cx="12" cy="12" r="10" />
+      </svg>
+      Report broken stream
+    </button>
+  );
 }
 
 export function WatchLayout({
@@ -177,9 +259,6 @@ export function WatchLayout({
     setProgressSynced(true);
     markAlive();
     checkStuckPosition();
-    // Backfills poster/title from what the watch page itself already
-    // fetched from TMDB, in case the active player's own report was
-    // missing either - see ensureEntryMetadata's doc comment.
     ensureEntryMetadata(target.type, target.mediaId, { title, poster_path: posterPath });
   }, [markAlive, checkStuckPosition, target.type, target.mediaId, title, posterPath]);
 
@@ -214,21 +293,24 @@ export function WatchLayout({
           </div>
         </div>
 
-        <div className="mb-4 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
-          {PLAYERS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => switchPlayer(id)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${
-                playerSource === id
-                  ? 'bg-accent text-[#0A1F2B] shadow-glow'
-                  : 'text-white/50 hover:text-white/80'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
+            {PLAYERS.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => switchPlayer(id)}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                  playerSource === id
+                    ? 'bg-accent text-[#0A1F2B] shadow-glow'
+                    : 'text-white/50 hover:text-white/80'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <ReportBrokenButton target={target} title={title} player={playerSource} />
         </div>
 
         {stalled && (
