@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ScrollRow } from '@/components/ScrollRow';
 import { buildContinueWatching, removeContinueWatchingItem } from '@/lib/progress-client';
+import { getSignedInUserId } from '@/lib/cloud-sync';
 import { tmdbImage } from '@/lib/tmdb-images';
 import type { ContinueWatchingItem } from '@/types/media';
 
@@ -16,12 +17,40 @@ function parseSeasonEpisode(subtitle: string | undefined): { season: number; epi
   return { season: Number(match[1]), episode: Number(match[2]) };
 }
 
+/** Cloud vs. local-only indicator. Sync status doesn't vary between
+ *  individual titles with the current architecture (progress pushes
+ *  as one snapshot, not acknowledged per-title), so this reflects
+ *  "is anyone signed in on this device" - true per-title delivery
+ *  confirmation would need the backend to ack each row individually,
+ *  which isn't how pushProgressSnapshot works today. */
+function SyncBadge({ signedIn }: { signedIn: boolean }) {
+  return (
+    <span
+      title={signedIn ? 'Synced to your account' : 'Saved on this device only - sign in to sync'}
+      className="inline-flex shrink-0 items-center text-ink-3"
+    >
+      {signedIn ? (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.7-1.5A4 4 0 0 0 6 19h11.5Z" />
+        </svg>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" />
+          <line x1="12" y1="18" x2="12.01" y2="18" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
 export function ContinueWatchingRow() {
   const [items, setItems] = useState<ContinueWatchingItem[]>([]);
   const [newEpisodeIds, setNewEpisodeIds] = useState<Set<number>>(new Set());
+  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
     setItems(buildContinueWatching());
+    setSignedIn(!!getSignedInUserId());
     const onStorage = (e: StorageEvent) => {
       // Storage key is now profile-scoped when signed in ("peachifyProgress:<id>"),
       // so match on the base key rather than an exact string.
@@ -30,7 +59,10 @@ export function ContinueWatchingRow() {
       }
     };
     window.addEventListener('storage', onStorage);
-    const interval = setInterval(() => setItems(buildContinueWatching()), 30000);
+    const interval = setInterval(() => {
+      setItems(buildContinueWatching());
+      setSignedIn(!!getSignedInUserId());
+    }, 30000);
     return () => {
       window.removeEventListener('storage', onStorage);
       clearInterval(interval);
@@ -108,7 +140,10 @@ export function ContinueWatchingRow() {
                 </span>
               )}
               <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black via-black/40 to-transparent p-3">
-                <p className="font-medium text-white">{item.title}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="min-w-0 truncate font-medium text-white">{item.title}</p>
+                  <SyncBadge signedIn={signedIn} />
+                </div>
                 {item.subtitle && (
                   <p className="text-xs text-ink-2">{item.subtitle}</p>
                 )}
