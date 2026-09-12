@@ -10,6 +10,7 @@ import { HomeMoreRowsSkeleton } from '@/components/HomeMoreRowsSkeleton';
 import { getHomeSportsRow } from '@/lib/ppv/service';
 import { HOME_ROW_SIZE } from '@/lib/tmdb/service';
 import {
+  getComingSoon,
   getNewMovies,
   getNewTvSeries,
   getTrendingToday,
@@ -32,11 +33,12 @@ function row<T>(items: T[]): T[] {
 }
  
 export default async function HomePage() {
-  const [trendingToday, newMovies, newTv, sportsRow] =
+  const [trendingToday, newMovies, newTv, comingSoon, sportsRow] =
     await Promise.all([
       getTrendingToday(),
       getNewMovies(3),
       getNewTvSeries(3),
+      getComingSoon(2),
       getHomeSportsRow(16),
     ]);
  
@@ -64,6 +66,9 @@ export default async function HomePage() {
         <div style={{contentVisibility:'auto', containIntrinsicSize:'auto 300px'}}><MediaRow title="Hot Right Now" items={row(trendingToday)} /></div>
         <MediaRow title="New Movies" items={row(newMovies)} />
         <MediaRow title="New TV Series" items={row(newTv)} />
+        {comingSoon.length > 0 && (
+          <MediaRow title="Coming Soon" items={row(comingSoon)} />
+        )}
  
         <Suspense fallback={<HomeMoreRowsSkeleton />}>
           <HomeMoreRows />
