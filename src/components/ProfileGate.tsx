@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { mergeCloudDataForProfile } from '@/lib/cloud-sync';
+import { getPinStatus } from '@/lib/pin-client';
+import { PinModal } from '@/components/PinModal';
 import {
   AVATAR_PRESETS,
   avatarPreset,
   createProfile,
   deleteProfile,
   fetchProfiles,
+  getActiveProfileId,
   getCachedProfiles,
   renameProfile,
   restyleProfile,
@@ -23,6 +26,7 @@ const SESSION_KEY = 'tigerstream:profile-selected';
 const LITE_KEY = 'tigerstream:lite-mode';
 
 type Status = 'checking' | 'hidden' | 'showing' | 'switching';
+type PinRequest = { mode: 'verify' | 'create' | 'change'; onSuccess: () => void } | null;
 
 /**
  * A Netflix/Apple TV-style profile picker shown once per browser
@@ -32,6 +36,15 @@ type Status = 'checking' | 'hidden' | 'showing' | 'switching';
  * filtering are all scoped to whichever one is active. Guest browsing
  * keeps its original single "Guest" bucket, kept on this device only,
  * same as before profiles existed at all.
+ *
+ * PIN protection (once one's set on the account): required to open
+ * any profile's editor, and required when switching AWAY FROM a kid
+ * profile to a different one - closes the obvious loophole of a kid
+ * just picking a different, unrestricted profile from this same
+ * screen. Switching between kid profiles, or from a non-kid profile
+ * TO a kid profile, never needs it. First time someone turns "Kids
+ * Profile" on with no PIN set yet, they're prompted to create one
+ * right then, since that's the moment it starts actually mattering.
  */
 export function ProfileGate() {
   const router = useRouter();
@@ -40,6 +53,8 @@ export function ProfileGate() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [leaving, setLeaving] = useState(false);
   const [editing, setEditing] = useState<Profile | 'new' | null>(null);
+  const [hasPin, setHasPin] = useState(false);
+  const [pinRequest, setPinRequest] = useState<PinRequest>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -61,8 +76,6 @@ export function ProfileGate() {
         setStatus('hidden');
         return;
       }
-      // Lite Mode devices skip the picker entirely - one less screen,
-      // one less thing for a weak device to render.
       if (liteMode) {
         sessionStorage.setItem(SESSION_KEY, '1');
         setStatus('hidden');
@@ -72,43 +85,53 @@ export function ProfileGate() {
       if (userId) {
         const cached = getCachedProfiles();
         if (cached.length) setProfiles(cached);
-        const fresh = await fetchProfiles(userId);
+        const [fresh, pinStatus] = await Promise.all([fetchProfiles(userId), getPinStatus()]);
         setProfiles(fresh);
+        setHasPin(pinStatus);
       }
       setStatus('showing');
     });
   }, []);
 
-  const chooseProfile = async (profile: Profile) => {
-    setActiveProfileId(profile.id);
-    setKidModeCookie(!!profile.isKid);
-
-    if (uid) {
-      // Pulls this specific profile's cloud data down BEFORE anything
-      // else on the page reads it, and shows a brief "Switching..."
-      // state while that happens instead of dismissing immediately.
-      // Skipping this was the root cause of two things looking like
-      // data loss: a never-before-used-on-this-device profile showing
-      // an empty Continue Watching row (its cloud data was never
-      // pulled down at all), and an already-rendered page still
-      // showing the PREVIOUS profile's row until some later refresh
-      // silently swapped it out for the new (empty) one.
-      setStatus('switching');
-      await mergeCloudDataForProfile(uid, profile.id);
-      try {
-        sessionStorage.setItem(SESSION_KEY, '1');
-      } catch {
-        // storage unavailable
-      }
-      // Full reload rather than just hiding the overlay - guarantees
-      // every already-mounted component (Continue Watching, favorites,
-      // the players) re-reads fresh state under the new profile,
-      // exactly like AuthButton's "Switch profile" already does.
-      window.location.reload();
+  /** Runs `action` immediately if no PIN is protecting anything right
+   *  now; otherwise shows the verify modal first and only runs it on
+   *  success. */
+  const withPinIfSet = (action: () => void) => {
+    if (!hasPin) {
+      action();
       return;
     }
+    setPinRequest({ mode: 'verify', onSuccess: () => { setPinRequest(null); action(); } });
+  };
 
-    dismiss();
+  const chooseProfile = (profile: Profile) => {
+    const currentId = getActiveProfileId();
+    const current = profiles.find((p) => p.id === currentId);
+    const leavingKidProfile = !!current?.isKid && profile.id !== currentId;
+
+    const proceed = async () => {
+      setActiveProfileId(profile.id);
+      setKidModeCookie(!!profile.isKid);
+
+      if (uid) {
+        setStatus('switching');
+        await mergeCloudDataForProfile(uid, profile.id);
+        try {
+          sessionStorage.setItem(SESSION_KEY, '1');
+        } catch {
+          // storage unavailable
+        }
+        window.location.reload();
+        return;
+      }
+      dismiss();
+    };
+
+    if (leavingKidProfile) {
+      withPinIfSet(proceed);
+    } else {
+      proceed();
+    }
   };
 
   const dismiss = () => {
@@ -135,150 +158,169 @@ export function ProfileGate() {
     );
   }
 
-  if (editing) {
-    return (
-      <ProfileEditor
-        uid={uid}
-        profile={editing === 'new' ? null : editing}
-        onCancel={() => setEditing(null)}
-        onSaved={(updated) => {
-          setProfiles((prev) => {
-            const exists = prev.some((p) => p.id === updated.id);
-            return exists ? prev.map((p) => (p.id === updated.id ? updated : p)) : [...prev, updated];
-          });
-          setEditing(null);
-        }}
-        onDeleted={(id) => {
-          setProfiles((prev) => prev.filter((p) => p.id !== id));
-          setEditing(null);
-        }}
-      />
-    );
-  }
-
   return (
-    <div
-      className="fixed inset-0 z-[500] flex flex-col items-center justify-center bg-surface px-4 transition-opacity duration-250"
-      style={{ opacity: leaving ? 0 : 1 }}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-ambient-glow" />
-
-      <h1 className="font-display relative text-2xl font-medium text-white sm:text-3xl">
-        Who&apos;s watching?
-      </h1>
-
-      <div className="relative mt-10 flex flex-wrap items-start justify-center gap-6 sm:gap-8">
-        {uid &&
-          profiles.map((p) => {
-            const preset = avatarPreset(p.avatar);
-            return (
-              <div key={p.id} className="group relative flex flex-col items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => chooseProfile(p)}
-                  className="relative flex h-24 w-24 items-center justify-center rounded-2xl text-3xl ring-2 ring-transparent transition group-hover:ring-white/40 sm:h-28 sm:w-28"
-                  style={{ backgroundColor: `${preset.color}33` }}
-                >
-                  {preset.emoji}
-                  {p.isKid && (
-                    <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0A1F2B]">
-                      Kids
-                    </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditing(p)}
-                  aria-label={`Edit ${p.name}`}
-                  className="absolute -right-1 -top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white/70 hover:text-white group-hover:flex"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                  </svg>
-                </button>
-                <span className="max-w-[7rem] truncate text-sm font-medium text-ink-1 group-hover:text-white">
-                  {p.name}
-                </span>
-              </div>
-            );
-          })}
-
-        {uid && profiles.length < 5 && (
-          <button
-            type="button"
-            onClick={() => setEditing('new')}
-            className="group flex flex-col items-center gap-3"
-          >
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-dashed border-glass-border text-ink-3 transition group-hover:border-accent/40 group-hover:text-accent sm:h-28 sm:w-28">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-ink-2 group-hover:text-white">Add Profile</span>
-          </button>
-        )}
-
-        {!uid && (
-          <button
-            type="button"
-            onClick={() => {
-              setKidModeCookie(false);
-              dismiss();
-            }}
-            className="group flex flex-col items-center gap-3"
-          >
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/[0.06] text-ink-2 ring-2 ring-transparent transition group-hover:bg-white/[0.1] group-hover:text-white group-hover:ring-white/30 sm:h-28 sm:w-28">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21a8 8 0 0 0-16 0" />
-                <circle cx="12" cy="7" r="4" strokeDasharray="3 2" />
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-ink-2 group-hover:text-white">Guest</span>
-          </button>
-        )}
-
-        {!uid && (
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                sessionStorage.setItem(SESSION_KEY, '1');
-              } catch {}
-              router.push('/auth');
-            }}
-            className="group flex flex-col items-center gap-3"
-          >
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-dashed border-glass-border text-ink-3 transition group-hover:border-accent/40 group-hover:text-accent sm:h-28 sm:w-28">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10 17l5-5-5-5M15 12H3" />
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-ink-2 group-hover:text-white">Sign In</span>
-          </button>
-        )}
-      </div>
-
-      {!uid && (
-        <p className="relative mt-10 max-w-xs text-center text-xs text-ink-4">
-          Guest browsing keeps your list and progress on this device only.
-          Sign in to create profiles and sync across devices.
-        </p>
+    <>
+      {editing && (
+        <ProfileEditor
+          uid={uid}
+          profile={editing === 'new' ? null : editing}
+          hasPin={hasPin}
+          onRequestCreatePin={(onSuccess) => setPinRequest({ mode: 'create', onSuccess })}
+          onCancel={() => setEditing(null)}
+          onSaved={(updated) => {
+            setProfiles((prev) => {
+              const exists = prev.some((p) => p.id === updated.id);
+              return exists ? prev.map((p) => (p.id === updated.id ? updated : p)) : [...prev, updated];
+            });
+            setEditing(null);
+          }}
+          onDeleted={(id) => {
+            setProfiles((prev) => prev.filter((p) => p.id !== id));
+            setEditing(null);
+          }}
+        />
       )}
-    </div>
+
+      {!editing && (
+        <div
+          className="fixed inset-0 z-[500] flex flex-col items-center justify-center bg-surface px-4 transition-opacity duration-250"
+          style={{ opacity: leaving ? 0 : 1 }}
+        >
+          <div className="pointer-events-none absolute inset-0 bg-ambient-glow" />
+
+          <h1 className="font-display relative text-2xl font-medium text-white sm:text-3xl">
+            Who&apos;s watching?
+          </h1>
+
+          <div className="relative mt-10 flex flex-wrap items-start justify-center gap-6 sm:gap-8">
+            {uid &&
+              profiles.map((p) => {
+                const preset = avatarPreset(p.avatar);
+                return (
+                  <div key={p.id} className="group relative flex flex-col items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => chooseProfile(p)}
+                      className="relative flex h-24 w-24 items-center justify-center rounded-2xl text-3xl ring-2 ring-transparent transition group-hover:ring-white/40 sm:h-28 sm:w-28"
+                      style={{ backgroundColor: `${preset.color}33` }}
+                    >
+                      {preset.emoji}
+                      {p.isKid && (
+                        <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0A1F2B]">
+                          Kids
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => withPinIfSet(() => setEditing(p))}
+                      aria-label={`Edit ${p.name}`}
+                      className="absolute -right-1 -top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white/70 hover:text-white group-hover:flex"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                      </svg>
+                    </button>
+                    <span className="max-w-[7rem] truncate text-sm font-medium text-ink-1 group-hover:text-white">
+                      {p.name}
+                    </span>
+                  </div>
+                );
+              })}
+
+            {uid && profiles.length < 5 && (
+              <button
+                type="button"
+                onClick={() => setEditing('new')}
+                className="group flex flex-col items-center gap-3"
+              >
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-dashed border-glass-border text-ink-3 transition group-hover:border-accent/40 group-hover:text-accent sm:h-28 sm:w-28">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-ink-2 group-hover:text-white">Add Profile</span>
+              </button>
+            )}
+
+            {!uid && (
+              <button
+                type="button"
+                onClick={() => {
+                  setKidModeCookie(false);
+                  dismiss();
+                }}
+                className="group flex flex-col items-center gap-3"
+              >
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/[0.06] text-ink-2 ring-2 ring-transparent transition group-hover:bg-white/[0.1] group-hover:text-white group-hover:ring-white/30 sm:h-28 sm:w-28">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21a8 8 0 0 0-16 0" />
+                    <circle cx="12" cy="7" r="4" strokeDasharray="3 2" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-ink-2 group-hover:text-white">Guest</span>
+              </button>
+            )}
+
+            {!uid && (
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem(SESSION_KEY, '1');
+                  } catch {}
+                  router.push('/auth');
+                }}
+                className="group flex flex-col items-center gap-3"
+              >
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-dashed border-glass-border text-ink-3 transition group-hover:border-accent/40 group-hover:text-accent sm:h-28 sm:w-28">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 17l5-5-5-5M15 12H3" />
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-ink-2 group-hover:text-white">Sign In</span>
+              </button>
+            )}
+          </div>
+
+          {!uid && (
+            <p className="relative mt-10 max-w-xs text-center text-xs text-ink-4">
+              Guest browsing keeps your list and progress on this device only.
+              Sign in to create profiles and sync across devices.
+            </p>
+          )}
+        </div>
+      )}
+
+      {pinRequest && (
+        <PinModal
+          mode={pinRequest.mode}
+          onSuccess={() => {
+            if (pinRequest.mode !== 'verify') setHasPin(true);
+            pinRequest.onSuccess();
+          }}
+          onCancel={() => setPinRequest(null)}
+        />
+      )}
+    </>
   );
 }
 
 function ProfileEditor({
   uid,
   profile,
+  hasPin,
+  onRequestCreatePin,
   onCancel,
   onSaved,
   onDeleted,
 }: {
   uid: string | null;
   profile: Profile | null;
+  hasPin: boolean;
+  onRequestCreatePin: (onSuccess: () => void) => void;
   onCancel: () => void;
   onSaved: (p: Profile) => void;
   onDeleted: (id: string) => void;
@@ -289,7 +331,7 @@ function ProfileEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const save = async () => {
+  const doSave = async () => {
     if (!uid || !name.trim()) return;
     setSaving(true);
     setError(null);
@@ -317,6 +359,19 @@ function ProfileEditor({
       }
       onSaved(created);
     }
+  };
+
+  const save = () => {
+    // First time turning Kids Profile on with no account PIN yet -
+    // set one up right now, since this is the moment it starts
+    // mattering. If they cancel, the save still goes through - a
+    // missing PIN just means kid mode isn't actually locked down yet.
+    const turningKidOn = isKid && !profile?.isKid;
+    if (turningKidOn && !hasPin) {
+      onRequestCreatePin(() => doSave());
+      return;
+    }
+    doSave();
   };
 
   const remove = async () => {
@@ -393,6 +448,16 @@ function ProfileEditor({
             <span className="absolute left-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5" />
           </label>
         </div>
+
+        {hasPin && (
+          <p className="mt-2 flex items-center gap-1.5 px-1 text-xs text-ink-3">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Protected by your account PIN
+          </p>
+        )}
 
         {error && (
           <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
