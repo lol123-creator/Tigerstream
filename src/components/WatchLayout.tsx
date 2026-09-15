@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PLAYER_ACCENT } from '@/lib/brand';
 import { buildContinueWatching } from '@/lib/progress-client';
 import { ensureEntryMetadata, getEntry } from '@/lib/watch-progress';
+import { getActiveSubtitleLang } from '@/lib/profiles';
 import { PeachifyPlayer } from '@/components/PeachifyPlayer';
 import { CinemaOSPlayer } from '@/components/CinemaOSPlayer';
 import { VideasyPlayer } from '@/components/VideasyPlayer';
@@ -111,7 +112,6 @@ function ReportBrokenButton({
       });
       setSent(true);
     } catch {
-      // best-effort - the button still confirms visually either way
       setSent(true);
     } finally {
       setSending(false);
@@ -181,12 +181,14 @@ export function WatchLayout({
   const [errorKey, setErrorKey] = useState(0);
   const [stalled, setStalled] = useState(false);
   const [stalledReason, setStalledReason] = useState<'silent' | 'stuck'>('silent');
+  const [subtitleLang, setSubtitleLang] = useState('English');
   const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stuckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstSeenWatched = useRef<number | null>(null);
 
   useEffect(() => {
     setPlayerSource(loadPlayerPref());
+    setSubtitleLang(getActiveSubtitleLang());
   }, []);
 
   const clearTimers = () => {
@@ -337,7 +339,12 @@ export function WatchLayout({
                 ...target,
                 options: {
                   accent: PLAYER_ACCENT,
-                  sub: 'English',
+                  // Confirmed Peachify embed option - reflects the
+                  // active profile's subtitle preference (see
+                  // @/lib/profiles' getActiveSubtitleLang). CinemaOS
+                  // and Videasy don't have a confirmed equivalent
+                  // param, so this only applies to Peachify for now.
+                  sub: subtitleLang,
                   autoNext: target.type === 'tv',
                   showNextBtn: true,
                   ...target.options,
