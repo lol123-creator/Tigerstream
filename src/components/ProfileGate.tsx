@@ -8,6 +8,7 @@ import { getPinStatus } from '@/lib/pin-client';
 import { PinModal } from '@/components/PinModal';
 import {
   AVATAR_PRESETS,
+  SUBTITLE_LANGUAGES,
   avatarPreset,
   createProfile,
   deleteProfile,
@@ -19,6 +20,7 @@ import {
   setActiveProfileId,
   setKidModeCookie,
   setProfileKidMode,
+  setProfileSubtitleLang,
   type Profile,
 } from '@/lib/profiles';
 
@@ -32,10 +34,11 @@ type PinRequest = { mode: 'verify' | 'create' | 'change'; onSuccess: () => void 
  * A Netflix/Apple TV-style profile picker shown once per browser
  * session, after the intro. Signed-in accounts get real, multiple
  * profiles here (add / rename / change avatar / delete / mark as a
- * kids' profile) - continue watching, favorites, and content
- * filtering are all scoped to whichever one is active. Guest browsing
- * keeps its original single "Guest" bucket, kept on this device only,
- * same as before profiles existed at all.
+ * kids' profile / set a preferred subtitle language) - continue
+ * watching, favorites, and content filtering are all scoped to
+ * whichever one is active. Guest browsing keeps its original single
+ * "Guest" bucket, kept on this device only, same as before profiles
+ * existed at all.
  *
  * PIN protection (once one's set on the account): required to open
  * any profile's editor, and required when switching AWAY FROM a kid
@@ -93,9 +96,6 @@ export function ProfileGate() {
     });
   }, []);
 
-  /** Runs `action` immediately if no PIN is protecting anything right
-   *  now; otherwise shows the verify modal first and only runs it on
-   *  success. */
   const withPinIfSet = (action: () => void) => {
     if (!hasPin) {
       action();
@@ -328,6 +328,7 @@ function ProfileEditor({
   const [name, setName] = useState(profile?.name ?? '');
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATAR_PRESETS[0].key);
   const [isKid, setIsKid] = useState(profile?.isKid ?? false);
+  const [subtitleLang, setSubtitleLangValue] = useState(profile?.subtitleLang ?? 'English');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -341,15 +342,20 @@ function ProfileEditor({
         name !== profile.name ? renameProfile(profile.id, name.trim()) : Promise.resolve(true),
         avatar !== profile.avatar ? restyleProfile(profile.id, avatar) : Promise.resolve(true),
         isKid !== !!profile.isKid ? setProfileKidMode(profile.id, isKid) : Promise.resolve(true),
+        subtitleLang !== profile.subtitleLang ? setProfileSubtitleLang(profile.id, subtitleLang) : Promise.resolve(true),
       ]);
       setSaving(false);
       if (results.some((ok) => !ok)) {
         setError("Couldn't save that change. Check your connection and try again.");
         return;
       }
-      onSaved({ ...profile, name: name.trim(), avatar, isKid });
+      onSaved({ ...profile, name: name.trim(), avatar, isKid, subtitleLang });
     } else {
       const created = await createProfile(uid, name.trim(), avatar, false, isKid);
+      if (created && subtitleLang !== 'English') {
+        await setProfileSubtitleLang(created.id, subtitleLang);
+        created.subtitleLang = subtitleLang;
+      }
       setSaving(false);
       if (!created) {
         setError(
@@ -362,10 +368,6 @@ function ProfileEditor({
   };
 
   const save = () => {
-    // First time turning Kids Profile on with no account PIN yet -
-    // set one up right now, since this is the moment it starts
-    // mattering. If they cancel, the save still goes through - a
-    // missing PIN just means kid mode isn't actually locked down yet.
     const turningKidOn = isKid && !profile?.isKid;
     if (turningKidOn && !hasPin) {
       onRequestCreatePin(() => doSave());
@@ -388,7 +390,7 @@ function ProfileEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-[500] flex flex-col items-center justify-center bg-surface px-4">
+    <div className="fixed inset-0 z-[500] flex flex-col items-center justify-center overflow-y-auto bg-surface px-4 py-10">
       <div className="pointer-events-none absolute inset-0 bg-ambient-glow" />
       <div className="relative w-full max-w-sm">
         <h2 className="font-display text-center text-2xl font-medium text-white">
@@ -458,6 +460,25 @@ function ProfileEditor({
             Protected by your account PIN
           </p>
         )}
+
+        <div className="mt-4 rounded-xl border border-glass-border bg-white/[0.03] px-4 py-3">
+          <label htmlFor="subtitle-lang" className="text-sm font-medium text-white">
+            Preferred Subtitles
+          </label>
+          <p className="mb-2 text-xs text-ink-3">Applies automatically on Peachify</p>
+          <select
+            id="subtitle-lang"
+            value={subtitleLang}
+            onChange={(e) => setSubtitleLangValue(e.target.value)}
+            className="w-full rounded-lg border border-glass-border bg-surface px-3 py-2 text-sm text-white outline-none ring-accent/50 focus:border-accent/50 focus:ring-2"
+          >
+            {SUBTITLE_LANGUAGES.map((lang) => (
+              <option key={lang} value={lang}>
+                {lang}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {error && (
           <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
