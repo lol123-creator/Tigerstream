@@ -16,6 +16,10 @@ export interface Profile {
   /** Content filtering (see @/lib/kid-mode) applies whenever this
    *  profile is active. */
   isKid?: boolean;
+  /** Passed as Peachify's confirmed `sub` embed option. CinemaOS and
+   *  Videasy don't have a confirmed equivalent param, so this only
+   *  affects playback there today - see SUBTITLE_LANGUAGES below. */
+  subtitleLang?: string;
 }
 
 export const AVATAR_PRESETS: { key: string; emoji: string; color: string }[] = [
@@ -34,6 +38,24 @@ export const AVATAR_PRESETS: { key: string; emoji: string; color: string }[] = [
 export function avatarPreset(key: string) {
   return AVATAR_PRESETS.find((a) => a.key === key) ?? AVATAR_PRESETS[0];
 }
+
+/** Common subtitle languages, as the display-name strings Peachify's
+ *  `sub` option is confirmed to accept (it's already used with
+ *  'English' hardcoded elsewhere in the codebase). */
+export const SUBTITLE_LANGUAGES = [
+  'English',
+  'Spanish',
+  'French',
+  'German',
+  'Portuguese',
+  'Italian',
+  'Japanese',
+  'Korean',
+  'Chinese',
+  'Arabic',
+  'Hindi',
+  'Off',
+];
 
 const ACTIVE_KEY = 'tigerstream:active-profile';
 const CLOUD_CACHE_KEY = 'tigerstream:profiles-cache';
@@ -76,13 +98,6 @@ export function setKidModeCookie(isKid: boolean) {
   }
 }
 
-/**
- * Turns a base storage key ("peachifyProgress", "tigerstream:favorites")
- * into a profile-scoped one when signed in ("peachifyProgress:<id>"),
- * or leaves it untouched for guest browsing. One shared helper so
- * watch-progress, favorites, and cloud-sync can never drift on the key
- * format.
- */
 export function scopedStorageKey(base: string, signedIn: boolean): string {
   if (!signedIn) return base;
   const id = getActiveProfileId();
@@ -107,13 +122,16 @@ function setCachedProfiles(list: Profile[]) {
   }
 }
 
-/**
- * Fetches this account's profiles from Supabase. The first time an
- * account is ever seen here, it has zero rows in `profiles` - this
- * auto-creates one default "Me" profile so there's always at least
- * one to select (the SQL migration already pointed any pre-existing
- * watch history/favorites at that same default profile server-side).
- */
+/** Reads the active profile's preferred subtitle language from the
+ *  local cache (synchronous, no network) - falls back to 'English'
+ *  for guests or before the cache is populated. */
+export function getActiveSubtitleLang(): string {
+  const id = getActiveProfileId();
+  if (!id) return 'English';
+  const profile = getCachedProfiles().find((p) => p.id === id);
+  return profile?.subtitleLang || 'English';
+}
+
 export async function fetchProfiles(uid: string): Promise<Profile[]> {
   const { createClient } = await import('@/lib/supabase/client');
   const supabase = createClient();
@@ -130,6 +148,7 @@ export async function fetchProfiles(uid: string): Promise<Profile[]> {
     avatar: r.avatar,
     isDefault: r.is_default,
     isKid: r.is_kid ?? false,
+    subtitleLang: r.subtitle_lang || 'English',
   }));
 
   if (list.length === 0) {
@@ -141,7 +160,6 @@ export async function fetchProfiles(uid: string): Promise<Profile[]> {
   const active = getActiveProfileId();
   if (!active || !list.some((p) => p.id === active)) {
     setActiveProfileId(list[0]?.id ?? '');
-    setKidModeCookie(!!list[0]?.isKid);
   }
   return list;
 }
@@ -168,6 +186,7 @@ export async function createProfile(
       avatar: data.avatar,
       isDefault: data.is_default,
       isKid: data.is_kid ?? false,
+      subtitleLang: data.subtitle_lang || 'English',
     };
     setCachedProfiles([...getCachedProfiles(), profile]);
     return profile;
@@ -178,7 +197,7 @@ export async function createProfile(
 
 async function updateProfile(
   id: string,
-  patch: { name?: string; avatar?: string; isKid?: boolean },
+  patch: { name?: string; avatar?: string; isKid?: boolean; subtitleLang?: string },
 ): Promise<boolean> {
   try {
     const { createClient } = await import('@/lib/supabase/client');
@@ -187,11 +206,10 @@ async function updateProfile(
     if (patch.name !== undefined) dbPatch.name = patch.name;
     if (patch.avatar !== undefined) dbPatch.avatar = patch.avatar;
     if (patch.isKid !== undefined) dbPatch.is_kid = patch.isKid;
+    if (patch.subtitleLang !== undefined) dbPatch.subtitle_lang = patch.subtitleLang;
     const { error } = await supabase.from('profiles').update(dbPatch).eq('id', id);
     if (error) return false;
     setCachedProfiles(getCachedProfiles().map((p) => (p.id === id ? { ...p, ...patch } : p)));
-    // If this is the currently-active profile, the cookie needs to
-    // reflect the change immediately.
     if (patch.isKid !== undefined && getActiveProfileId() === id) {
       setKidModeCookie(patch.isKid);
     }
@@ -211,6 +229,10 @@ export function restyleProfile(id: string, avatar: string): Promise<boolean> {
 
 export function setProfileKidMode(id: string, isKid: boolean): Promise<boolean> {
   return updateProfile(id, { isKid });
+}
+
+export function setProfileSubtitleLang(id: string, subtitleLang: string): Promise<boolean> {
+  return updateProfile(id, { subtitleLang });
 }
 
 export async function deleteProfile(id: string): Promise<boolean> {
