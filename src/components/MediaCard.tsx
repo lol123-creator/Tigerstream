@@ -7,6 +7,7 @@ import { tmdbImage } from '@/lib/tmdb-images';
 import type { MediaItem } from '@/types/media';
 import { storeReturnPath } from '@/components/BackButton';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { WatchLaterButton } from '@/components/WatchLaterButton';
 import { movieDetailHref, tvDetailHref } from '@/lib/routes';
 import { isRecentRelease } from '@/lib/date-utils';
 
@@ -16,15 +17,7 @@ interface MediaCardProps {
   variant?: 'row' | 'grid';
 }
 
-// How long a hover has to hold before the trailer preview kicks in -
-// long enough that someone just scrolling their cursor across the row
-// doesn't trigger a wall of video requests, short enough to still feel
-// responsive for an intentional hover.
 const HOVER_DELAY_MS = 1200;
-
-// Module-level cache so re-hovering the same card (or seeing it again
-// in another row) doesn't re-fetch. null is a valid cached value -
-// "checked, this title has no trailer" - not "not yet checked".
 const trailerCache = new Map<string, string | null>();
 
 export const MediaCard = React.memo(function MediaCard({ item, priority, variant = 'row' }: MediaCardProps) {
@@ -33,33 +26,18 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
 
   const releaseDateStr = item.type === 'movie' ? item.release_date : item.first_air_date;
 
-  // Guards against missing/empty release dates (e.g. favorites saved
-  // via a path that didn't pass this data along) producing a raw NaN
-  // in the UI - shows nothing for the year instead of "NaN".
   const rawYear = releaseDateStr ? new Date(releaseDateStr).getFullYear() : NaN;
   const year = Number.isFinite(rawYear) ? rawYear : null;
 
   const hasRating = typeof item.vote_average === 'number' && item.vote_average > 0;
 
-  // A title is "upcoming" purely based on its own release date being
-  // in the future - independent of isRecentRelease, which only looks
-  // backward. The two badges are mutually exclusive by construction:
-  // isNew is forced off while isUpcoming is true, so the moment a
-  // release date passes, "Coming Soon" simply stops being true and
-  // "New" picks up automatically on the very next render (no separate
-  // transition logic needed - it falls out of the two date checks).
   const releaseTime = releaseDateStr ? new Date(releaseDateStr).getTime() : NaN;
   const isUpcoming = Number.isFinite(releaseTime) && releaseTime > Date.now();
   const isNew = !isUpcoming && isRecentRelease(releaseDateStr);
 
-  // Falls back to a placeholder if the poster fails to load for any
-  // reason - a stale/expired TMDB path, a CDN hiccup, or the image
-  // optimizer timing out - rather than leaving a blank/broken box with
-  // no retry, which is what a bare <Image> does on error.
   const [imgSrc, setImgSrc] = useState(() => tmdbImage(item.poster_path, 'w342'));
   const [failed, setFailed] = useState(false);
 
-  // --- Hover trailer preview ---
   const cacheKey = `${item.type}-${item.id}`;
   const [trailerKey, setTrailerKey] = useState<string | null>(() => trailerCache.get(cacheKey) ?? null);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -73,12 +51,9 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
   };
 
   const handleMouseEnter = () => {
-    // Lite Mode devices are on weak hardware - an autoplaying video
-    // per hovered card is exactly the kind of thing it exists to skip.
     if (typeof document !== 'undefined' && document.documentElement.dataset.lite === 'true') {
       return;
     }
-    // Nothing to preview yet - don't even start the timer.
     if (isUpcoming) return;
     clearHoverTimer();
     hoverTimer.current = setTimeout(async () => {
@@ -125,8 +100,6 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           : undefined
       }
     >
-      {/* Subtle top highlight - the "glass reflection" edge that reads
-          as a frosted pane rather than a flat panel */}
       <div className="pointer-events-none absolute inset-x-1.5 top-1.5 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
 
       <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
@@ -158,15 +131,16 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
         )}
 
         <div className="absolute inset-0 bg-card-shine opacity-0 transition-opacity group-hover:opacity-100" />
-        <FavoriteButton
-          entry={{ id: item.id, type: item.type, title: item.title, poster_path: item.poster_path, vote_average: item.vote_average, release_date: item.type === "movie" ? item.release_date : undefined, first_air_date: item.type === "tv" ? item.first_air_date : undefined }}
-          variant="card"
-        />
+        {(() => {
+          const favEntry = { id: item.id, type: item.type, title: item.title, poster_path: item.poster_path, vote_average: item.vote_average, release_date: item.type === "movie" ? item.release_date : undefined, first_air_date: item.type === "tv" ? item.first_air_date : undefined };
+          return (
+            <>
+              <FavoriteButton entry={favEntry} variant="card" />
+              <WatchLaterButton entry={favEntry} variant="card" />
+            </>
+          );
+        })()}
 
-        {/* Coming Soon / New are mutually exclusive - a title can only
-            ever be one or the other, driven purely by whether its
-            release date has passed yet, so this just falls out of the
-            two boolean checks above with no extra state to manage. */}
         {isUpcoming ? (
           <span className="absolute top-2 right-2 z-10 rounded-full border border-white/25 bg-black/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/90 backdrop-blur-sm">
             Coming Soon
@@ -185,8 +159,6 @@ export const MediaCard = React.memo(function MediaCard({ item, priority, variant
           </span>
         )}
 
-        {/* Play affordance - hidden for unreleased titles (nothing to
-            play yet) and once the trailer preview takes over. */}
         {!showTrailer && !isUpcoming && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100">
             <div className="flex h-12 w-12 scale-75 items-center justify-center rounded-full bg-accent/90 shadow-glow backdrop-blur-sm transition-transform duration-300 group-hover:scale-100">
