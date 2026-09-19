@@ -47,12 +47,6 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
   const dragStartPageX = useRef(0);
   const dragScrollLeft = useRef(0);
 
-  // Drag updates are batched into requestAnimationFrame instead of
-  // writing scrollLeft synchronously on every mousemove. mousemove can
-  // fire far faster than the display refresh rate, and each direct
-  // scrollLeft write forces an immediate layout/paint - batching to one
-  // write per animation frame is what actually makes the drag feel
-  // smooth instead of janky.
   const rafId = useRef<number | null>(null);
   const pendingX = useRef<number | null>(null);
 
@@ -129,13 +123,6 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
         didDrag.current = true;
         el.style.outline = '2px solid rgba(255,255,255,0.05)';
         el.style.outlineOffset = '-2px';
-        // Only now - once we know this is genuinely a drag, not a click -
-        // hint the browser and disable pointer events on the row's
-        // contents so dragging across dozens of cards doesn't trigger a
-        // hover transition/box-shadow recalculation on every one of them.
-        // Doing this on every mousedown (including plain clicks) was the
-        // bug: it could interfere with the browser's native click
-        // detection on the card underneath before a drag was confirmed.
         el.style.willChange = 'scroll-position';
         el.style.pointerEvents = 'none';
       }
@@ -183,6 +170,38 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
     }
   };
 
+  // Roving keyboard navigation: once a card inside this row has focus
+  // (via normal Tab), Left/Right arrow moves focus to the previous/next
+  // card and scrolls it into view - the same pattern Netflix-style rows
+  // use, instead of Tab alone being the only way to move between many
+  // cards in a horizontally-scrolling row. Tab itself is left untouched
+  // (still moves focus out of the row normally); this only intercepts
+  // the arrow keys, and only while focus is actually on a card inside
+  // this specific row.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const active = document.activeElement as HTMLElement | null;
+    if (!active || !el.contains(active)) return;
+    const current = active.closest('a,button') as HTMLElement | null;
+    if (!current) return;
+
+    const focusable = Array.from(el.querySelectorAll<HTMLElement>('a,button')).filter(
+      (node) => node.tabIndex !== -1 && !node.hasAttribute('disabled'),
+    );
+    const idx = focusable.indexOf(current);
+    if (idx === -1) return;
+
+    const next = focusable[e.key === 'ArrowRight' ? idx + 1 : idx - 1];
+    if (!next) return;
+
+    e.preventDefault();
+    next.focus();
+    next.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+  };
+
   return (
     <section className={className ?? 'mb-10'}>
       <div className="mb-4 flex items-center justify-between gap-4 px-4 sm:px-6">
@@ -205,7 +224,14 @@ export function ScrollRow({ title, children, className }: ScrollRowProps) {
           </button>
         )}
 
-        <div ref={scrollerRef} onMouseDown={onMouseDown} onDragStart={(e) => e.preventDefault()} draggable={false} className="scrollbar-hide flex cursor-grab gap-3 overflow-x-auto px-4 pb-2 pt-5 -mt-5 active:cursor-grabbing sm:gap-4 sm:px-6">
+        <div
+          ref={scrollerRef}
+          onMouseDown={onMouseDown}
+          onDragStart={(e) => e.preventDefault()}
+          onKeyDown={onKeyDown}
+          draggable={false}
+          className="scrollbar-hide flex cursor-grab gap-3 overflow-x-auto px-4 pb-2 pt-5 -mt-5 active:cursor-grabbing sm:gap-4 sm:px-6"
+        >
           {children}
         </div>
       </div>
