@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useMemo, useCallback, useState, lazy, Suspense } from 'react';
+import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { SITE_NAME } from '@/lib/brand';
 import { LiteModeToggle } from '@/components/LiteModeToggle';
 import { AuthButton } from '@/components/AuthButton';
@@ -11,14 +11,27 @@ const SearchDropdown = lazy(() =>
   import('@/components/SearchDropdown').then((m) => ({ default: m.SearchDropdown }))
 );
 
-const NAV_LINKS = [
+// Core content categories - always visible in the top bar.
+const PRIMARY_LINKS = [
   { label: 'Movies', href: '/movies', icon: 'film' },
   { label: 'TV Shows', href: '/tv', icon: 'tv' },
   { label: 'Anime', href: '/anime', icon: 'sparkle' },
   { label: 'Sports', href: '/sports', icon: 'trophy' },
+];
+
+// Everything else - tucked into the "More" dropdown on desktop so the
+// primary rail doesn't get crowded as the site grows. All shown
+// together with PRIMARY_LINKS in the single mobile menu panel, since
+// there's no room for a nested dropdown there anyway.
+const MORE_LINKS = [
   { label: 'Genres', href: '/genres', icon: 'grid' },
   { label: 'My List', href: '/favorites', icon: 'bookmark' },
+  { label: 'Watch Later', href: '/watchlater', icon: 'watchlater' },
+  { label: 'History', href: '/history', icon: 'history' },
+  { label: 'Status', href: '/status', icon: 'status' },
 ];
+
+const ALL_LINKS = [...PRIMARY_LINKS, ...MORE_LINKS];
 
 function NavIcon({ name }: { name: string }) {
   const common = {
@@ -75,6 +88,33 @@ function NavIcon({ name }: { name: string }) {
           <path d="M6 4h12v17l-6-4-6 4V4Z" />
         </svg>
       );
+    case 'watchlater':
+      return (
+        <svg {...common}>
+          <path d="M6 4h12v17l-6-4-6 4V4Z" />
+          <path d="M9.5 9h4M11.5 7v4" />
+        </svg>
+      );
+    case 'history':
+      return (
+        <svg {...common}>
+          <path d="M3 12a9 9 0 1 0 3-6.7" />
+          <path d="M3 4v5h5" />
+          <path d="M12 7v5l3 3" />
+        </svg>
+      );
+    case 'status':
+      return (
+        <svg {...common}>
+          <path d="M3 12h4l2-7 4 14 2-7h6" />
+        </svg>
+      );
+    case 'chevron-down':
+      return (
+        <svg {...common}>
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -83,22 +123,39 @@ function NavIcon({ name }: { name: string }) {
 export function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   const isWatch =
     pathname.startsWith('/watch') || pathname.startsWith('/sports/watch');
 
   const activeMap = useMemo(() => {
-    const m = {};
-    for (const { href } of NAV_LINKS) {
+    const m: Record<string, boolean> = {};
+    for (const { href } of ALL_LINKS) {
       m[href] = href === '/' ? pathname === '/' : pathname.startsWith(href);
     }
     return m;
   }, [pathname]);
 
   const isActive = useCallback(
-    (href) => activeMap[href] ?? false,
+    (href: string) => activeMap[href] ?? false,
     [activeMap]
   );
+
+  const moreActive = MORE_LINKS.some(({ href }) => isActive(href));
+
+  // Close the "More" dropdown on an outside click, same pattern
+  // AuthButton's account menu already uses.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [moreOpen]);
 
   return (
     <>
@@ -127,7 +184,7 @@ export function Navbar() {
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
-            {NAV_LINKS.map(({ label, href }) => (
+            {PRIMARY_LINKS.map(({ label, href }) => (
               <Link
                 key={href}
                 href={href}
@@ -140,6 +197,47 @@ export function Navbar() {
                 {label}
               </Link>
             ))}
+
+            {/* "More" dropdown - everything outside the four core
+                content categories, kept out of the primary rail so it
+                doesn't grow unbounded as pages get added. */}
+            <div className="relative" ref={moreRef}>
+              <button
+                type="button"
+                onClick={() => setMoreOpen((o) => !o)}
+                aria-expanded={moreOpen}
+                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                  moreActive
+                    ? 'bg-accent/15 text-accent'
+                    : 'text-ink-2 hover:bg-white/[0.06] hover:text-white'
+                }`}
+              >
+                More
+                <span className={`transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`}>
+                  <NavIcon name="chevron-down" />
+                </span>
+              </button>
+
+              {moreOpen && (
+                <div className="animate-dropdown-in absolute left-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-glass-border bg-surface/95 p-1.5 shadow-2xl backdrop-blur-xl">
+                  {MORE_LINKS.map(({ label, href, icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMoreOpen(false)}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                        isActive(href)
+                          ? 'bg-accent/15 text-accent'
+                          : 'text-ink-2 hover:bg-white/[0.06] hover:text-white'
+                      }`}
+                    >
+                      <NavIcon name={icon} />
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <Suspense
@@ -209,9 +307,9 @@ export function Navbar() {
       )}
 
       {menuOpen && (
-        <div className="fixed inset-x-3 top-[4.5rem] z-[60] overflow-hidden rounded-2xl border border-glass-border bg-surface-card/95 shadow-2xl backdrop-blur-md md:hidden">
+        <div className="fixed inset-x-3 top-[4.5rem] z-[60] max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-glass-border bg-surface-card/95 shadow-2xl backdrop-blur-md md:hidden">
           <div className="p-2">
-            {NAV_LINKS.map(({ label, href, icon }, i) => (
+            {PRIMARY_LINKS.map(({ label, href, icon }, i) => (
               <Link
                 key={href}
                 href={href}
@@ -243,6 +341,31 @@ export function Navbar() {
               Surprise Me
             </a>
           </div>
+
+          {/* Same "everything else" set as the desktop More dropdown,
+              just inline here since there's no room for a nested
+              dropdown inside the mobile panel. */}
+          <div className="border-t border-glass-border p-2">
+            <p className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-ink-4">
+              More
+            </p>
+            {MORE_LINKS.map(({ label, href, icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+                  isActive(href)
+                    ? 'bg-accent/15 text-accent'
+                    : 'text-ink-2 hover:bg-white/[0.06] hover:text-white'
+                }`}
+              >
+                <NavIcon name={icon} />
+                {label}
+              </Link>
+            ))}
+          </div>
+
           <div className="border-t border-glass-border p-2">
             <LiteModeToggle variant="inline" />
           </div>
