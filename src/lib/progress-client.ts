@@ -11,11 +11,20 @@ import { watchMovieHref, watchTvHref } from '@/lib/routes';
 import { movieDetailHref, tvDetailHref } from '@/lib/routes';
 import type { ContinueWatchingItem } from '@/types/media';
 
+/**
+ * Shows every title with saved progress - the same inclusion rule
+ * buildWatchHistory uses - sorted most-recently-watched first. This
+ * used to also hide anything under 2% or over 98% complete and sort
+ * by completion percent instead, which meant a title could show on
+ * the /history page but be invisible here - the two lists now agree
+ * exactly, and the only way something leaves this row is the X button
+ * (removeContinueWatchingItem), not an automatic percent-based filter.
+ */
 export function buildContinueWatching(
   store?: PeachifyProgressStore,
 ): ContinueWatchingItem[] {
   const progress = store ?? loadProgressStore();
-  const items: ContinueWatchingItem[] = [];
+  const items: (ContinueWatchingItem & { lastWatchedAt: number })[] = [];
 
   for (const key of Object.keys(progress)) {
     const entry = progress[key];
@@ -23,7 +32,7 @@ export function buildContinueWatching(
     if (!entry.title && !entry.poster_path) continue;
 
     const ratio = getCompletionRatio(entry);
-    if (ratio <= 0.02 || ratio >= 0.98) continue;
+    const lastWatchedAt = entry.last_updated ?? 0;
 
     if (entry.type === 'movie') {
       items.push({
@@ -33,6 +42,7 @@ export function buildContinueWatching(
         poster_path: entry.poster_path || '',
         progressPercent: Math.round(ratio * 100),
         href: watchMovieHref(entry.id),
+        lastWatchedAt,
       });
       continue;
     }
@@ -47,8 +57,6 @@ export function buildContinueWatching(
           ? Math.min(1, epProgress.watched / epProgress.duration)
           : ratio;
 
-      if (epRatio <= 0.02 || epRatio >= 0.98) continue;
-
       items.push({
         id: entry.id,
         type: 'tv',
@@ -57,11 +65,15 @@ export function buildContinueWatching(
         progressPercent: Math.round(epRatio * 100),
         href: watchTvHref(entry.id, season, episode),
         subtitle: `S${season} · E${episode}`,
+        lastWatchedAt,
       });
     }
   }
 
-  return items.sort((a, b) => b.progressPercent - a.progressPercent).slice(0, 12);
+  return items
+    .sort((a, b) => b.lastWatchedAt - a.lastWatchedAt)
+    .slice(0, 12)
+    .map(({ lastWatchedAt, ...item }) => item);
 }
 
 export interface WatchHistoryItem extends ContinueWatchingItem {
@@ -71,10 +83,10 @@ export interface WatchHistoryItem extends ContinueWatchingItem {
 }
 
 /**
- * Full watch history - unlike buildContinueWatching, this includes
- * everything with any recorded progress at all (including finished
- * titles), sorted most-recently-watched first. Used by the dedicated
- * /history page.
+ * Full watch history - same inclusion rule as buildContinueWatching
+ * (anything with recorded progress), but with no 12-item cap and no
+ * "completed" exclusion, sorted most-recently-watched first. Used by
+ * the dedicated /history page.
  */
 export function buildWatchHistory(store?: PeachifyProgressStore): WatchHistoryItem[] {
   const progress = store ?? loadProgressStore();
@@ -132,7 +144,7 @@ export function buildWatchHistory(store?: PeachifyProgressStore): WatchHistoryIt
 }
 
 /** Removes a title from Continue Watching / history. `type` is required
- *  now - a bare id can't tell a movie and a same-id TV show apart. */
+ *  - a bare id can't tell a movie and a same-id TV show apart. */
 export function removeContinueWatchingItem(type: 'movie' | 'tv', id: string | number): void {
   removeProgressItem(type, id);
 }
